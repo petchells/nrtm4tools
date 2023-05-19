@@ -1,0 +1,7 @@
+*~
+.*.swp
+.*.swo
+Session.vim
+
+.vscode/
+cmd/nrtm4-client/nrtm4-client
