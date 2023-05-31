@@ -8,8 +8,7 @@ create table rpslobject (
 	primary_key varchar(255) not null,
 
 	constraint rpslobject_pk primary key (id),
-	constraint rpslobject__source__primary_key_uid unique (source, primary_key),
-	unique (source, primary_key)
+	constraint rpslobject__source__primary_key_uid unique (source, primary_key)
 );
 
 create table nrtmstate (
