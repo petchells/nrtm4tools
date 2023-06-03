@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"gitlab.com/etchells/nrtm4-client/internal/nrtm4/db"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/db"
 )
 
 type NRTMState struct {

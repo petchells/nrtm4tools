@@ -18,15 +18,15 @@ GOMODDOWNLOAD:=$(GOCMD) mod download
 BASTION=bastion
 
 # Fixed names
-APP_DIR:=cmd/nrtm4-client
-BINARY_NAME_APP:=nrtm4-client
+APP_DIR:=cmd/nrtm4client
+BINARY_NAME_APP:=nrtm4client
 BINARY_NAME_APP_UNIX:=$(BINARY_NAME_APP)_unix
 BINARY_NAME_DEBUG:=__debug_*
 
 # Image release params
-DOCKERFILE_APP_DIR:=deployments/docker/nrtm4-client
-IMAGE_APP_NAME_RELEASE:=eu.gcr.io/fourth-flag-253822/nrtm4-client
-IMAGE_APP_NAME:=nrtm4-clientdev
+DOCKERFILE_APP_DIR:=deployments/docker/nrtm4client
+IMAGE_APP_NAME_RELEASE:=eu.gcr.io/fourth-flag-253822/nrtm4client
+IMAGE_APP_NAME:=nrtm4client-dev
 
 # Util
 CHECK_VCS:=scripts/checkvcs.sh
@@ -87,10 +87,10 @@ install: test docker-app-prep
 	cd $(DOCKERFILE_APP_DIR) && $(DOCKERCMD) build -t $(IMAGE_APP_NAME) .
 
 testimage: install
-	-$(DOCKERCMD) stop nrtm4-client_testcontainer 2>/dev/null
-	cd $(DOCKERFILE_WEB_DIR) && $(DOCKERCMD) run -dp 8000:8080 --rm --name nrtm4-client_testcontainer --env-file ./env.conf $(IMAGE_WEB_NAME) >/dev/null
+	-$(DOCKERCMD) stop nrtm4client_testcontainer 2>/dev/null
+	cd $(DOCKERFILE_WEB_DIR) && $(DOCKERCMD) run -dp 8000:8080 --rm --name nrtm4client_testcontainer --env-file ./env.conf $(IMAGE_WEB_NAME) >/dev/null
 	#cd web && $(NPMCMD) run e2e >/dev/null
-	$(DOCKERCMD) stop nrtm4-client_testcontainer >/dev/null
+	$(DOCKERCMD) stop nrtm4client_testcontainer >/dev/null
 
 checkvcs:
 	sh scripts/checkvcs.sh || (echo "You have local changes to your files. Synchronize your changes and try again."; exit 1)

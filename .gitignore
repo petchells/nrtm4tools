@@ -4,4 +4,7 @@
 Session.vim
 
 .vscode/
-cmd/nrtm4-client/nrtm4-client
+
+cmd/nrtm4client/nrtm4client
+work/
+

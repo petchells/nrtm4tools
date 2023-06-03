@@ -1,4 +1,4 @@
-module gitlab.com/etchells/nrtm4-client
+module gitlab.com/etchells/nrtm4client
 
 go 1.20
 

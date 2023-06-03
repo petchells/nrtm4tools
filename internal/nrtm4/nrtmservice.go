@@ -4,8 +4,8 @@ import (
 	"errors"
 	"log"
 
-	"gitlab.com/etchells/nrtm4-client/internal/nrtm4/model"
-	"gitlab.com/etchells/nrtm4-client/internal/nrtm4/persist"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/model"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
 var ErrInvalidJSON = errors.New("invalid JSON")

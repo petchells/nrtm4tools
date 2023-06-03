@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"gitlab.com/etchells/nrtm4-client/internal/nrtm4"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4"
 )
 
 func main() {
