@@ -14,12 +14,12 @@ type Change struct {
 }
 
 type Notification struct {
-	NrtmVersion uint       `json:"nrtm_version"`
+	NrtmVersion int        `json:"nrtm_version"`
 	Timestamp   string     `json:"timestamp"`
 	Type        string     `json:"type"`
 	Source      string     `json:"source"`
 	SessionID   string     `json:"session_id"`
-	Version     uint       `json:"version"`
+	Version     int        `json:"version"`
 	Snapshot    FileRef    `json:"snapshot"`
 	Deltas      *[]FileRef `json:"deltas"`
 }

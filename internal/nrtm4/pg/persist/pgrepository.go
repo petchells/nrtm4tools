@@ -1,6 +1,8 @@
 package persist
 
 import (
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
@@ -11,6 +13,16 @@ type PgRepository struct {
 
 func (repo PgRepository) InitializeConnectionPool(dbUrl string) {
 	db.InitializeConnectionPool(dbUrl)
+}
+
+func (repo PgRepository) CreateState(state persist.NRTMState) error {
+	var dbstate *NRTMState
+	dbstate.Created = time.Now()
+
+	err := db.WithTransaction(func(tx pgx.Tx) error {
+		return nil
+	})
+	return err
 }
 
 func (repo PgRepository) GetState(source string) (persist.NRTMState, error) {

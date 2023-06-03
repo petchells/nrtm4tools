@@ -11,30 +11,39 @@ func UpdateNRTM(repo persist.Repository, url string) {
 	// Fetch notification
 	// -- validate
 	// -- new version?
-	httpClient := newNrtmHttpClient(url)
-	notificationFile, err := httpClient.getUpdateNotification()
-	if err != nil {
-		log.Println("Failed to get notification file", err)
+	var notification nrtm4model.Notification
+	var err error
+
+	if notification, err = getUpdateNotification(url); err != nil {
+		log.Println("ERROR failed to fetch notificationFile", err)
 		return
 	}
-	if errs := validateNotificationFile(notificationFile); len(errs) > 0 {
+	if errs := validateNotificationFile(notification); len(errs) > 0 {
 		for _, err := range errs {
-			log.Println("ERROR failed to get notificationFile", err)
+			log.Println("ERROR notificationFile failed validation", err)
 		}
 		return
 	}
+
 	// Fetch state
 	ds := NrtmDataService{Repository: repo}
-	state, err := repo.GetState(notificationFile.Source)
+	state, err := repo.GetState(notification.Source)
 	if err != nil {
-		log.Panicln("Failed to get state", err)
+		log.Println("Failed to get state", err)
+		//repo.CreateState(state)
+		// -- if no state, then initialize
+		//    * get snapshot
+		getSnapshot(notification)
+		//    * save state
+		//    * insert rpsl objects
+		//    * done and dusted
+		return
 	}
 	log.Println(state)
-	// -- if no state, then initialize
-	//    * get snapshot
-	//    * save state
-	//    * insert rpsl objects
-	//    * done and dusted
+	log.Println("DEBUG Current:", state.Version, "Notification file:", notification.Version)
+	if state.Version >= notification.Version {
+		return
+	}
 	// -- compare with latest notification
 	//    * is version newer? if not then blow
 	//    * are there contiguous deltas since our last delta? if not, download snapshot
@@ -42,19 +51,19 @@ func UpdateNRTM(repo persist.Repository, url string) {
 	ds.ApplyDeltas("RIR-TEST", []nrtm4model.Change{})
 }
 
-func validateNotificationFile(notificationFile nrtm4model.Notification) []error {
+func validateNotificationFile(file nrtm4model.Notification) []error {
 	var errs []error
-	if notificationFile.NrtmVersion != 4 {
-		errs = append(errs, newInvalidJSONError("notificationFile nrtm version is not v4: '%v'", notificationFile.NrtmVersion))
+	if file.NrtmVersion != 4 {
+		errs = append(errs, newInvalidJSONError("notificationFile nrtm version is not v4: '%v'", file.NrtmVersion))
 	}
-	if len(notificationFile.SessionID) < 36 {
-		errs = append(errs, newInvalidJSONError("notificationFile session ID is not valid: '%v'", notificationFile.SessionID))
+	if len(file.SessionID) < 36 {
+		errs = append(errs, newInvalidJSONError("notificationFile session ID is not valid: '%v'", file.SessionID))
 	}
-	if len(notificationFile.Source) < 3 {
-		errs = append(errs, newInvalidJSONError("notificationFile source is not valid: '%v'", notificationFile.Source))
+	if len(file.Source) < 3 {
+		errs = append(errs, newInvalidJSONError("notificationFile source is not valid: '%v'", file.Source))
 	}
-	if notificationFile.Version < 1 {
-		errs = append(errs, newInvalidJSONError("notificationFile version must be positive: '%v'", notificationFile.NrtmVersion))
+	if file.Version < 1 {
+		errs = append(errs, newInvalidJSONError("notificationFile version must be positive: '%v'", file.NrtmVersion))
 	}
 	return errs
 }
