@@ -1,10 +1,10 @@
-package nrtm4
+package service
 
 import (
 	"errors"
 	"log"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/model"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
@@ -14,7 +14,7 @@ type NrtmDataService struct {
 	Repository persist.Repository
 }
 
-func (ds NrtmDataService) ApplyDeltas(source string, deltas []model.Change) error {
+func (ds NrtmDataService) ApplyDeltas(source string, deltas []nrtm4model.Change) error {
 	for _, delta := range deltas {
 		if delta.Action == "delete" {
 			log.Println("i will delete", source, delta.PrimaryKey)

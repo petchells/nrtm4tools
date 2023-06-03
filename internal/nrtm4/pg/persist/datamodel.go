@@ -3,7 +3,7 @@ package persist
 import (
 	"time"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/db"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
 )
 
 type RPSLObject struct {

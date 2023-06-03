@@ -1,4 +1,4 @@
-package model
+package nrtm4model
 
 type FileRef struct {
 	Version uint   `json:"version"`

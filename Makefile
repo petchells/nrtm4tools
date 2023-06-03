@@ -66,12 +66,12 @@ emptytestdb: ; $(TERN) migrate --destination 0 --config third_party/tern/tern.te
 
 migratetest: ; $(TERN) migrate --config third_party/tern/tern.test.conf --migrations third_party/tern
 
-docker-app-prep: buildweb build-linux
-	mkdir -p $(DOCKERFILE_WEB_DIR)/app
-	$(RSYNCCMD) -q -a --delete web/www $(DOCKERFILE_WEB_DIR)/app
-	cp $(CD_WEB_DIR)/$(BINARY_NAME_WEB_UNIX) $(DOCKERFILE_WEB_DIR)/app
-	mkdir -p $(DOCKERFILE_API_DIR)/app
-	cp $(APP_DIR)/$(BINARY_NAME_API_UNIX) $(DOCKERFILE_API_DIR)/app
+# docker-app-prep: buildweb build-linux
+# 	mkdir -p $(DOCKERFILE_WEB_DIR)/app
+# 	$(RSYNCCMD) -q -a --delete web/www $(DOCKERFILE_WEB_DIR)/app
+# 	cp $(CD_WEB_DIR)/$(BINARY_NAME_WEB_UNIX) $(DOCKERFILE_WEB_DIR)/app
+# 	mkdir -p $(DOCKERFILE_API_DIR)/app
+# 	cp $(APP_DIR)/$(BINARY_NAME_API_UNIX) $(DOCKERFILE_API_DIR)/app
 
 coverage: ;	sh scripts/coverage.sh
 
@@ -103,12 +103,11 @@ release: release-app ;
 
 clean:
 	$(GOCLEAN) ./...
-	rm -rf web/www
-	rm -rf $(DOCKERFILE_APP_DIR)/app
-	rm -f $(CD_WEB_DIR)/$(BINARY_NAME_DEBUG) $(CD_WEB_DIR)/$(BINARY_NAME_WEB) $(CD_WEB_DIR)/$(BINARY_NAME_WEB_UNIX)
-	rm -f $(APP_DIR)/$(BINARY_NAME_DEBUG) $(APP_DIR)/$(BINARY_NAME_API) $(APP_DIR)/$(BINARY_NAME_API_UNIX)
-	-$(DOCKERCMD) image rm $(IMAGE_APP_NAME) >/dev/null 2>&1
-	-$(DOCKERCMD) rmi $(shell docker images --filter=reference="$(IMAGE_APP_NAME_RELEASE):*" -q) 2>/dev/null
+#	rm -rf web/www
+#	rm -rf $(DOCKERFILE_APP_DIR)/app
+	rm -f $(APP_DIR)/$(BINARY_NAME_DEBUG) $(APP_DIR)/$(BINARY_NAME_APP) $(APP_DIR)/$(BINARY_NAME_APP_UNIX)
+#	-$(DOCKERCMD) image rm $(IMAGE_APP_NAME) >/dev/null 2>&1
+#	-$(DOCKERCMD) rmi $(shell docker images --filter=reference="$(IMAGE_APP_NAME_RELEASE):*" -q) 2>/dev/null
 
 cleanall: clean ;
 
