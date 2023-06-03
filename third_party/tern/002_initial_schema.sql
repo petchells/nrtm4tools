@@ -15,8 +15,10 @@ create table nrtmstate (
 	id bigint not null,
 	created timestamp without time zone not null,
 	url text not null,
+	file_version unsigned bigint not null,
 	is_delta boolean not null,
 	delta text not null,
+	snapshot_path varchar(255) not null,
 	source varchar(255) not null,
 	
 	constraint nrtmstate_pk primary key (id)

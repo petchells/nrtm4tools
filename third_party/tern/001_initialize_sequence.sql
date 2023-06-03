@@ -9,7 +9,7 @@ DECLARE
     -- schema shard you have - you could pass this as a parameter too
     shard_id int := 1;
 BEGIN
-    SELECT nextval('app_seq') % 1024 INTO seq_id;
+    SELECT nextval('_seq') % 1024 INTO seq_id;
 
     SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp()) * 1000) INTO now_millis;
     result := (now_millis - our_epoch) << 23;

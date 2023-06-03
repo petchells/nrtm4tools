@@ -15,9 +15,11 @@ type NRTMState struct {
 	ID               uint64    `em:"."`
 	Created          time.Time `em:"."`
 	URL              string    `em:"."`
-	Version          uint      `em:"."`
+	FileVersion      uint      `em:"."`
 	IsDelta          bool      `em:"."`
 	Delta            string    `em:"."`
+	SnapshotPath     string    `em:"."`
+	Source           uint64    `em:"."`
 }
 
 func GetLastState(tx pgx.Tx) *NRTMState {
