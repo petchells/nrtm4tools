@@ -14,20 +14,26 @@ type NRTMState struct {
 	db.EntityManaged `em:"nrtmstate st"`
 	ID               uint64    `em:"."`
 	Created          time.Time `em:"."`
+	Source           string    `em:"."`
+	Version          int       `em:"."`
 	URL              string    `em:"."`
-	FileVersion      uint      `em:"."`
 	IsDelta          bool      `em:"."`
 	Delta            string    `em:"."`
 	SnapshotPath     string    `em:"."`
-	Source           uint64    `em:"."`
 }
 
-func GetLastState(tx pgx.Tx) *NRTMState {
+func GetLastState(tx pgx.Tx, source string) *NRTMState {
 	state := new(NRTMState)
 	descriptor := db.GetDescriptor(state)
-	sql := fmt.Sprintf(`SELECT %v FROM %v WHERE st.version=MAX(st.version)`, descriptor.ColumnNamesWithAlias(), descriptor.TableNameWithAlias())
+	sql := fmt.Sprintf(`
+		SELECT %v FROM %v
+		WHERE
+			source=$1
+		  AND 
+			st.version=MAX(st.version)
+		`, descriptor.ColumnNamesWithAlias(), descriptor.TableNameWithAlias())
 	log.Println(sql)
-	err := tx.QueryRow(context.Background(), sql).Scan(db.FieldValues(state)...)
+	err := tx.QueryRow(context.Background(), sql, source).Scan(db.FieldValues(state)...)
 	if err != nil {
 		log.Println("WARN", err)
 	}

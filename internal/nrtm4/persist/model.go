@@ -5,8 +5,9 @@ import "time"
 type NRTMState struct {
 	ID           uint64
 	Created      time.Time
+	Source       string
+	Version      int
 	URL          string
-	Version      uint
 	IsDelta      bool
 	Delta        string
 	SnapshotPath string

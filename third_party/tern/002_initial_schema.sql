@@ -2,7 +2,6 @@ create table rpslobject (
 	id bigint not null,
 	created timestamp without time zone not null,
 	updated timestamp without time zone not null,
-	version bigint not null,
 	rpsl text not null,
 	source varchar(255) not null,
 	primary_key varchar(255) not null,
@@ -14,15 +13,17 @@ create table rpslobject (
 create table nrtmstate (
 	id bigint not null,
 	created timestamp without time zone not null,
+	source varchar(255) not null,
+	version integer not null,
 	url text not null,
-	file_version unsigned bigint not null,
 	is_delta boolean not null,
 	delta text not null,
 	snapshot_path varchar(255) not null,
-	source varchar(255) not null,
 	
-	constraint nrtmstate_pk primary key (id)
+	constraint nrtmstate_pk primary key (id),
+	create index nrtmstate__source_version_idx on (source, version)
 );
 ---- create above / drop below ----
 drop table nrtmstate;
+drop table version;
 drop table rpslobject;

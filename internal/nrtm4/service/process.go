@@ -7,13 +7,25 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
-func UpdateNRTM(repo persist.Repository) {
-	ds := NrtmDataService{Repository: repo}
+func UpdateNRTM(repo persist.Repository, url string) {
 	// Fetch notification
 	// -- validate
 	// -- new version?
+	httpClient := newNrtmHttpClient(url)
+	notificationFile, err := httpClient.getUpdateNotification()
+	if err != nil {
+		log.Println("Failed to get notification file", err)
+		return
+	}
+	if errs := validateNotificationFile(notificationFile); len(errs) > 0 {
+		for _, err := range errs {
+			log.Println("ERROR failed to get notificationFile", err)
+		}
+		return
+	}
 	// Fetch state
-	state, err := repo.GetState()
+	ds := NrtmDataService{Repository: repo}
+	state, err := repo.GetState(notificationFile.Source)
 	if err != nil {
 		log.Panicln("Failed to get state", err)
 	}
@@ -28,4 +40,21 @@ func UpdateNRTM(repo persist.Repository) {
 	//    * are there contiguous deltas since our last delta? if not, download snapshot
 	//    * apply deltas
 	ds.ApplyDeltas("RIR-TEST", []nrtm4model.Change{})
+}
+
+func validateNotificationFile(notificationFile nrtm4model.Notification) []error {
+	var errs []error
+	if notificationFile.NrtmVersion != 4 {
+		errs = append(errs, newInvalidJSONError("notificationFile nrtm version is not v4: '%v'", notificationFile.NrtmVersion))
+	}
+	if len(notificationFile.SessionID) < 36 {
+		errs = append(errs, newInvalidJSONError("notificationFile session ID is not valid: '%v'", notificationFile.SessionID))
+	}
+	if len(notificationFile.Source) < 3 {
+		errs = append(errs, newInvalidJSONError("notificationFile source is not valid: '%v'", notificationFile.Source))
+	}
+	if notificationFile.Version < 1 {
+		errs = append(errs, newInvalidJSONError("notificationFile version must be positive: '%v'", notificationFile.NrtmVersion))
+	}
+	return errs
 }

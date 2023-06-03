@@ -30,5 +30,5 @@ func Launch() {
 func launchWithPg(repository persist.PgRepository, config AppConfig) {
 	repository.InitializeConnectionPool(config.DatabaseURL)
 	log.Println("DEBUG Launch()", config)
-	service.UpdateNRTM(repository)
+	service.UpdateNRTM(repository, config.NrtmUrlNotificationUrl)
 }
