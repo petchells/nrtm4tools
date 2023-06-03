@@ -2,6 +2,14 @@ package rpsl
 
 import "testing"
 
+/*
+
+What about multi-line strings like address -- how is the second line distinguished from an attribute name?
+- maybe indented? if so, then is it mandatory for the first char in a line to *always* be an attribute name, or comment?
+- or is a colon disallowed?
+
+*/
+
 func TestErrorThrownForBadRPSL(t *testing.T) {
 
 	var err error
