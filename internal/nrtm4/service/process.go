@@ -1,11 +1,16 @@
 package service
 
 import (
+	"io"
 	"log"
+	"os"
+	"strings"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
+
+var FILE_BUFFER_LENGTH = 1024 * 8
 
 func UpdateNRTM(repo persist.Repository, url string) {
 	// Fetch notification
@@ -13,8 +18,9 @@ func UpdateNRTM(repo persist.Repository, url string) {
 	// -- new version?
 	var notification nrtm4model.Notification
 	var err error
+	var httpClient httpClient
 
-	if notification, err = getUpdateNotification(url); err != nil {
+	if notification, err = httpClient.getUpdateNotification(url); err != nil {
 		log.Println("ERROR failed to fetch notificationFile", err)
 		return
 	}
@@ -32,23 +38,70 @@ func UpdateNRTM(repo persist.Repository, url string) {
 		log.Println("Failed to get state", err)
 		//repo.CreateState(state)
 		// -- if no state, then initialize
-		//    * get snapshot
-		getSnapshot(notification)
+		//    * get snapshot, put file on disk
+		//    * parse it
 		//    * save state
 		//    * insert rpsl objects
+		//    * see if there are more deltas to process
 		//    * done and dusted
+		var snapshotFile *os.File
+		if snapshotFile, err = writeResourceToPath(notification.Snapshot.Url, "/tmp"); err != nil {
+			log.Println("ERROR cannot write resource to disk", notification.Snapshot.Url, err)
+			return
+		}
+		defer func() {
+			if err := snapshotFile.Close(); err != nil {
+				panic(err)
+			}
+		}()
 		return
 	}
 	log.Println(state)
-	log.Println("DEBUG Current:", state.Version, "Notification file:", notification.Version)
-	if state.Version >= notification.Version {
-		return
-	}
 	// -- compare with latest notification
 	//    * is version newer? if not then blow
 	//    * are there contiguous deltas since our last delta? if not, download snapshot
 	//    * apply deltas
+	log.Println("DEBUG Current:", state.Version, "Notification file:", notification.Version)
+	if state.Version >= notification.Version {
+		return
+	}
 	ds.ApplyDeltas("RIR-TEST", []nrtm4model.Change{})
+}
+
+func writeResourceToPath(url string, path string) (*os.File, error) {
+	fileName := url[strings.LastIndex(url, "/"):]
+	var reader io.ReadCloser
+	var httpClient httpClient
+	var outFile *os.File
+	var err error
+	if reader, err = httpClient.fetchFile(url); err != nil {
+		log.Println("ERROR Failed to fetch file", url, err)
+		if outFile, err = os.Create(path + "/" + fileName); err != nil {
+			log.Println("ERROR Failed to open file on disk", err)
+		}
+		if err = transferReaderToFile(reader, outFile); err != nil {
+			log.Println("ERROR writing file")
+			return nil, err
+		}
+	}
+	return outFile, err
+}
+
+func transferReaderToFile(from io.ReadCloser, to *os.File) error {
+	buf := make([]byte, FILE_BUFFER_LENGTH)
+	for {
+		n, err := from.Read(buf)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if n == 0 {
+			break
+		}
+		if _, err := to.Write(buf[:n]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func validateNotificationFile(file nrtm4model.Notification) []error {
@@ -64,6 +117,9 @@ func validateNotificationFile(file nrtm4model.Notification) []error {
 	}
 	if file.Version < 1 {
 		errs = append(errs, newInvalidJSONError("notificationFile version must be positive: '%v'", file.NrtmVersion))
+	}
+	if len(file.Snapshot.Url) < 20 {
+		errs = append(errs, newInvalidJSONError("notificationFile snapshot url is not valid: '%v'", file.Snapshot.Url))
 	}
 	return errs
 }
