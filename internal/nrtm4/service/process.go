@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
@@ -54,6 +55,22 @@ func UpdateNRTM(repo persist.Repository, url string) {
 				panic(err)
 			}
 		}()
+		state = persist.NRTMState{
+			ID:      0,
+			Created: time.Now(),
+			Source:  notification.Source,
+			Version: notification.Version,
+			URL:     url,
+			Type:    "",
+			Payload: "",
+		}
+		err = repo.SaveState(state)
+		if err != nil {
+			log.Println("WARN failed to save state", state)
+			return
+		}
+		log.Println("DEBUG snapshotFile.Name()", snapshotFile.Name())
+
 		return
 	}
 	log.Println(state)
@@ -69,7 +86,7 @@ func UpdateNRTM(repo persist.Repository, url string) {
 }
 
 func writeResourceToPath(url string, path string) (*os.File, error) {
-	fileName := url[strings.LastIndex(url, "/"):]
+	fileName := url[strings.LastIndex(url, "/")+1:]
 	var reader io.ReadCloser
 	var httpClient httpClient
 	var outFile *os.File
@@ -78,6 +95,7 @@ func writeResourceToPath(url string, path string) (*os.File, error) {
 		log.Println("ERROR Failed to fetch file", url, err)
 		if outFile, err = os.Create(path + "/" + fileName); err != nil {
 			log.Println("ERROR Failed to open file on disk", err)
+			return nil, err
 		}
 		if err = transferReaderToFile(reader, outFile); err != nil {
 			log.Println("ERROR writing file")

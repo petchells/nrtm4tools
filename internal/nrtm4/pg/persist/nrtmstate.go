@@ -17,9 +17,8 @@ type NRTMState struct {
 	Source           string    `em:"."`
 	Version          int       `em:"."`
 	URL              string    `em:"."`
-	IsDelta          bool      `em:"."`
-	Delta            string    `em:"."`
-	SnapshotPath     string    `em:"."`
+	Type             string    `em:"."`
+	Payload          string    `em:"."`
 }
 
 func GetLastState(tx pgx.Tx, source string) *NRTMState {
@@ -33,9 +32,26 @@ func GetLastState(tx pgx.Tx, source string) *NRTMState {
 			st.version=MAX(st.version)
 		`, descriptor.ColumnNamesWithAlias(), descriptor.TableNameWithAlias())
 	log.Println(sql)
-	err := tx.QueryRow(context.Background(), sql, source).Scan(db.FieldValues(state)...)
+	rows, err := tx.Query(context.Background(), sql, source)
 	if err != nil {
 		log.Println("WARN", err)
+		return nil
 	}
+	defer rows.Close()
+	var states []NRTMState
+	for rows.Next() {
+		log.Println(rows)
+		err = rows.Scan(db.FieldValues(state)...)
+		if err != nil {
+			log.Println("WARN scanning fields", err)
+			return state
+		}
+		states = append(states, *state)
+	}
+	log.Println("DEBUG states", states)
+
+	// if err != nil {
+	// 	log.Println("WARN", err)
+	// }
 	return state
 }

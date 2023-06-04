@@ -15,7 +15,7 @@ func (repo PgRepository) InitializeConnectionPool(dbUrl string) {
 	db.InitializeConnectionPool(dbUrl)
 }
 
-func (repo PgRepository) CreateState(state persist.NRTMState) error {
+func (repo PgRepository) SaveState(state persist.NRTMState) error {
 	var dbstate *NRTMState
 	dbstate.Created = time.Now()
 
@@ -42,9 +42,8 @@ func (repo PgRepository) GetState(source string) (persist.NRTMState, error) {
 	state.Created = dbstate.Created
 	state.Source = dbstate.Source
 	state.Version = dbstate.Version
-	state.IsDelta = dbstate.IsDelta
 	state.URL = dbstate.URL
-	state.Delta = dbstate.Delta
-	state.SnapshotPath = dbstate.SnapshotPath
+	state.Type = dbstate.Type
+	state.Payload = dbstate.Payload
 	return state, nil
 }

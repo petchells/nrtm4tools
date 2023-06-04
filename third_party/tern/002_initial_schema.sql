@@ -16,9 +16,8 @@ create table nrtmstate (
 	source varchar(255) not null,
 	version integer not null,
 	url text not null,
-	is_delta boolean not null,
-	delta text not null,
-	snapshot_path varchar(255) not null,
+	type varchar(255) not null,
+	payload text not null,
 	
 	constraint nrtmstate_pk primary key (id),
 	create index nrtmstate__source_version_idx on (source, version)
