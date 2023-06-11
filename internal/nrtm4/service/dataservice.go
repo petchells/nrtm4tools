@@ -8,16 +8,16 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
-type ErrInvalidJSON struct {
+type ErrNRTMServiceError struct {
 	Message string
 }
 
-func (e ErrInvalidJSON) Error() string {
-	return "invalid JSON: " + e.Message
+func (e ErrNRTMServiceError) Error() string {
+	return "nrtm service error: " + e.Message
 }
 
-func newInvalidJSONError(msg string, args ...any) ErrInvalidJSON {
-	return ErrInvalidJSON{fmt.Sprintf(msg, args...)}
+func newNRTMServiceError(msg string, args ...any) ErrNRTMServiceError {
+	return ErrNRTMServiceError{fmt.Sprintf(msg, args...)}
 }
 
 type NrtmDataService struct {
@@ -31,7 +31,7 @@ func (ds NrtmDataService) ApplyDeltas(source string, deltas []nrtm4model.Change)
 		} else if delta.Action == "add_modify" {
 			log.Println("i will add/modify", source, delta.PrimaryKey)
 		} else {
-			return newInvalidJSONError("unknown action %v: '%v'", source, delta.Action)
+			return newNRTMServiceError("unknown action %v: '%v'", source, delta.Action)
 		}
 	}
 	return nil

@@ -8,9 +8,14 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 )
 
-type httpClient struct{}
+type Client interface {
+	getUpdateNotification(string) (nrtm4model.Notification, error)
+	fetchFile(string) (io.ReadCloser, error)
+}
 
-func (cl httpClient) getUpdateNotification(url string) (nrtm4model.Notification, error) {
+type HttpClient struct{}
+
+func (cl HttpClient) getUpdateNotification(url string) (nrtm4model.Notification, error) {
 	var file nrtm4model.Notification
 	if err := cl.fetchObject(url, &file); err != nil {
 		return file, err
@@ -18,7 +23,7 @@ func (cl httpClient) getUpdateNotification(url string) (nrtm4model.Notification,
 	return file, nil
 }
 
-func (cl httpClient) fetchFile(url string) (io.ReadCloser, error) {
+func (cl HttpClient) fetchFile(url string) (io.ReadCloser, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -26,7 +31,7 @@ func (cl httpClient) fetchFile(url string) (io.ReadCloser, error) {
 	return resp.Body, err
 }
 
-func (cl httpClient) fetchObject(url string, file any) error {
+func (cl HttpClient) fetchObject(url string, file any) error {
 	var resp *http.Response
 	var err error
 	if resp, err = http.Get(url); err != nil {

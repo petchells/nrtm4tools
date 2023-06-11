@@ -13,15 +13,14 @@ import (
 
 var FILE_BUFFER_LENGTH = 1024 * 8
 
-func UpdateNRTM(repo persist.Repository, url string) {
+func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath string) {
 	// Fetch notification
 	// -- validate
 	// -- new version?
 	var notification nrtm4model.Notification
 	var err error
-	var httpClient httpClient
 
-	if notification, err = httpClient.getUpdateNotification(url); err != nil {
+	if notification, err = client.getUpdateNotification(url); err != nil {
 		log.Println("ERROR failed to fetch notificationFile", err)
 		return
 	}
@@ -46,8 +45,8 @@ func UpdateNRTM(repo persist.Repository, url string) {
 		//    * see if there are more deltas to process
 		//    * done and dusted
 		var snapshotFile *os.File
-		if snapshotFile, err = writeResourceToPath(notification.Snapshot.Url, "/tmp"); err != nil {
-			log.Println("ERROR cannot write resource to disk", notification.Snapshot.Url, err)
+		if snapshotFile, err = writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
+			log.Println("ERROR occurred when writing snapshot file to disk", notification.Snapshot.Url, err)
 			return
 		}
 		defer func() {
@@ -82,25 +81,26 @@ func UpdateNRTM(repo persist.Repository, url string) {
 	if state.Version >= notification.Version {
 		return
 	}
-	ds.ApplyDeltas("RIR-TEST", []nrtm4model.Change{})
+	ds.ApplyDeltas(notification.Source, []nrtm4model.Change{})
 }
 
 func writeResourceToPath(url string, path string) (*os.File, error) {
 	fileName := url[strings.LastIndex(url, "/")+1:]
 	var reader io.ReadCloser
-	var httpClient httpClient
+	var httpClient HttpClient
 	var outFile *os.File
 	var err error
 	if reader, err = httpClient.fetchFile(url); err != nil {
 		log.Println("ERROR Failed to fetch file", url, err)
-		if outFile, err = os.Create(path + "/" + fileName); err != nil {
-			log.Println("ERROR Failed to open file on disk", err)
-			return nil, err
-		}
-		if err = transferReaderToFile(reader, outFile); err != nil {
-			log.Println("ERROR writing file")
-			return nil, err
-		}
+		return nil, err
+	}
+	if outFile, err = os.Create(path + "/" + fileName); err != nil {
+		log.Println("ERROR Failed to open file on disk", err)
+		return nil, err
+	}
+	if err = transferReaderToFile(reader, outFile); err != nil {
+		log.Println("ERROR writing file")
+		return nil, err
 	}
 	return outFile, err
 }
@@ -125,19 +125,19 @@ func transferReaderToFile(from io.ReadCloser, to *os.File) error {
 func validateNotificationFile(file nrtm4model.Notification) []error {
 	var errs []error
 	if file.NrtmVersion != 4 {
-		errs = append(errs, newInvalidJSONError("notificationFile nrtm version is not v4: '%v'", file.NrtmVersion))
+		errs = append(errs, newNRTMServiceError("notificationFile nrtm version is not v4: '%v'", file.NrtmVersion))
 	}
 	if len(file.SessionID) < 36 {
-		errs = append(errs, newInvalidJSONError("notificationFile session ID is not valid: '%v'", file.SessionID))
+		errs = append(errs, newNRTMServiceError("notificationFile session ID is not valid: '%v'", file.SessionID))
 	}
 	if len(file.Source) < 3 {
-		errs = append(errs, newInvalidJSONError("notificationFile source is not valid: '%v'", file.Source))
+		errs = append(errs, newNRTMServiceError("notificationFile source is not valid: '%v'", file.Source))
 	}
 	if file.Version < 1 {
-		errs = append(errs, newInvalidJSONError("notificationFile version must be positive: '%v'", file.NrtmVersion))
+		errs = append(errs, newNRTMServiceError("notificationFile version must be positive: '%v'", file.NrtmVersion))
 	}
 	if len(file.Snapshot.Url) < 20 {
-		errs = append(errs, newInvalidJSONError("notificationFile snapshot url is not valid: '%v'", file.Snapshot.Url))
+		errs = append(errs, newNRTMServiceError("notificationFile snapshot url is not valid: '%v'", file.Snapshot.Url))
 	}
 	return errs
 }
