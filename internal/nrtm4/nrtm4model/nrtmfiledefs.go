@@ -26,19 +26,17 @@ type Notification struct {
 }
 
 type DeltaFile struct {
-	NrtmVersion uint     `json:"nrtm_version"`
-	Type        string   `json:"type"`
-	Source      string   `json:"source"`
-	SessionID   string   `json:"session_id"`
-	Version     uint     `json:"version"`
-	Changes     []Change `json:"changes"`
+	NrtmVersion uint   `json:"nrtm_version"`
+	Type        string `json:"type"`
+	Source      string `json:"source"`
+	SessionID   string `json:"session_id"`
+	Version     uint   `json:"version"`
 }
 
 type SnapshotFile struct {
-	NrtmVersion uint     `json:"nrtm_version"`
-	Type        string   `json:"type"`
-	Source      string   `json:"source"`
-	SessionID   string   `json:"session_id"`
-	Version     uint     `json:"version"`
-	Objects     []string `json:"objects"`
+	NrtmVersion uint   `json:"nrtm_version"`
+	Type        string `json:"type"`
+	Source      string `json:"source"`
+	SessionID   string `json:"session_id"`
+	Version     uint   `json:"version"`
 }

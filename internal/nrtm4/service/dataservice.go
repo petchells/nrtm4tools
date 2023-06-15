@@ -31,7 +31,7 @@ func (ds NrtmDataService) ApplyDeltas(source string, deltas []nrtm4model.Change)
 		} else if delta.Action == "add_modify" {
 			log.Println("i will add/modify", source, delta.PrimaryKey)
 		} else {
-			return newNRTMServiceError("unknown action %v: '%v'", source, delta.Action)
+			return newNRTMServiceError("unknown delta action %v: '%v'", source, delta.Action)
 		}
 	}
 	return nil

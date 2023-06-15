@@ -7,10 +7,21 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
+
+func TestUpdateNRTM(t *testing.T) {
+	stubRepo := stubRepo{t}
+	stubClient := stubClient{t}
+	tmpDir := filepath.Join(os.TempDir(), "/nrtmtest")
+	defer func() {
+		os.RemoveAll(tmpDir)
+	}()
+	UpdateNRTM(stubRepo, stubClient, "https://example.com/source1/notification.json", tmpDir)
+}
 
 type stubRepo struct {
 	t *testing.T
@@ -20,6 +31,14 @@ func (r stubRepo) InitializeConnectionPool(dbUrl string) {}
 
 func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
 	var state persist.NRTMState
+	state.ID = 1234
+	state.Source = source
+	state.Payload = ""
+	state.Created = time.Now()
+	state.Type = persist.Notification
+	state.URL = "https://example.com"
+	state.Version = 1
+
 	if source == "EXAMPLE" {
 		return state, nil
 	}
@@ -51,26 +70,15 @@ func (c stubClient) getUpdateNotification(url string) (nrtm4model.Notification, 
 
 func (c stubClient) fetchFile(url string) (io.ReadCloser, error) {
 	var reader io.ReadCloser
-	file := "{}"
 	if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz" {
-		reader.Read([]byte(file))
+		reader.Read([]byte(snapshotExample))
 	} else if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.1.784a2a65aba22e001fd25a1b9e8544e058fbc703.json" {
-		reader.Read([]byte(file))
+		reader.Read([]byte(deltaExample))
 	} else {
 		c.t.Error("Call to unexpected URL", url)
 		return reader, errors.New("unexpected file url")
 	}
 	return reader, nil
-}
-
-func TestUpdateNRTM(t *testing.T) {
-	stubClient := stubClient{t}
-	stubRepo := stubRepo{t}
-	tmpDir := filepath.Join(os.TempDir(), "/nrtmtest")
-	defer func() {
-		os.RemoveAll(tmpDir)
-	}()
-	UpdateNRTM(stubRepo, stubClient, "https://example.com/source1/notification.json", tmpDir)
 }
 
 var notificationExample = `
@@ -105,4 +113,40 @@ var notificationExample = `
 	  }
 	]
   }  
+`
+
+var snapshotExample = `
+{
+	"nrtm_version": 4,
+	"type": "snapshot",
+	"source": "EXAMPLE",
+	"session_id": "ca128382-78d9-41d1-8927-1ecef15275be",
+	"version": 3
+}
+{"object": "route: 192.0.2.0/24\norigin: AS65530\nsource: EXAMPLE"}
+{"object": "route: 2001:db8::/32\norigin: AS65530\nsource: EXAMPLE"}
+`
+
+var deltaExample = `
+{
+	"nrtm_version": 4,
+	"type": "delta",
+	"source": "EXAMPLE",
+	"session_id": "ca128382-78d9-41d1-8927-1ecef15275be",
+	"version": 3
+}
+{
+	"action": "delete",
+	"object_class": "person",
+	"primary_key": "PRSN1-EXAMPLE"
+}
+{
+	"action": "delete",
+	"object_class": "route",
+	"primary_key": "192.0.2.0/24AS65530"
+}
+{
+	"action": "add_modify",
+	"object": "route: 2001:db8::/32\norigin: AS65530\nsource: EXAMPLE"
+}
 `

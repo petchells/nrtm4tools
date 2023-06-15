@@ -60,7 +60,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 			Source:  notification.Source,
 			Version: notification.Version,
 			URL:     url,
-			Type:    "",
+			Type:    persist.Notification,
 			Payload: "",
 		}
 		err = repo.SaveState(state)
