@@ -25,7 +25,7 @@ link to docker
 * Create role and DB
 * Configure and run Tern to migrate db
 * Script for doing this on a non-dev machine
-* Configure Env/Flags DATABASE_URL
+* Configure Env/Flags PG_DATABASE_URL
 
 ### Build and dev targets
 

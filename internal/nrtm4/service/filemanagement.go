@@ -5,11 +5,27 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
+
+func initializeSource(repo persist.Repository, url string, notification nrtm4model.Notification, path string) error {
+	var err error
+	var file *os.File
+	file, err = fileToDatabase(repo, url, notification.NrtmFile, persist.NotificationFile, path)
+	if err != nil {
+		return err
+	}
+	log.Println("DEBUG notification file.Name()", file.Name())
+
+	log.Println("INFO file", file.Name())
+	var snapshotFile *os.File
+	snapshotFile, err = writeResourceToPath(notification.Snapshot.Url, path)
+	// file, err = fileToDatabase(repo, notification.Snapshot.Url, nrtmFile, persist.SnapshotFile, path)
+	log.Println("DEBUG wrote snapshotFile", snapshotFile.Name())
+	return err
+}
 
 func fileToDatabase(repo persist.Repository, url string, nrtmFile nrtm4model.NrtmFile, filetype persist.NTRMFileType, path string) (*os.File, error) {
 	var file *os.File
@@ -22,17 +38,8 @@ func fileToDatabase(repo persist.Repository, url string, nrtmFile nrtm4model.Nrt
 			panic(err)
 		}
 	}()
-	state := persist.NRTMState{
-		ID:       0,
-		Created:  time.Now(),
-		Source:   nrtmFile.Source,
-		Version:  nrtmFile.Version,
-		URL:      url,
-		Type:     filetype,
-		FileName: file.Name(),
-	}
-	err = repo.SaveState(state)
-	return file, err
+	ds := NrtmDataService{repo}
+	return file, ds.saveState(url, nrtmFile, filetype, file)
 }
 
 func writeResourceToPath(url string, path string) (*os.File, error) {

@@ -3,6 +3,8 @@ package service
 import (
 	"fmt"
 	"log"
+	"os"
+	"time"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
@@ -24,7 +26,7 @@ type NrtmDataService struct {
 	Repository persist.Repository
 }
 
-func (ds NrtmDataService) ApplyDeltas(source string, deltas []nrtm4model.Change) error {
+func (ds NrtmDataService) applyDeltas(source string, deltas []nrtm4model.Change) error {
 	for _, delta := range deltas {
 		if delta.Action == "delete" {
 			log.Println("i will delete", source, delta.PrimaryKey)
@@ -35,4 +37,17 @@ func (ds NrtmDataService) ApplyDeltas(source string, deltas []nrtm4model.Change)
 		}
 	}
 	return nil
+}
+
+func (ds NrtmDataService) saveState(url string, nrtmFile nrtm4model.NrtmFile, filetype persist.NTRMFileType, file *os.File) error {
+	state := persist.NRTMState{
+		ID:       0,
+		Created:  time.Now(),
+		Source:   nrtmFile.Source,
+		Version:  nrtmFile.Version,
+		URL:      url,
+		Type:     filetype,
+		FileName: file.Name(),
+	}
+	return ds.Repository.SaveState(state)
 }

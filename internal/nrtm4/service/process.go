@@ -2,7 +2,6 @@ package service
 
 import (
 	"log"
-	"os"
 
 	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
@@ -42,12 +41,11 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	state, err := repo.GetState(notification.Source)
 	if err == pgx.ErrNoRows {
 		log.Println("INFO Failed to find previous state. Initializing")
-		var snapshotFile *os.File
-		if snapshotFile, err = fileToDatabase(repo, notification.Snapshot.Url, notification.NrtmFile, persist.SnapshotFile, nrtmFilePath); err != nil {
+		if err = initializeSource(repo, url, notification, nrtmFilePath); err != nil {
 			log.Println("WARN failed to save state", state, err)
 			return
 		}
-		log.Println("DEBUG snapshotFile.Name()", snapshotFile.Name())
+		return
 	} else if err != nil {
 		log.Println("ERROR Database error", err)
 		return
@@ -61,7 +59,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	if state.Version >= notification.Version {
 		return
 	}
-	ds.ApplyDeltas(notification.Source, []nrtm4model.Change{})
+	ds.applyDeltas(notification.Source, []nrtm4model.Change{})
 }
 
 func validateNotificationFile(file nrtm4model.Notification) []error {
