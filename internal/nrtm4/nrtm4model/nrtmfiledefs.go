@@ -6,6 +6,14 @@ type FileRef struct {
 	Hash    string `json:"hash"`
 }
 
+type NrtmFile struct {
+	NrtmVersion uint   `json:"nrtm_version"`
+	Type        string `json:"type"`
+	Source      string `json:"source"`
+	SessionID   string `json:"session_id"`
+	Version     uint   `json:"version"`
+}
+
 type Change struct {
 	Action      string  `json:"action"`
 	Object      *string `json:"object"`
@@ -14,29 +22,17 @@ type Change struct {
 }
 
 type Notification struct {
-	NrtmVersion    int        `json:"nrtm_version"`
+	NrtmFile
 	Timestamp      string     `json:"timestamp"`
-	Type           string     `json:"type"`
 	NextSigningKey *string    `json:"next_signing_key"`
-	Source         string     `json:"source"`
-	SessionID      string     `json:"session_id"`
-	Version        int        `json:"version"`
 	Snapshot       FileRef    `json:"snapshot"`
 	Deltas         *[]FileRef `json:"deltas"`
 }
 
 type DeltaFile struct {
-	NrtmVersion uint   `json:"nrtm_version"`
-	Type        string `json:"type"`
-	Source      string `json:"source"`
-	SessionID   string `json:"session_id"`
-	Version     uint   `json:"version"`
+	NrtmFile
 }
 
 type SnapshotFile struct {
-	NrtmVersion uint   `json:"nrtm_version"`
-	Type        string `json:"type"`
-	Source      string `json:"source"`
-	SessionID   string `json:"session_id"`
-	Version     uint   `json:"version"`
+	NrtmFile
 }

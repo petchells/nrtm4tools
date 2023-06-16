@@ -54,7 +54,7 @@ build-linux:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 	$(GOBUILD) -o $(BINARY_NAME_APP_UNIX) -v
 
-dumpdb: ; $(PGDUMP) -h localhost --data-only nrtm4 | gzip | > work/nrtm4-data-$(shell date -I).psql.gz
+dumpdb: ; $(PGDUMP) -h localhost --data-only $(BINARY_NAME_APP) | gzip | > work/$(BINARY_NAME_APP)-data-$(shell date -I).psql.gz
 
 emptydb: ; $(TERN) migrate --destination 1 --config third_party/tern/tern.conf --migrations third_party/tern
 

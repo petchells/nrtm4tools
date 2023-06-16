@@ -7,27 +7,27 @@ import (
 )
 
 type NRTMState struct {
-	ID      uint64
-	Created time.Time
-	Source  string
-	Version int
-	URL     string
-	Type    NTRMFileType
-	Payload string
+	ID       uint64
+	Created  time.Time
+	Source   string
+	Version  uint
+	URL      string
+	Type     NTRMFileType
+	FileName string
 }
 
 type NTRMFileType int
 
 const (
-	Notification NTRMFileType = iota
-	Snapshot
-	Delta
+	NotificationFile NTRMFileType = iota
+	SnapshotFile
+	DeltaFile
 )
 
 var ftstrings = [...]string{"notification", "snapshot", "delta"}
 
 func (ft NTRMFileType) String() string {
-	if ft < Notification || ft > Delta {
+	if ft < NotificationFile || ft > DeltaFile {
 		return ""
 	}
 	return ftstrings[ft]

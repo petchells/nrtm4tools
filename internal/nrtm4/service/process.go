@@ -1,12 +1,10 @@
 package service
 
 import (
-	"io"
 	"log"
 	"os"
-	"strings"
-	"time"
 
+	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
@@ -32,44 +30,26 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	}
 
 	// Fetch state
+	//repo.CreateState(state)
+	// -- if no state, then initialize
+	//    * get snapshot, put file on disk
+	//    * parse it
+	//    * save state
+	//    * insert rpsl objects
+	//    * see if there are more deltas to process
+	//    * done and dusted
 	ds := NrtmDataService{Repository: repo}
 	state, err := repo.GetState(notification.Source)
-	if err != nil {
-		log.Println("Failed to get state", err)
-		//repo.CreateState(state)
-		// -- if no state, then initialize
-		//    * get snapshot, put file on disk
-		//    * parse it
-		//    * save state
-		//    * insert rpsl objects
-		//    * see if there are more deltas to process
-		//    * done and dusted
+	if err == pgx.ErrNoRows {
+		log.Println("INFO Failed to find previous state. Initializing")
 		var snapshotFile *os.File
-		if snapshotFile, err = writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
-			log.Println("ERROR occurred when writing snapshot file to disk", notification.Snapshot.Url, err)
-			return
-		}
-		defer func() {
-			if err := snapshotFile.Close(); err != nil {
-				panic(err)
-			}
-		}()
-		state = persist.NRTMState{
-			ID:      0,
-			Created: time.Now(),
-			Source:  notification.Source,
-			Version: notification.Version,
-			URL:     url,
-			Type:    persist.Notification,
-			Payload: "",
-		}
-		err = repo.SaveState(state)
-		if err != nil {
-			log.Println("WARN failed to save state", state)
+		if snapshotFile, err = fileToDatabase(repo, notification.Snapshot.Url, notification.NrtmFile, persist.SnapshotFile, nrtmFilePath); err != nil {
+			log.Println("WARN failed to save state", state, err)
 			return
 		}
 		log.Println("DEBUG snapshotFile.Name()", snapshotFile.Name())
-
+	} else if err != nil {
+		log.Println("ERROR Database error", err)
 		return
 	}
 	log.Println(state)
@@ -82,44 +62,6 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		return
 	}
 	ds.ApplyDeltas(notification.Source, []nrtm4model.Change{})
-}
-
-func writeResourceToPath(url string, path string) (*os.File, error) {
-	fileName := url[strings.LastIndex(url, "/")+1:]
-	var reader io.ReadCloser
-	var httpClient HttpClient
-	var outFile *os.File
-	var err error
-	if reader, err = httpClient.fetchFile(url); err != nil {
-		log.Println("ERROR Failed to fetch file", url, err)
-		return nil, err
-	}
-	if outFile, err = os.Create(path + "/" + fileName); err != nil {
-		log.Println("ERROR Failed to open file on disk", err)
-		return nil, err
-	}
-	if err = transferReaderToFile(reader, outFile); err != nil {
-		log.Println("ERROR writing file")
-		return nil, err
-	}
-	return outFile, err
-}
-
-func transferReaderToFile(from io.ReadCloser, to *os.File) error {
-	buf := make([]byte, FILE_BUFFER_LENGTH)
-	for {
-		n, err := from.Read(buf)
-		if err != nil && err != io.EOF {
-			return err
-		}
-		if n == 0 {
-			break
-		}
-		if _, err := to.Write(buf[:n]); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func validateNotificationFile(file nrtm4model.Notification) []error {

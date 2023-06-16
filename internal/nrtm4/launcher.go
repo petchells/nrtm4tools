@@ -9,7 +9,7 @@ import (
 
 type AppConfig struct {
 	NrtmUrlNotificationUrl string
-	DatabaseURL            string
+	PgDatabaseURL          string
 	NrtmFilePath           string
 }
 
@@ -19,7 +19,7 @@ func Launch(config AppConfig) {
 }
 
 func launchWithPg(repository persist.PgRepository, config AppConfig) {
-	repository.InitializeConnectionPool(config.DatabaseURL)
+	repository.InitializeConnectionPool(config.PgDatabaseURL)
 	log.Println("DEBUG Launch()", config)
 	var httpClient service.HttpClient
 	service.UpdateNRTM(repository, httpClient, config.NrtmUrlNotificationUrl, config.NrtmFilePath)

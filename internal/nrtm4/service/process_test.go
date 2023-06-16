@@ -33,9 +33,9 @@ func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
 	var state persist.NRTMState
 	state.ID = 1234
 	state.Source = source
-	state.Payload = ""
+	state.FileName = ""
 	state.Created = time.Now()
-	state.Type = persist.Notification
+	state.Type = persist.NotificationFile
 	state.URL = "https://example.com"
 	state.Version = 1
 

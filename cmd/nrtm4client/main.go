@@ -14,13 +14,16 @@ func main() {
 			log.Fatalln("Environment variable not set: ", ev)
 		}
 	}
+	dbUrl := os.Getenv("PG_DATABASE_URL")
 	nrtmUrlNotificationUrl := os.Getenv("NRTM4_BASE_NOTIFICATION")
-	dbUrl := os.Getenv("DATABASE_URL")
 	nrtmFilePath := os.Getenv("NRTM4_FILE_PATH")
 	config := nrtm4.AppConfig{
 		NrtmUrlNotificationUrl: nrtmUrlNotificationUrl,
 		NrtmFilePath:           nrtmFilePath,
-		DatabaseURL:            dbUrl,
+		PgDatabaseURL:          dbUrl,
 	}
+	// TODO
+	// Parse multiple URLs and file path
+	// Start one goroutine for each source
 	nrtm4.Launch(config)
 }

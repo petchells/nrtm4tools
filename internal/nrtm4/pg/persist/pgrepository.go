@@ -44,6 +44,6 @@ func (repo PgRepository) GetState(source string) (persist.NRTMState, error) {
 	state.Version = dbstate.Version
 	state.URL = dbstate.URL
 	state.Type, _ = persist.ToFileType(dbstate.Type)
-	state.Payload = dbstate.Payload
+	state.FileName = dbstate.FileName
 	return state, nil
 }

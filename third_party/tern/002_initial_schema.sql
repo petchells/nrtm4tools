@@ -12,12 +12,12 @@ create table rpslobject (
 
 create table nrtmstate (
 	id bigint not null,
-	created timestamp without time zone not null,
 	source varchar(255) not null,
 	version integer not null,
 	url text not null,
 	type varchar(255) not null,
-	payload text not null,
+	file_name text not null,
+	created timestamp without time zone not null,
 	
 	constraint nrtmstate_pk primary key (id),
 	create index nrtmstate__source_version_idx on (source, version)
