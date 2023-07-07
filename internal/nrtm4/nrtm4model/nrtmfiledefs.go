@@ -36,3 +36,7 @@ type DeltaFile struct {
 type SnapshotFile struct {
 	NrtmFile
 }
+
+type SnapshotObject struct {
+	Object string `json:"object"`
+}

@@ -111,7 +111,7 @@ func TestRpslParseRoute(t *testing.T) {
 }
 
 func TestRpslParseASBlock(t *testing.T) {
-	str := `as-block:       AS3209 - AS3353
+	str := `AS-BLOCK:       AS3209 - AS3353
 	descr:          RIPE NCC ASN block
 	remarks:        These AS Numbers are assigned to network operators in the RIPE NCC service region.
 	mnt-by:         RIPE-NCC-HM-MNT
