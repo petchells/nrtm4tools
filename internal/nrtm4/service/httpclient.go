@@ -10,7 +10,7 @@ import (
 
 type Client interface {
 	getUpdateNotification(string) (nrtm4model.Notification, error)
-	fetchFile(string) (io.ReadCloser, error)
+	fetchFile(string) (io.Reader, error)
 }
 
 type HttpClient struct{}
@@ -23,7 +23,7 @@ func (cl HttpClient) getUpdateNotification(url string) (nrtm4model.Notification,
 	return file, nil
 }
 
-func (cl HttpClient) fetchFile(url string) (io.ReadCloser, error) {
+func (cl HttpClient) fetchFile(url string) (io.Reader, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err

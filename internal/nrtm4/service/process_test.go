@@ -1,20 +1,22 @@
 package service
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
+	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
-func TestUpdateNRTM(t *testing.T) {
-	stubRepo := stubRepo{t}
+func TestUpdateNRTMWithSourceInitialization(t *testing.T) {
+	stubRepo := stubRepo{t: t, state: persist.NRTMState{}, err: pgx.ErrNoRows}
 	stubClient := stubClient{t}
 	tmpDir := filepath.Join(os.TempDir(), "/nrtmtest")
 	defer func() {
@@ -24,21 +26,18 @@ func TestUpdateNRTM(t *testing.T) {
 }
 
 type stubRepo struct {
-	t *testing.T
+	t     *testing.T
+	state persist.NRTMState
+	err   error
 }
 
 func (r stubRepo) InitializeConnectionPool(dbUrl string) {}
 
 func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
-	var state persist.NRTMState
-	state.ID = 1234
-	state.Source = source
-	state.FileName = ""
-	state.Created = time.Now()
-	state.Type = persist.NotificationFile
-	state.URL = "https://example.com"
-	state.Version = 1
-
+	state := r.state
+	if r.err != nil {
+		return state, r.err
+	}
 	if source == "EXAMPLE" {
 		return state, nil
 	}
@@ -47,10 +46,11 @@ func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
 }
 
 func (r stubRepo) SaveState(state persist.NRTMState) error {
-	expected := persist.NRTMState{}
-	if expected != state {
-		r.t.Error("SaveState failed. expected", expected, "but was", state)
+	expected := "notification.json"
+	if state.FileName == expected {
+		return nil
 	}
+	r.t.Error("SaveState failed. expected file name", expected, "but was", state.FileName)
 	return nil
 }
 
@@ -68,10 +68,15 @@ func (c stubClient) getUpdateNotification(url string) (nrtm4model.Notification, 
 	return file, errors.New("unexpected notification url")
 }
 
-func (c stubClient) fetchFile(url string) (io.ReadCloser, error) {
-	var reader io.ReadCloser
+func (c stubClient) fetchFile(url string) (io.Reader, error) {
+	var reader io.Reader
 	if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz" {
 		reader.Read([]byte(snapshotExample))
+
+		var buf bytes.Buffer
+		zw := gzip.NewWriter(&buf)
+		zw.Write([]byte(snapshotExample))
+		return gzip.NewReader(&buf)
 	} else if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.1.784a2a65aba22e001fd25a1b9e8544e058fbc703.json" {
 		reader.Read([]byte(deltaExample))
 	} else {

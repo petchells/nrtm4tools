@@ -1,61 +1,102 @@
 package service
 
 import (
+	"compress/gzip"
+	"fmt"
 	"io"
 	"log"
 	"os"
-	"strings"
+	"path/filepath"
 
+	"github.com/jmank88/jsonseq"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
-func initializeSource(repo persist.Repository, url string, notification nrtm4model.Notification, path string) error {
+type fileManager struct {
+	repo   persist.Repository
+	client Client
+}
+
+func (fm fileManager) initializeSource(url string, path string, notification nrtm4model.Notification) error {
+
 	var err error
-	var file *os.File
-	file, err = fileToDatabase(repo, url, notification.NrtmFile, persist.NotificationFile, path)
-	if err != nil {
+	// var file *os.File
+	// file, err = fm.fileToDatabase(url, notification.NrtmFile, persist.NotificationFile, path)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Println("DEBUG notification file.Name()", file.Name())
+
+	// log.Println("INFO file", file.Name())
+	var snapshotFile *os.File
+	if snapshotFile, err = fm.writeResourceToPath(notification.Snapshot.Url, path); err != nil {
 		return err
 	}
-	log.Println("DEBUG notification file.Name()", file.Name())
-
-	log.Println("INFO file", file.Name())
-	var snapshotFile *os.File
-	snapshotFile, err = writeResourceToPath(notification.Snapshot.Url, path)
-	// file, err = fileToDatabase(repo, notification.Snapshot.Url, nrtmFile, persist.SnapshotFile, path)
 	log.Println("DEBUG wrote snapshotFile", snapshotFile.Name())
+	// TODO: parse file
+	var reader io.Reader
+	if reader, err = os.Open(snapshotFile.Name()); err != nil {
+		return err
+	}
+	var gzreader *gzip.Reader
+	if gzreader, err = gzip.NewReader(reader); err != nil {
+		return err
+	}
+	d := jsonseq.NewDecoder(gzreader)
+	for {
+		var i interface{}
+		if err := d.Decode(&i); err != nil {
+			if err == io.EOF {
+				break
+			}
+			fmt.Println(err)
+		} else {
+			fmt.Println(i)
+		}
+	}
+	// file, err = fileToDatabase(repo, notification.Snapshot.Url, nrtmFile, persist.SnapshotFile, path)
 	return err
 }
 
-func fileToDatabase(repo persist.Repository, url string, nrtmFile nrtm4model.NrtmFile, filetype persist.NTRMFileType, path string) (*os.File, error) {
+func (fm fileManager) fileToDatabase(url string, nrtmFile nrtm4model.NrtmFile, filetype persist.NTRMFileType, path string) (*os.File, error) {
 	var file *os.File
 	var err error
-	if file, err = writeResourceToPath(url, path); err != nil {
+	if file, err = fm.writeResourceToPath(url, path); err != nil {
 		return file, err
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	ds := NrtmDataService{repo}
+	// defer func() {
+	// 	if err := file.Close(); err != nil {
+	// 		panic(err)
+	// 	}
+	// }()
+	ds := NrtmDataService{fm.repo}
 	return file, ds.saveState(url, nrtmFile, filetype, file)
 }
 
-func writeResourceToPath(url string, path string) (*os.File, error) {
-	fileName := url[strings.LastIndex(url, "/")+1:]
-	var reader io.ReadCloser
-	var httpClient HttpClient
-	var outFile *os.File
+func (fm fileManager) writeResourceToPath(url string, path string) (*os.File, error) {
+	fileName := filepath.Base(url)
+	var reader io.Reader
 	var err error
-	if reader, err = httpClient.fetchFile(url); err != nil {
+	if reader, err = fm.client.fetchFile(url); err != nil {
 		log.Println("ERROR Failed to fetch file", url, err)
 		return nil, err
 	}
-	if outFile, err = os.Create(path + "/" + fileName); err != nil {
+	return readerToFile(reader, path, fileName)
+}
+
+func readerToFile(reader io.Reader, path string, fileName string) (*os.File, error) {
+	var outFile *os.File
+	var err error
+	if outFile, err = os.Create(filepath.Join(path, fileName)); err != nil {
 		log.Println("ERROR Failed to open file on disk", err)
 		return nil, err
 	}
+	defer func() {
+		if err := outFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
 	if err = transferReaderToFile(reader, outFile); err != nil {
 		log.Println("ERROR writing file")
 		return nil, err
@@ -63,7 +104,7 @@ func writeResourceToPath(url string, path string) (*os.File, error) {
 	return outFile, err
 }
 
-func transferReaderToFile(from io.ReadCloser, to *os.File) error {
+func transferReaderToFile(from io.Reader, to *os.File) error {
 	buf := make([]byte, FILE_BUFFER_LENGTH)
 	for {
 		n, err := from.Read(buf)
