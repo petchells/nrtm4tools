@@ -3,6 +3,7 @@ package jsonseq
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"strings"
@@ -10,7 +11,9 @@ import (
 
 var RS byte = 0x1E
 
-type UnmarshalFunc func([]byte)
+var ErrEmptyPayload = errors.New("empty payload")
+
+type UnmarshalFunc func([]byte, error)
 
 func ParseString(jsonSeq string, fn UnmarshalFunc) error {
 	reader := bufio.NewReader(strings.NewReader(jsonSeq))
@@ -33,7 +36,7 @@ func ParseReader(reader *bufio.Reader, fn UnmarshalFunc) error {
 		if err == nil {
 			trimBytes(jsonBytes[:len(jsonBytes)-1], fn)
 		} else if err == io.EOF {
-			trimBytes(jsonBytes, fn)
+			fn(bytes.TrimSpace(jsonBytes), err)
 			return nil
 		} else {
 			return err
@@ -44,6 +47,8 @@ func ParseReader(reader *bufio.Reader, fn UnmarshalFunc) error {
 func trimBytes(b []byte, fn UnmarshalFunc) {
 	res := bytes.TrimSpace(b)
 	if len(res) > 0 {
-		fn(res)
+		fn(res, nil)
+	} else {
+		fn(res, ErrEmptyPayload)
 	}
 }

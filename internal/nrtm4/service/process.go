@@ -48,7 +48,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		}
 		fm := fileManager{repo: repo, client: client}
 		// save notification file to disk and nrtmstate table
-		if err = fm.initializeSource(url, nrtmFilePath, notification); err != nil {
+		if err = fm.initializeSourceWithSnapshot(url, nrtmFilePath, notification); err != nil {
 			log.Println("WARN failed to intialize source", state, err)
 			return
 		}

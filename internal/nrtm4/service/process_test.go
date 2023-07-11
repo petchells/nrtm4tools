@@ -69,7 +69,7 @@ func (c stubClient) getUpdateNotification(url string) (nrtm4model.Notification, 
 	return file, errors.New("unexpected notification url")
 }
 
-func (c stubClient) fetchFile(url string) (io.Reader, error) {
+func (c stubClient) getResponseBody(url string) (io.Reader, error) {
 	var reader io.Reader
 	if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz" {
 		reader = strings.NewReader(snapshotExample)
