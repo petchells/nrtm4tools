@@ -1,16 +1,17 @@
 package persist
 
 import (
-	"errors"
 	"fmt"
 )
 
-var ErrNoState = errors.New("state not initialized")
+var ErrNoState = ErrNrtmClient{"state not initialized"}
+var ErrNoEntity = ErrNrtmClient{"no json entity in record"}
+var ErrFetchingState = ErrNrtmClient{"no state exists"}
 
-type ErrOne struct {
+type ErrNrtmClient struct {
 	Msg string
 }
 
-func (e ErrOne) Error() string {
-	return fmt.Sprintf("everthing is wrong: %v", e.Msg)
+func (e *ErrNrtmClient) Error() string {
+	return fmt.Sprintf("ErrNrtmClient: %v", e.Msg)
 }

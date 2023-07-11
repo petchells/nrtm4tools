@@ -13,7 +13,7 @@ func TestJSONSequenceParser(t *testing.T) {
 	numObjects := 3
 
 	i := 0
-	err := ParseString(snapshotExample, func(possJsonBytes []byte) {
+	err := ParseString(snapshotExample, func(possJsonBytes []byte, err error) {
 		if i == 0 {
 			snapshot := new(nrtm4model.SnapshotFile)
 			err := json.Unmarshal(possJsonBytes, snapshot)

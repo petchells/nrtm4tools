@@ -20,7 +20,12 @@ type fileManager struct {
 	client Client
 }
 
-func (fm fileManager) initializeSourceWithSnapshot(url string, path string, notification nrtm4model.Notification) error {
+func (fm fileManager) initializeSourceAndParseSnapshot(
+	url string,
+	path string,
+	notification nrtm4model.Notification,
+	fn func(bytes []byte, err error),
+) error {
 
 	var err error
 
@@ -44,10 +49,8 @@ func (fm fileManager) initializeSourceWithSnapshot(url string, path string, noti
 	} else {
 		bufioReader = bufio.NewReader(reader)
 	}
-	i := 0
 	err = jsonseq.ParseReader(bufioReader, func(bytes []byte, err error) {
-		// What to do?
-		i++
+		fn(bytes, err)
 	})
 	// file, err = fileToDatabase(repo, notification.Snapshot.Url, nrtmFile, persist.SnapshotFile, path)
 	return err

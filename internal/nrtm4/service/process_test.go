@@ -6,18 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
 func TestUpdateNRTMWithSourceInitialization(t *testing.T) {
-	stubRepo := stubRepo{t: t, state: persist.NRTMState{}, err: pgx.ErrNoRows}
+	stubRepo := stubRepo{t: t, state: persist.NRTMState{}, err: &persist.ErrNrtmClient{Msg: ""}}
 	stubClient := stubClient{t}
 	tmpDir := filepath.Join(os.TempDir(), "/nrtmtest")
 	defer func() {
@@ -29,21 +29,22 @@ func TestUpdateNRTMWithSourceInitialization(t *testing.T) {
 type stubRepo struct {
 	t     *testing.T
 	state persist.NRTMState
-	err   error
+	err   *persist.ErrNrtmClient
 }
 
 func (r stubRepo) InitializeConnectionPool(dbUrl string) {}
 
-func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
+func (r stubRepo) GetState(source string) (persist.NRTMState, *persist.ErrNrtmClient) {
 	state := r.state
 	if r.err != nil {
-		return state, r.err
+		log.Println("ERROR GetState", r.err)
+		return state, &persist.ErrFetchingState
 	}
 	if source == "EXAMPLE" {
 		return state, nil
 	}
 	r.t.Fatal("Unexpected request for source", source)
-	return state, errors.New("unknown source")
+	return state, &persist.ErrFetchingState
 }
 
 func (r stubRepo) SaveState(state persist.NRTMState) error {

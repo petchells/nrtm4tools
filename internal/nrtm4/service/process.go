@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
@@ -38,7 +37,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	//    * see if there are more deltas to process
 	//    * done and dusted
 	state, err := repo.GetState(notification.Source)
-	if err == pgx.ErrNoRows {
+	if err == &persist.ErrNoState {
 		log.Println("INFO Failed to find previous state. Initializing")
 		err = os.RemoveAll(nrtmFilePath)
 		log.Println("WARNING removed existing directory", err)
@@ -46,9 +45,20 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		fm := fileManager{repo: repo, client: client}
 		// save notification file to disk and nrtmstate table
-		if err = fm.initializeSourceWithSnapshot(url, nrtmFilePath, notification); err != nil {
+		var snapshotOSFile *os.File
+		if snapshotOSFile, err = fm.writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
+			log.Fatal(err)
+		}
+		log.Println(snapshotOSFile.Name())
+
+		i := 0
+		if err = fm.initializeSourceAndParseSnapshot(url, nrtmFilePath, notification, func(bytes []byte, err error) {
+
+			i++
+		}); err != nil {
 			log.Println("WARN failed to intialize source", state, err)
 			return
 		}

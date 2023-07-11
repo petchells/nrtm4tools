@@ -3,9 +3,9 @@ package persist
 import "testing"
 
 func TestErrors(t *testing.T) {
-	myErr1 := ErrOne{"oo"}
-	myErr2 := ErrOne{"oo"}
-	myErr3 := ErrOne{"ee"}
+	myErr1 := ErrNrtmClient{"oo"}
+	myErr2 := ErrNrtmClient{"oo"}
+	myErr3 := ErrNrtmClient{"ee"}
 	if myErr1 == myErr2 {
 		t.Log("They are equal")
 	} else {

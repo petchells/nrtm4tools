@@ -25,18 +25,18 @@ func (repo PgRepository) SaveState(state persist.NRTMState) error {
 	return err
 }
 
-func (repo PgRepository) GetState(source string) (persist.NRTMState, error) {
+func (repo PgRepository) GetState(source string) (persist.NRTMState, *persist.ErrNrtmClient) {
 	var state persist.NRTMState
 	var dbstate *NRTMState
 	err := db.WithTransaction(func(tx pgx.Tx) error {
 		dbstate = GetLastState(tx, source)
 		if dbstate == nil {
-			return persist.ErrNoState
+			return &persist.ErrNoState
 		}
 		return nil
 	})
 	if err != nil {
-		return state, err
+		return state, &persist.ErrNrtmClient{Msg: err.Error()}
 	}
 	state.ID = dbstate.ID
 	state.Created = dbstate.Created

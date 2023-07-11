@@ -2,6 +2,6 @@ package persist
 
 type Repository interface {
 	InitializeConnectionPool(dbUrl string)
-	GetState(string) (NRTMState, error)
+	GetState(string) (NRTMState, *ErrNrtmClient)
 	SaveState(NRTMState) error
 }
