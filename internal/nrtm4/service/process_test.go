@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -71,14 +72,13 @@ func (c stubClient) getUpdateNotification(url string) (nrtm4model.Notification, 
 func (c stubClient) fetchFile(url string) (io.Reader, error) {
 	var reader io.Reader
 	if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz" {
-		reader.Read([]byte(snapshotExample))
-
+		reader = strings.NewReader(snapshotExample)
 		var buf bytes.Buffer
 		zw := gzip.NewWriter(&buf)
 		zw.Write([]byte(snapshotExample))
 		return gzip.NewReader(&buf)
 	} else if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.1.784a2a65aba22e001fd25a1b9e8544e058fbc703.json" {
-		reader.Read([]byte(deltaExample))
+		reader = strings.NewReader(deltaExample)
 	} else {
 		c.t.Error("Call to unexpected URL", url)
 		return reader, errors.New("unexpected file url")

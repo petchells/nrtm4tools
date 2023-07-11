@@ -2,13 +2,11 @@ package service
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/jmank88/jsonseq"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
@@ -43,18 +41,7 @@ func (fm fileManager) initializeSource(url string, path string, notification nrt
 	if gzreader, err = gzip.NewReader(reader); err != nil {
 		return err
 	}
-	d := jsonseq.NewDecoder(gzreader)
-	for {
-		var i interface{}
-		if err := d.Decode(&i); err != nil {
-			if err == io.EOF {
-				break
-			}
-			fmt.Println(err)
-		} else {
-			fmt.Println(i)
-		}
-	}
+	log.Println(gzreader)
 	// file, err = fileToDatabase(repo, notification.Snapshot.Url, nrtmFile, persist.SnapshotFile, path)
 	return err
 }

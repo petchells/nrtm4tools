@@ -14,7 +14,7 @@ type UnmarshalFunc func([]byte)
 
 func ParseString(jsonSeq string, fn UnmarshalFunc) error {
 	reader := bufio.NewReader(strings.NewReader(jsonSeq))
-	return parseReader(reader, fn)
+	return ParseReader(reader, fn)
 }
 
 func ParseFile(path string, fn UnmarshalFunc) error {
@@ -24,10 +24,10 @@ func ParseFile(path string, fn UnmarshalFunc) error {
 	}
 	defer file.Close()
 	reader := bufio.NewReader(file)
-	return parseReader(reader, fn)
+	return ParseReader(reader, fn)
 }
 
-func parseReader(reader *bufio.Reader, fn UnmarshalFunc) error {
+func ParseReader(reader *bufio.Reader, fn UnmarshalFunc) error {
 	for {
 		jsonBytes, err := reader.ReadBytes(RS)
 		if err == nil {
