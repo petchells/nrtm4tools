@@ -17,7 +17,7 @@ import (
 )
 
 func TestUpdateNRTMWithSourceInitialization(t *testing.T) {
-	stubRepo := stubRepo{t: t, state: persist.NRTMState{}, err: &persist.ErrNrtmClient{Msg: ""}}
+	stubRepo := stubRepo{t: t, state: persist.NRTMState{}, err: &persist.ErrNoState}
 	stubClient := stubClient{t}
 	tmpDir := filepath.Join(os.TempDir(), "/nrtmtest")
 	defer func() {

@@ -36,8 +36,8 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	//    * insert rpsl objects
 	//    * see if there are more deltas to process
 	//    * done and dusted
-	state, err := repo.GetState(notification.Source)
-	if err == &persist.ErrNoState {
+	state, clientErr := repo.GetState(notification.Source)
+	if clientErr == &persist.ErrNoState {
 		log.Println("INFO Failed to find previous state. Initializing")
 		err = os.RemoveAll(nrtmFilePath)
 		log.Println("WARNING removed existing directory", err)
@@ -62,12 +62,13 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 			log.Println("WARN failed to intialize source", state, err)
 			return
 		}
-		if state, err = repo.GetState(notification.Source); err != nil {
-			log.Println("ERROR failed to retrieve inital state", err)
+		var stateErr *persist.ErrNrtmClient
+		if state, stateErr = repo.GetState(notification.Source); stateErr != nil {
+			log.Println("ERROR failed to retrieve inital state", stateErr)
 			return
 		}
 		log.Println("INFO new state", state)
-	} else if err != nil {
+	} else if clientErr != nil {
 		log.Println("ERROR Database error", err)
 		return
 	}
