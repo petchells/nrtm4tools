@@ -168,7 +168,7 @@ func GetAllByColumn[T EntityManaged](tx pgx.Tx, colname string, value any, entit
 }
 
 // GetByID Fills the entityPtr with the row selected by ID
-func GetByID(tx pgx.Tx, ID int64, entityPtr EntityManaged) error {
+func GetByID(tx pgx.Tx, ID uint64, entityPtr EntityManaged) error {
 	dtor := GetDescriptor(entityPtr)
 	cols := strings.Join(dtor.columnNames, ", ")
 	tableName := dtor.tableName

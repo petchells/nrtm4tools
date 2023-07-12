@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 
@@ -56,7 +57,23 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 
 		i := 0
 		if err = fm.initializeSourceAndParseSnapshot(url, nrtmFilePath, notification, func(bytes []byte, err error) {
-
+			if err != &persist.ErrNoEntity {
+				if i == 0 {
+					sf := new(nrtm4model.SnapshotFile)
+					if err = json.Unmarshal(bytes, sf); err != nil {
+						repo.SaveSnapshotFile(state, *sf)
+					} else {
+						log.Println("WARN error unmarshalling JSON", err)
+					}
+				} else {
+					so := new(nrtm4model.SnapshotObject)
+					if err = json.Unmarshal(bytes, so); err != nil {
+						repo.SaveSnapshotObject(state, *so)
+					} else {
+						log.Println("WARN error unmarshalling JSON", err)
+					}
+				}
+			}
 			i++
 		}); err != nil {
 			log.Println("WARN failed to intialize source", state, err)

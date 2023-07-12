@@ -18,6 +18,10 @@ type Rpsl struct {
 	Payload    string
 }
 
+func ParseString(str string) (Rpsl, error) {
+	return parseString(str)
+}
+
 func parseString(str string) (Rpsl, error) {
 	lines := strings.Split(str, "\n")
 	var source, objectType string

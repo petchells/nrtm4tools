@@ -34,6 +34,14 @@ type stubRepo struct {
 
 func (r stubRepo) InitializeConnectionPool(dbUrl string) {}
 
+func (r stubRepo) SaveSnapshotFile(persist.NRTMState, nrtm4model.SnapshotFile) *persist.ErrNrtmClient {
+	return nil
+}
+
+func (r stubRepo) SaveSnapshotObject(persist.NRTMState, nrtm4model.SnapshotObject) *persist.ErrNrtmClient {
+	return nil
+}
+
 func (r stubRepo) GetState(source string) (persist.NRTMState, *persist.ErrNrtmClient) {
 	state := r.state
 	if r.err != nil {
@@ -47,7 +55,7 @@ func (r stubRepo) GetState(source string) (persist.NRTMState, *persist.ErrNrtmCl
 	return state, &persist.ErrFetchingState
 }
 
-func (r stubRepo) SaveState(state persist.NRTMState) error {
+func (r stubRepo) SaveState(state persist.NRTMState) *persist.ErrNrtmClient {
 	expected := "notification.json"
 	if state.FileName == expected {
 		return nil
