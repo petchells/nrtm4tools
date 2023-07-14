@@ -22,18 +22,13 @@ type fileManager struct {
 
 func (fm fileManager) initializeSourceAndParseSnapshot(
 	url string,
-	path string,
+	snapshotFile *os.File,
 	notification nrtm4model.Notification,
 	fn func(bytes []byte, err error),
 ) error {
 
 	var err error
 
-	// log.Println("INFO file", file.Name())
-	var snapshotFile *os.File
-	if snapshotFile, err = fm.writeResourceToPath(notification.Snapshot.Url, path); err != nil {
-		return err
-	}
 	log.Println("DEBUG wrote snapshotFile", snapshotFile.Name())
 	var reader io.Reader
 	if reader, err = os.Open(snapshotFile.Name()); err != nil {

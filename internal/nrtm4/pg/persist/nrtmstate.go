@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -30,7 +31,7 @@ func GetLastState(tx pgx.Tx, source string) *NRTMState {
 			source=$1
 		  AND 
 			st.version=MAX(st.version)
-		`, descriptor.ColumnNamesWithAlias(), descriptor.TableNameWithAlias())
+		`, strings.Join(descriptor.ColumnNamesWithAlias(), ", "), descriptor.TableNameWithAlias())
 	log.Println(sql)
 	rows, err := tx.Query(context.Background(), sql, source)
 	if err != nil {

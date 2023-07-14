@@ -40,8 +40,9 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	state, clientErr := repo.GetState(notification.Source)
 	if clientErr == &persist.ErrNoState {
 		log.Println("INFO Failed to find previous state. Initializing")
-		err = os.RemoveAll(nrtmFilePath)
-		log.Println("WARNING removed existing directory", err)
+		if err = os.RemoveAll(nrtmFilePath); err != nil {
+			log.Println("WARNING removed existing directory", err)
+		}
 		err = os.Mkdir(nrtmFilePath, 0755)
 		if err != nil {
 			log.Fatal(err)
@@ -53,32 +54,42 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		if snapshotOSFile, err = fm.writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
 			log.Fatal(err)
 		}
+		snapshotOSFile.Close()
 		log.Println(snapshotOSFile.Name())
 
 		i := 0
-		if err = fm.initializeSourceAndParseSnapshot(url, nrtmFilePath, notification, func(bytes []byte, err error) {
+		failedEntities := 0
+		if err = fm.initializeSourceAndParseSnapshot(url, snapshotOSFile, notification, func(bytes []byte, err error) {
 			if err != &persist.ErrNoEntity {
-				if i == 0 {
+				if err != nil {
+					log.Println("WARN error unmarshalling JSON.", err)
+				} else if i == 0 {
 					sf := new(nrtm4model.SnapshotFile)
 					if err = json.Unmarshal(bytes, sf); err != nil {
 						repo.SaveSnapshotFile(state, *sf)
 					} else {
-						log.Println("WARN error unmarshalling JSON", err)
+						log.Println("WARN error unmarshalling JSON. Expected SnapshotFile", err)
+						failedEntities++
+						return
 					}
 				} else {
 					so := new(nrtm4model.SnapshotObject)
 					if err = json.Unmarshal(bytes, so); err != nil {
 						repo.SaveSnapshotObject(state, *so)
 					} else {
-						log.Println("WARN error unmarshalling JSON", err)
+						log.Println("WARN error unmarshalling JSON. Expected SnapshotObject", err)
+						failedEntities++
 					}
 				}
+				i++
+			} else {
+				log.Println("WARN error empty JSON", err)
 			}
-			i++
 		}); err != nil {
 			log.Println("WARN failed to intialize source", state, err)
 			return
 		}
+		log.Println("INFO failed to read", failedEntities, "JSON entities")
 		var stateErr *persist.ErrNrtmClient
 		if state, stateErr = repo.GetState(notification.Source); stateErr != nil {
 			log.Println("ERROR failed to retrieve inital state", stateErr)

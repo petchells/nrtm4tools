@@ -15,7 +15,7 @@ func main() {
 		}
 	}
 	dbUrl := os.Getenv("PG_DATABASE_URL")
-	nrtmUrlNotificationUrl := os.Getenv("NRTM4_BASE_NOTIFICATION")
+	nrtmUrlNotificationUrl := os.Getenv("NRTM4_NOTIFICATION_URL")
 	nrtmFilePath := os.Getenv("NRTM4_FILE_PATH")
 	config := nrtm4.AppConfig{
 		NrtmUrlNotificationUrl: nrtmUrlNotificationUrl,

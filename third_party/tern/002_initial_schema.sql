@@ -7,8 +7,7 @@ create table nrtmstate (
 	file_name text not null,
 	created timestamp without time zone not null,
 	
-	constraint nrtmstate_pk primary key (id),
-	create index nrtmstate__source_version_idx on (source, version)
+	constraint nrtmstate_pk primary key (id)
 );
 
 create table rpslobject (
@@ -22,11 +21,13 @@ create table rpslobject (
 	updated timestamp without time zone not null,
 
 	constraint rpslobject_pk primary key (id),
-	foreign key rpslobject__nrtmstate_fk on nrtmstate_id references nrtmstate(id),
-	constraint rpslobject__source__primary_key_uid unique (source, primary_key)
+	constraint rpslobject__source__primary_key_uid unique (source, primary_key),
+	constraint rpslobject__nrtmstate_fk foreign key (nrtmstate_id) references nrtmstate(id)
 );
 
+create index nrtmstate__source_version_idx on nrtmstate(source, version);
 
 ---- create above / drop below ----
-drop table nrtmstate;
+drop index nrtmstate__source_version_idx;
 drop table rpslobject;
+drop table nrtmstate;
