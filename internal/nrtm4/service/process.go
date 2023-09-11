@@ -39,7 +39,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	//    * done and dusted
 	state, clientErr := repo.GetState(notification.Source)
 	if clientErr == &persist.ErrNoState {
-		log.Println("INFO Failed to find previous state. Initializing")
+		log.Println("INFO No previous state found. Initializing")
 		if err = os.RemoveAll(nrtmFilePath); err != nil {
 			log.Println("WARNING removed existing directory", err)
 		}
@@ -47,15 +47,19 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		log.Println("INFO Created path", nrtmFilePath)
+		log.Println("INFO Downloading snapshot", notification.Snapshot.Url)
 		fm := fileManager{repo: repo, client: client}
 		// save notification file to disk and nrtmstate table
 		var snapshotOSFile *os.File
 		if snapshotOSFile, err = fm.writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
 			log.Fatal(err)
 		}
+		if err != nil {
+			log.Println("ERROR failed to write snapshot", notification.Snapshot.Url, "to", nrtmFilePath)
+			return
+		}
 		snapshotOSFile.Close()
-		log.Println(snapshotOSFile.Name())
 
 		i := 0
 		failedEntities := 0
@@ -97,7 +101,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		}
 		log.Println("INFO new state", state)
 	} else if clientErr != nil {
-		log.Println("ERROR Database error", err)
+		log.Println("ERROR Database error", clientErr)
 		return
 	}
 

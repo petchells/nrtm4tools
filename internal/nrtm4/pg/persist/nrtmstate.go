@@ -28,31 +28,25 @@ func GetLastState(tx pgx.Tx, source string) *NRTMState {
 	sql := fmt.Sprintf(`
 		SELECT %v FROM %v
 		WHERE
-			source=$1
-		  AND 
-			st.version=MAX(st.version)
+			st.source=$1
+		ORDER BY
+			st.version DESC,
+			st.created DESC
+		LIMIT 1
 		`, strings.Join(descriptor.ColumnNamesWithAlias(), ", "), descriptor.TableNameWithAlias())
-	log.Println(sql)
 	rows, err := tx.Query(context.Background(), sql, source)
 	if err != nil {
 		log.Println("WARN", err)
 		return nil
 	}
 	defer rows.Close()
-	var states []NRTMState
 	for rows.Next() {
 		log.Println(rows)
 		err = rows.Scan(db.FieldValues(state)...)
-		if err != nil {
-			log.Println("WARN scanning fields", err)
+		if err == nil {
 			return state
 		}
-		states = append(states, *state)
+		log.Println("WARN scanning fields", err)
 	}
-	log.Println("DEBUG states", states)
-
-	// if err != nil {
-	// 	log.Println("WARN", err)
-	// }
-	return state
+	return nil
 }

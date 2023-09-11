@@ -37,7 +37,7 @@ func ParseReader(reader *bufio.Reader, fn UnmarshalFunc) error {
 			trimBytes(jsonBytes[:len(jsonBytes)-1], fn)
 		} else if err == io.EOF {
 			fn(bytes.TrimSpace(jsonBytes), err)
-			return nil
+			return io.EOF
 		} else {
 			return err
 		}
