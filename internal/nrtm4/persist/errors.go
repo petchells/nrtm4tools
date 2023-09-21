@@ -4,9 +4,8 @@ import (
 	"fmt"
 )
 
-var ErrNoState = ErrNrtmClient{"state not initialized"}
+var ErrStateNotInitialized = ErrNrtmClient{"state not initialized"}
 var ErrNoEntity = ErrNrtmClient{"no json entity in record"}
-var ErrFetchingState = ErrNrtmClient{"no state exists"}
 
 type ErrNrtmClient struct {
 	Msg string

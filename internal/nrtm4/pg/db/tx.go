@@ -16,13 +16,15 @@ type TxFn func(pgx.Tx) error
 var pool *pgxpool.Pool
 
 // InitializeConnectionPool must be called before connecting to db
-func InitializeConnectionPool(url string) {
-	p, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+func InitializeConnectionPool(url string) error {
+	p, err := pgxpool.New(context.Background(), os.Getenv("PG_DATABASE_URL"))
 	if err != nil {
 		log.Fatal("ERROR db.connect: ", err)
+		return err
 	}
 	pool = p
 	log.Println("INFO maximum db pool connections", p.Config().MaxConns)
+	return nil
 }
 
 // WithTransaction executes a function within a transaction

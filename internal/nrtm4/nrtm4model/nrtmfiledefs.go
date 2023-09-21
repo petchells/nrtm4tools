@@ -34,7 +34,11 @@ type DeltaFile struct {
 }
 
 type SnapshotFile struct {
-	NrtmFile
+	NrtmVersion uint   `json:"nrtm_version"`
+	Type        string `json:"type"`
+	Source      string `json:"source"`
+	SessionID   string `json:"session_id"`
+	Version     uint   `json:"version"`
 }
 
 type SnapshotObject struct {

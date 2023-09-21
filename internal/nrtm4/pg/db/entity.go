@@ -202,12 +202,8 @@ func Create(tx pgx.Tx, entityPtr EntityManaged) error {
 		strings.Join(cols, ", "),
 		strings.Join(placeholders, ", "),
 	)
-	tag, err := tx.Exec(context.Background(), sql, values...)
-	if err != nil {
-		return err
-	}
-	log.Println("DEBUG Insert", tag.RowsAffected(), "rows affected")
-	return nil
+	_, err := tx.Exec(context.Background(), sql, values...)
+	return err
 }
 
 // Update an entity

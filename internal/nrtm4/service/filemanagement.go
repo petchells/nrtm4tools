@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
@@ -20,16 +19,14 @@ type fileManager struct {
 	client Client
 }
 
-func (fm fileManager) initializeSourceAndParseSnapshot(
-	url string,
+func (fm fileManager) readSnapshotRecords(
 	snapshotFile *os.File,
-	notification nrtm4model.Notification,
-	fn func(bytes []byte, err error),
+	fn jsonseq.RecordReaderFunc,
 ) error {
 
 	var err error
 
-	log.Println("DEBUG wrote snapshotFile", snapshotFile.Name())
+	log.Println("DEBUG opening snapshotFile for reading", snapshotFile.Name())
 	var reader io.Reader
 	if reader, err = os.Open(snapshotFile.Name()); err != nil {
 		return err
@@ -44,30 +41,32 @@ func (fm fileManager) initializeSourceAndParseSnapshot(
 	} else {
 		bufioReader = bufio.NewReader(reader)
 	}
-	err = jsonseq.ParseReader(bufioReader, func(bytes []byte, err error) {
-		fn(bytes, err)
+	err = jsonseq.ReadRecords(bufioReader, func(bytes []byte, err error) error {
+		return fn(bytes, err)
 	})
-	// file, err = fileToDatabase(repo, notification.Snapshot.Url, nrtmFile, persist.SnapshotFile, path)
 	return err
 }
 
-func (fm fileManager) fileToDatabase(url string, nrtmFile nrtm4model.NrtmFile, filetype persist.NTRMFileType, path string) (*os.File, error) {
-	var file *os.File
-	var err error
-	if file, err = fm.writeResourceToPath(url, path); err != nil {
-		return file, err
-	}
-	// defer func() {
-	// 	if err := file.Close(); err != nil {
-	// 		panic(err)
-	// 	}
-	// }()
-	ds := NrtmDataService{fm.repo}
-	return file, ds.saveState(url, nrtmFile, filetype, file)
-}
+// func (fm fileManager) fileToDatabase(url string, nrtmFile nrtm4model.NrtmFile, filetype persist.NTRMFileType, path string) (*os.File, error) {
+// 	var file *os.File
+// 	var err error
+// 	if file, err = fm.writeResourceToPath(url, path); err != nil {
+// 		return file, err
+// 	}
+// 	// defer func() {
+// 	// 	if err := file.Close(); err != nil {
+// 	// 		panic(err)
+// 	// 	}
+// 	// }()
+// 	ds := NrtmDataService{fm.repo}
+// 	return file, ds.saveState(url, nrtmFile, filetype, file)
+// }
 
 func (fm fileManager) writeResourceToPath(url string, path string) (*os.File, error) {
 	fileName := filepath.Base(url)
+	if f, err := os.Open(filepath.Join(path, fileName)); err == nil {
+		return f, err
+	}
 	var reader io.Reader
 	var err error
 	if reader, err = fm.client.getResponseBody(url); err != nil {

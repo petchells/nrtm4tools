@@ -14,10 +14,11 @@ import (
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 )
 
 func TestUpdateNRTMWithSourceInitialization(t *testing.T) {
-	stubRepo := stubRepo{t: t, state: persist.NRTMState{}, err: &persist.ErrNoState}
+	stubRepo := stubRepo{t: t, state: persist.NRTMState{}, err: &persist.ErrStateNotInitialized}
 	stubClient := stubClient{t}
 	tmpDir := filepath.Join(os.TempDir(), "/nrtmtest")
 	defer func() {
@@ -29,33 +30,39 @@ func TestUpdateNRTMWithSourceInitialization(t *testing.T) {
 type stubRepo struct {
 	t     *testing.T
 	state persist.NRTMState
-	err   *persist.ErrNrtmClient
+	err   error
 }
 
-func (r stubRepo) InitializeConnectionPool(dbUrl string) {}
-
-func (r stubRepo) SaveSnapshotFile(persist.NRTMState, nrtm4model.SnapshotFile) *persist.ErrNrtmClient {
+func (r stubRepo) Initialize(dbUrl string) error {
 	return nil
 }
 
-func (r stubRepo) SaveSnapshotObject(persist.NRTMState, nrtm4model.SnapshotObject) *persist.ErrNrtmClient {
+func (r stubRepo) Close() error {
 	return nil
 }
 
-func (r stubRepo) GetState(source string) (persist.NRTMState, *persist.ErrNrtmClient) {
+func (r stubRepo) SaveSnapshotFile(state persist.NRTMState, snapshotFile nrtm4model.SnapshotFile) error {
+	return nil
+}
+
+func (r stubRepo) SaveSnapshotObject(state persist.NRTMState, rpslObject rpsl.Rpsl) error {
+	return nil
+}
+
+func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
 	state := r.state
 	if r.err != nil {
 		log.Println("ERROR GetState", r.err)
-		return state, &persist.ErrFetchingState
+		return state, &persist.ErrStateNotInitialized
 	}
 	if source == "EXAMPLE" {
 		return state, nil
 	}
 	r.t.Fatal("Unexpected request for source", source)
-	return state, &persist.ErrFetchingState
+	return state, &persist.ErrStateNotInitialized
 }
 
-func (r stubRepo) SaveState(state persist.NRTMState) *persist.ErrNrtmClient {
+func (r stubRepo) SaveState(state *persist.NRTMState) error {
 	expected := "notification.json"
 	if state.FileName == expected {
 		return nil

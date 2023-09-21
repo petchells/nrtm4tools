@@ -15,18 +15,19 @@ GOGET:=$(GOCMD) get
 GOMODDOWNLOAD:=$(GOCMD) mod download
 
 # Name of the remote rsync production host for migrations
-BASTION=bastion
+BASTION:=bastion
 
 # Fixed names
-APP_DIR:=cmd/nrtm4client
 BINARY_NAME_APP:=nrtm4client
 BINARY_NAME_APP_UNIX:=$(BINARY_NAME_APP)_unix
 BINARY_NAME_DEBUG:=__debug_*
+APP_DIR:=cmd/nrtm4client
 
 # Image release params
-DOCKERFILE_APP_DIR:=deployments/docker/nrtm4client
-IMAGE_APP_NAME_RELEASE:=eu.gcr.io/fourth-flag-253822/nrtm4client
-IMAGE_APP_NAME:=nrtm4client-dev
+DOCKERFILE_DIR:=deployments/docker/nrtm4client
+IMAGE_NAME_RELEASE:=eu.gcr.io/fourth-flag-253822/$(BINARY_NAME_APP)
+IMAGE_NAME_DEV:=$(BINARY_NAME_APP)-dev
+CONTAINER_NAME_TEST:=$(BINARY_NAME_APP)_testcontainer
 
 # Util
 CHECK_VCS:=scripts/checkvcs.sh
@@ -87,17 +88,17 @@ install: test docker-app-prep
 	cd $(DOCKERFILE_APP_DIR) && $(DOCKERCMD) build -t $(IMAGE_APP_NAME) .
 
 testimage: install
-	-$(DOCKERCMD) stop nrtm4client_testcontainer 2>/dev/null
-	cd $(DOCKERFILE_WEB_DIR) && $(DOCKERCMD) run -dp 8000:8080 --rm --name nrtm4client_testcontainer --env-file ./env.conf $(IMAGE_WEB_NAME) >/dev/null
+	-$(DOCKERCMD) stop $(CONTAINER_NAME_TEST) 2>/dev/null
+	cd $(DOCKERFILE_DIR) && $(DOCKERCMD) run -dp 8000:8080 --rm --name $(CONTAINER_NAME_TEST) --env-file ./env.conf $(IMAGE_NAME_DEV) >/dev/null
 	#cd web && $(NPMCMD) run e2e >/dev/null
-	$(DOCKERCMD) stop nrtm4client_testcontainer >/dev/null
+	$(DOCKERCMD) stop $(CONTAINER_NAME_TEST) >/dev/null
 
 checkvcs:
 	sh scripts/checkvcs.sh || (echo "You have local changes to your files. Synchronize your changes and try again."; exit 1)
 
 release-app: checkvcs install
-	$(DOCKERCMD) tag $(IMAGE_APP_NAME) $(IMAGE_APP_NAME_RELEASE):$(shell git rev-parse --short HEAD)
-	$(DOCKERCMD) push $(IMAGE_APP_NAME_RELEASE):$(shell git rev-parse --short HEAD)
+	$(DOCKERCMD) tag $(IMAGE_NAME_DEV) $(IMAGE_NAME_RELEASE):$(shell git rev-parse --short HEAD)
+	$(DOCKERCMD) push $(IMAGE_NAME_RELEASE):$(shell git rev-parse --short HEAD)
 
 release: release-app ;
 

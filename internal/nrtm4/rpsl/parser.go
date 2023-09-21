@@ -32,7 +32,7 @@ func parseString(str string) (Rpsl, error) {
 			continue
 		}
 		if len(objectType) == 0 {
-			parts := strings.Split(line, ":")
+			parts := strings.SplitN(line, ":", 2)
 			if len(parts) != 2 {
 				log.Println("Cannot determine ObjectType")
 				return Rpsl{}, ErrCannotParseRPSL

@@ -3,8 +3,6 @@ package service
 import (
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"time"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
@@ -40,8 +38,7 @@ func (ds NrtmDataService) applyDeltas(source string, deltas []nrtm4model.Change)
 	return nil
 }
 
-func (ds NrtmDataService) saveState(url string, nrtmFile nrtm4model.NrtmFile, fileType persist.NTRMFileType, file *os.File) error {
-	fileName := filepath.Base(file.Name())
+func (ds NrtmDataService) saveState(url string, nrtmFile nrtm4model.NrtmFile, fileType persist.NTRMFileType, fileName string) error {
 	state := persist.NRTMState{
 		ID:       0,
 		Created:  time.Now(),
@@ -51,5 +48,5 @@ func (ds NrtmDataService) saveState(url string, nrtmFile nrtm4model.NrtmFile, fi
 		Type:     fileType,
 		FileName: fileName,
 	}
-	return ds.Repository.SaveState(state)
+	return ds.Repository.SaveState(&state)
 }

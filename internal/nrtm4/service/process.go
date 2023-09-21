@@ -2,11 +2,16 @@ package service
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"time"
 
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 )
 
 var FILE_BUFFER_LENGTH = 1024 * 8
@@ -37,64 +42,51 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	//    * insert rpsl objects
 	//    * see if there are more deltas to process
 	//    * done and dusted
+	ds := NrtmDataService{Repository: repo}
 	state, clientErr := repo.GetState(notification.Source)
-	if clientErr == &persist.ErrNoState {
+	if clientErr == &persist.ErrStateNotInitialized {
 		log.Println("INFO No previous state found. Initializing")
-		if err = os.RemoveAll(nrtmFilePath); err != nil {
-			log.Println("WARNING removed existing directory", err)
+		state := persist.NRTMState{
+			ID:       0,
+			Created:  time.Now(),
+			Source:   notification.Source,
+			Version:  notification.Version,
+			URL:      url,
+			Type:     persist.NotificationFile,
+			FileName: "",
 		}
-		err = os.Mkdir(nrtmFilePath, 0755)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Println("INFO Created path", nrtmFilePath)
-		log.Println("INFO Downloading snapshot", notification.Snapshot.Url)
-		fm := fileManager{repo: repo, client: client}
-		// save notification file to disk and nrtmstate table
-		var snapshotOSFile *os.File
-		if snapshotOSFile, err = fm.writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
-			log.Fatal(err)
-		}
-		if err != nil {
-			log.Println("ERROR failed to write snapshot", notification.Snapshot.Url, "to", nrtmFilePath)
+		if err = repo.SaveState(&state); err != nil {
+			log.Println("ERROR Saving state", err)
 			return
 		}
-		snapshotOSFile.Close()
-
-		i := 0
-		failedEntities := 0
-		if err = fm.initializeSourceAndParseSnapshot(url, snapshotOSFile, notification, func(bytes []byte, err error) {
-			if err != &persist.ErrNoEntity {
-				if err != nil {
-					log.Println("WARN error unmarshalling JSON.", err)
-				} else if i == 0 {
-					sf := new(nrtm4model.SnapshotFile)
-					if err = json.Unmarshal(bytes, sf); err != nil {
-						repo.SaveSnapshotFile(state, *sf)
-					} else {
-						log.Println("WARN error unmarshalling JSON. Expected SnapshotFile", err)
-						failedEntities++
-						return
-					}
-				} else {
-					so := new(nrtm4model.SnapshotObject)
-					if err = json.Unmarshal(bytes, so); err != nil {
-						repo.SaveSnapshotObject(state, *so)
-					} else {
-						log.Println("WARN error unmarshalling JSON. Expected SnapshotObject", err)
-						failedEntities++
-					}
-				}
-				i++
-			} else {
-				log.Println("WARN error empty JSON", err)
+		fm := fileManager{repo: repo, client: client}
+		// save notification file to disk and nrtmstate table
+		snapshotOSFile, err := os.Open(filepath.Join(nrtmFilePath, filepath.Base(notification.Snapshot.Url)))
+		if err != nil {
+			if err = os.RemoveAll(nrtmFilePath); err != nil {
+				log.Println("WARNING removed existing directory", err)
 			}
-		}); err != nil {
+			err = os.Mkdir(nrtmFilePath, 0755)
+			if err != nil {
+				log.Fatal(err)
+			}
+			log.Println("INFO Created path", nrtmFilePath)
+			log.Println("INFO Downloading snapshot", notification.Snapshot.Url)
+			if snapshotOSFile, err = fm.writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
+				log.Fatal(err)
+			}
+			if err != nil {
+				log.Println("ERROR failed to write snapshot", notification.Snapshot.Url, "to", nrtmFilePath)
+				return
+			}
+		}
+		defer snapshotOSFile.Close()
+
+		if err = fm.readSnapshotRecords(snapshotOSFile, snapshotRecordReaderFunc(repo, state)); err != nil {
 			log.Println("WARN failed to intialize source", state, err)
 			return
 		}
-		log.Println("INFO failed to read", failedEntities, "JSON entities")
-		var stateErr *persist.ErrNrtmClient
+		var stateErr error
 		if state, stateErr = repo.GetState(notification.Source); stateErr != nil {
 			log.Println("ERROR failed to retrieve inital state", stateErr)
 			return
@@ -111,13 +103,55 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	//    * apply deltas
 	log.Println("DEBUG Current:", state.Version, "Notification file:", notification.Version)
 	if state.Version >= notification.Version {
+		log.Println("INFO Nothing to do: version is up to date.")
 		return
 	}
 	log.Println("DEBUG Applying deltas >", state.Version, "up to", notification.Version)
-	ds := NrtmDataService{Repository: repo}
 	// TODO:
 	// Get the actual deltas
 	ds.applyDeltas(notification.Source, []nrtm4model.Change{})
+}
+
+func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) jsonseq.RecordReaderFunc {
+
+	i := 0
+	failedEntities := 0
+
+	return func(bytes []byte, err error) error {
+		if err != &persist.ErrNoEntity {
+			if err != nil && err != io.EOF {
+				log.Println("WARN error unmarshalling JSON.", err)
+				return err
+			} else if i == 0 {
+				sf := new(nrtm4model.SnapshotFile)
+				if err = json.Unmarshal(bytes, sf); err == nil {
+					i++
+					return repo.SaveSnapshotFile(state, *sf)
+				} else {
+					failedEntities++
+					log.Println("WARN error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedEntities)
+					return err
+				}
+			} else {
+				so := new(nrtm4model.SnapshotObject)
+				if err = json.Unmarshal(bytes, so); err == nil {
+					rpsl, err := rpsl.ParseString(so.Object)
+					if err != nil {
+						return err
+					}
+					i++
+					return repo.SaveSnapshotObject(state, rpsl)
+				} else {
+					failedEntities++
+					log.Println("WARN error unmarshalling JSON. Expected SnapshotObject", err, "errors", failedEntities)
+					return err
+				}
+			}
+		} else {
+			log.Println("WARN error empty JSON", err)
+			return err
+		}
+	}
 }
 
 func validateNotificationFile(file nrtm4model.Notification) []error {

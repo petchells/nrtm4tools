@@ -2,6 +2,7 @@ package jsonseq
 
 import (
 	"encoding/json"
+	"io"
 	"testing"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
@@ -13,10 +14,10 @@ func TestJSONSequenceParser(t *testing.T) {
 	numObjects := 3
 
 	i := 0
-	err := ParseString(snapshotExample, func(possJsonBytes []byte, err error) {
+	err := ReadStringRecords(snapshotExample, func(possJsonBytes []byte, err error) error {
 		if i == 0 {
 			snapshot := new(nrtm4model.SnapshotFile)
-			err := json.Unmarshal(possJsonBytes, snapshot)
+			err = json.Unmarshal(possJsonBytes, snapshot)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -25,7 +26,7 @@ func TestJSONSequenceParser(t *testing.T) {
 			}
 		} else if i == 1 {
 			object := new(nrtm4model.SnapshotObject)
-			err := json.Unmarshal(possJsonBytes, object)
+			err = json.Unmarshal(possJsonBytes, object)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -36,12 +37,13 @@ func TestJSONSequenceParser(t *testing.T) {
 			t.Fatal("Expected three JSON entities")
 		}
 		i += 1
+		return nil
 	})
-	if err != nil {
-		t.Error(err)
+	if err != io.EOF {
+		t.Fatal(err)
 	}
 	if i != numObjects {
-		t.Error("Wrong number of JSON objects. Expected", numObjects, "but was", i)
+		t.Fatal("Wrong number of JSON objects. Expected", numObjects, "but was", i)
 	}
 }
 
