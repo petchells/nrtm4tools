@@ -14,15 +14,15 @@ import (
 type PgRepository struct {
 }
 
-func (repo PgRepository) Initialize(dbUrl string) error {
+func (repo *PgRepository) Initialize(dbUrl string) error {
 	return db.InitializeConnectionPool(dbUrl)
 }
 
-func (repo PgRepository) Close() error {
+func (repo *PgRepository) Close() error {
 	return nil
 }
 
-func (repo PgRepository) SaveState(state *persist.NRTMState) error {
+func (repo *PgRepository) SaveState(state *persist.NRTMState) error {
 	return db.WithTransaction(func(tx pgx.Tx) error {
 		st := pgpersist.NRTMState{
 			ID:       uint64(db.NextID()),
@@ -38,11 +38,11 @@ func (repo PgRepository) SaveState(state *persist.NRTMState) error {
 	})
 }
 
-func (repo PgRepository) SaveSnapshotFile(state persist.NRTMState, snapshotObject nrtm4model.SnapshotFile) error {
+func (repo *PgRepository) SaveSnapshotFile(state persist.NRTMState, snapshotObject nrtm4model.SnapshotFile) error {
 	return nil
 }
 
-func (repo PgRepository) SaveSnapshotObject(state persist.NRTMState, rpslObject rpsl.Rpsl) error {
+func (repo *PgRepository) SaveSnapshotObject(state persist.NRTMState, rpslObject rpsl.Rpsl) error {
 	return db.WithTransaction(func(tx pgx.Tx) error {
 		dbstate := new(pgpersist.NRTMState)
 		err := db.GetByID(tx, state.ID, dbstate)
@@ -64,7 +64,7 @@ func (repo PgRepository) SaveSnapshotObject(state persist.NRTMState, rpslObject 
 	})
 }
 
-func (repo PgRepository) GetState(source string) (persist.NRTMState, error) {
+func (repo *PgRepository) GetState(source string) (persist.NRTMState, error) {
 	var state persist.NRTMState
 	var dbstate *pgpersist.NRTMState
 	err := db.WithTransaction(func(tx pgx.Tx) error {

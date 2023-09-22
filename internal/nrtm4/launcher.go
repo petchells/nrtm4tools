@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/bolt"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/service"
 )
@@ -15,23 +16,21 @@ type AppConfig struct {
 	BoltDatabasePath       string
 }
 
-func Launch(config AppConfig) {
-	//repo := bolt.BoltRepository{}
+func LaunchPg(config AppConfig) {
 	repo := pg.PgRepository{}
-	launchWithPg(&repo, config)
+	repo.Initialize(config.PgDatabaseURL)
+	update(&repo, config)
 }
 
-func launchWithPg(repository *pg.PgRepository, config AppConfig) {
-	repository.Initialize(config.PgDatabaseURL)
-	log.Println("DEBUG Launch()", config)
-	var httpClient service.HttpClient
-	service.UpdateNRTM(repository, httpClient, config.NrtmUrlNotificationUrl, config.NrtmFilePath)
+func LaunchBolt(config AppConfig) {
+	repo := bolt.BoltRepository{}
+	repo.Initialize(config.BoltDatabasePath)
+	update(&repo, config)
 }
 
-func launchWithBolt(repository *bolt.BoltRepository, config AppConfig) {
-	repository.Initialize(config.BoltDatabasePath)
+func update(repo persist.Repository, config AppConfig) error {
 	log.Println("DEBUG Launch()", config)
 	var httpClient service.HttpClient
-	service.UpdateNRTM(repository, httpClient, config.NrtmUrlNotificationUrl, config.NrtmFilePath)
-	repository.Close()
+	service.UpdateNRTM(repo, httpClient, config.NrtmUrlNotificationUrl, config.NrtmFilePath)
+	return repo.Close()
 }

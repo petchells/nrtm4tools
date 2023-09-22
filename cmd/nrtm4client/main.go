@@ -27,5 +27,5 @@ func main() {
 	// TODO
 	// Parse multiple URLs and file path
 	// Start one goroutine for each source
-	nrtm4.Launch(config)
+	nrtm4.LaunchBolt(config)
 }
