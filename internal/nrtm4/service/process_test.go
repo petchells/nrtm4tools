@@ -49,6 +49,10 @@ func (r stubRepo) SaveSnapshotObject(state persist.NRTMState, rpslObject rpsl.Rp
 	return nil
 }
 
+func (r stubRepo) SaveSnapshotObjects(state persist.NRTMState, rpslObject []rpsl.Rpsl) error {
+	return nil
+}
+
 func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
 	state := r.state
 	if r.err != nil {

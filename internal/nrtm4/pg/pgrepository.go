@@ -1,6 +1,7 @@
 package pg
 
 import (
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -61,6 +62,35 @@ func (repo *PgRepository) SaveSnapshotObject(state persist.NRTMState, rpslObject
 			Updated:     now,
 		}
 		return db.Create(tx, &rpslObjectDB)
+	})
+}
+
+func (repo *PgRepository) SaveSnapshotObjects(state persist.NRTMState, rpslObjects []rpsl.Rpsl) error {
+	return db.WithTransaction(func(tx pgx.Tx) error {
+		dbstate := new(pgpersist.NRTMState)
+		err := db.GetByID(tx, state.ID, dbstate)
+		if err != nil {
+			return err
+		}
+		now := time.Now()
+		for _, rpslObject := range rpslObjects {
+			rpslObjectDB := pgpersist.RPSLObject{
+				ID:          uint64(db.NextID()),
+				ObjectType:  rpslObject.ObjectType,
+				RPSL:        rpslObject.Payload,
+				Source:      state.Source,
+				PrimaryKey:  rpslObject.PrimaryKey,
+				NrtmstateID: dbstate.ID,
+				Created:     now,
+				Updated:     now,
+			}
+			err = db.Create(tx, &rpslObjectDB)
+			if err != nil {
+				log.Println("WARNING failed to save object", rpslObject.Source, rpslObject.ObjectType, rpslObject.PrimaryKey)
+				return err
+			}
+		}
+		return nil
 	})
 }
 

@@ -18,19 +18,24 @@ type AppConfig struct {
 
 func LaunchPg(config AppConfig) {
 	repo := pg.PgRepository{}
-	repo.Initialize(config.PgDatabaseURL)
+	if err := repo.Initialize(config.PgDatabaseURL); err != nil {
+		log.Fatal("Failed to initialize repository")
+	}
+	defer repo.Close()
 	update(&repo, config)
 }
 
 func LaunchBolt(config AppConfig) {
 	repo := bolt.BoltRepository{}
-	repo.Initialize(config.BoltDatabasePath)
+	if err := repo.Initialize(config.BoltDatabasePath); err != nil {
+		log.Fatal("Failed to initialize repository")
+	}
+	defer repo.Close()
 	update(&repo, config)
 }
 
-func update(repo persist.Repository, config AppConfig) error {
+func update(repo persist.Repository, config AppConfig) {
 	log.Println("DEBUG Launch()", config)
 	var httpClient service.HttpClient
 	service.UpdateNRTM(repo, httpClient, config.NrtmUrlNotificationUrl, config.NrtmFilePath)
-	return repo.Close()
 }

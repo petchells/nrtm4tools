@@ -11,5 +11,6 @@ type Repository interface {
 	SaveState(*NRTMState) error
 	SaveSnapshotFile(NRTMState, nrtm4model.SnapshotFile) error
 	SaveSnapshotObject(NRTMState, rpsl.Rpsl) error
+	SaveSnapshotObjects(NRTMState, []rpsl.Rpsl) error
 	Close() error
 }

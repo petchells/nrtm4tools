@@ -72,6 +72,16 @@ func (r *BoltRepository) SaveSnapshotObject(state persist.NRTMState, rpslObject 
 	})
 }
 
+func (r *BoltRepository) SaveSnapshotObjects(state persist.NRTMState, rpslObjects []rpsl.Rpsl) error {
+	for _, rpslObject := range rpslObjects {
+		err := r.SaveSnapshotObject(state, rpslObject)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *BoltRepository) Close() error {
 	return r.db.Close()
 }

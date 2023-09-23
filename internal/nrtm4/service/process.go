@@ -83,7 +83,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		defer snapshotOSFile.Close()
 
 		if err = fm.readSnapshotRecords(snapshotOSFile, snapshotRecordReaderFunc(repo, state)); err != nil {
-			log.Println("WARN failed to intialize source", state, err)
+			log.Println("WARN failed to initialize source", state, err)
 			return
 		}
 		var stateErr error
@@ -117,6 +117,8 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 	i := 0
 	failedEntities := 0
 
+	var rpslObjects []rpsl.Rpsl
+
 	return func(bytes []byte, err error) error {
 		if err != &persist.ErrNoEntity {
 			if err != nil && err != io.EOF {
@@ -140,7 +142,15 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 						return err
 					}
 					i++
-					return repo.SaveSnapshotObject(state, rpsl)
+					rpslObjects = append(rpslObjects, rpsl)
+					if len(rpslObjects) >= 1000 {
+						err = repo.SaveSnapshotObjects(state, rpslObjects)
+						if err != nil {
+							return err
+						}
+						rpslObjects = nil
+					}
+					return nil
 				} else {
 					failedEntities++
 					log.Println("WARN error unmarshalling JSON. Expected SnapshotObject", err, "errors", failedEntities)
