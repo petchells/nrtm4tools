@@ -21,7 +21,7 @@ create table rpslobject (
 	updated timestamp without time zone not null,
 
 	constraint rpslobject_pk primary key (id),
-	constraint rpslobject__source__primary_key_uid unique (source, object_type, primary_key),
+	constraint rpslobject__source__object_type__primary_key_uid unique (source, object_type, primary_key),
 	constraint rpslobject__nrtmstate_fk foreign key (nrtmstate_id) references nrtmstate(id)
 );
 
