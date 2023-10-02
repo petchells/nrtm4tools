@@ -82,7 +82,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		}
 		defer snapshotOSFile.Close()
 
-		if err = fm.readSnapshotRecords(snapshotOSFile, snapshotRecordReaderFunc(repo, state)); err != nil {
+		if err = fm.readSnapshotRecords(snapshotOSFile, snapshotRecordReaderFunc(repo, state)); err != io.EOF {
 			log.Println("WARN failed to initialize source", state, err)
 			return
 		}
@@ -121,16 +121,26 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 
 	return func(bytes []byte, err error) error {
 		if err != &persist.ErrNoEntity {
-			if err != nil && err != io.EOF {
+			if err == io.EOF {
+				so := new(nrtm4model.SnapshotObject)
+				if err = json.Unmarshal(bytes, so); err == nil {
+					rpsl, err := rpsl.ParseString(so.Object)
+					if err != nil {
+						return err
+					}
+					i++
+					rpslObjects = append(rpslObjects, rpsl)
+					return repo.SaveSnapshotObjects(state, rpslObjects)
+				}
+				return err
+			} else if err != nil {
 				log.Println("WARN error unmarshalling JSON.", err)
 				return err
 			} else if i == 0 {
 				sf := new(nrtm4model.SnapshotFile)
 				if err = json.Unmarshal(bytes, sf); err == nil {
-					i++
 					return repo.SaveSnapshotFile(state, *sf)
 				} else {
-					failedEntities++
 					log.Println("WARN error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedEntities)
 					return err
 				}

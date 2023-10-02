@@ -12,10 +12,10 @@ create table nrtmstate (
 
 create table rpslobject (
 	id bigint not null,
-	object_type varchar(255) not null,
-	rpsl text not null,
 	source varchar(255) not null,
+	object_type varchar(255) not null,
 	primary_key varchar(255) not null,
+	rpsl text not null,
 	nrtmstate_id bigint not null,
 	created timestamp without time zone not null,
 	updated timestamp without time zone not null,

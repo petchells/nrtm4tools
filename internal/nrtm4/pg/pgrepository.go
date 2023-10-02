@@ -1,6 +1,7 @@
 package pg
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -73,22 +74,25 @@ func (repo *PgRepository) SaveSnapshotObjects(state persist.NRTMState, rpslObjec
 			return err
 		}
 		now := time.Now()
+		inputRows := [][]any{}
 		for _, rpslObject := range rpslObjects {
-			rpslObjectDB := pgpersist.RPSLObject{
-				ID:          uint64(db.NextID()),
-				ObjectType:  rpslObject.ObjectType,
-				RPSL:        rpslObject.Payload,
-				Source:      state.Source,
-				PrimaryKey:  rpslObject.PrimaryKey,
-				NrtmstateID: dbstate.ID,
-				Created:     now,
-				Updated:     now,
+			inputRow := []any{
+				uint64(db.NextID()),
+				rpslObject.Source,
+				rpslObject.ObjectType,
+				rpslObject.PrimaryKey,
+				rpslObject.Payload,
+				dbstate.ID,
+				now,
+				now,
 			}
-			err = db.Create(tx, &rpslObjectDB)
-			if err != nil {
-				log.Println("WARNING failed to save object", rpslObject.Source, rpslObject.ObjectType, rpslObject.PrimaryKey)
-				return err
-			}
+			inputRows = append(inputRows, inputRow)
+		}
+		rpslDescriptor := db.GetDescriptor(&pgpersist.RPSLObject{})
+		_, err = tx.CopyFrom(context.Background(), pgx.Identifier{rpslDescriptor.TableName()}, rpslDescriptor.ColumnNames(), pgx.CopyFromRows(inputRows))
+		if err != nil {
+			log.Println("WARNING failed to save objects with error", err)
+			return err
 		}
 		return nil
 	})
