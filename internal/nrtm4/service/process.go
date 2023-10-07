@@ -114,8 +114,8 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 
 func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) jsonseq.RecordReaderFunc {
 
-	i := 0
-	failedEntities := 0
+	successfulObjects := 0
+	failedObjects := 0
 
 	var rpslObjects []rpsl.Rpsl
 
@@ -128,7 +128,7 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 					if err != nil {
 						return err
 					}
-					i++
+					successfulObjects++
 					rpslObjects = append(rpslObjects, rpsl)
 					return repo.SaveSnapshotObjects(state, rpslObjects)
 				}
@@ -136,12 +136,12 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 			} else if err != nil {
 				log.Println("WARN error unmarshalling JSON.", err)
 				return err
-			} else if i == 0 {
+			} else if successfulObjects == 0 {
 				sf := new(nrtm4model.SnapshotFile)
 				if err = json.Unmarshal(bytes, sf); err == nil {
 					return repo.SaveSnapshotFile(state, *sf)
 				} else {
-					log.Println("WARN error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedEntities)
+					log.Println("WARN error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedObjects)
 					return err
 				}
 			} else {
@@ -149,9 +149,10 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 				if err = json.Unmarshal(bytes, so); err == nil {
 					rpsl, err := rpsl.ParseString(so.Object)
 					if err != nil {
+						failedObjects++
 						return err
 					}
-					i++
+					successfulObjects++
 					rpslObjects = append(rpslObjects, rpsl)
 					if len(rpslObjects) >= 1000 {
 						err = repo.SaveSnapshotObjects(state, rpslObjects)
@@ -162,8 +163,8 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 					}
 					return nil
 				} else {
-					failedEntities++
-					log.Println("WARN error unmarshalling JSON. Expected SnapshotObject", err, "errors", failedEntities)
+					failedObjects++
+					log.Println("WARN error unmarshalling JSON. Expected SnapshotObject", err, "errors", failedObjects)
 					return err
 				}
 			}
