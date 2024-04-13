@@ -17,7 +17,7 @@ type AppConfig struct {
 }
 
 func LaunchPg(config AppConfig) {
-	repo := pg.PgRepository{}
+	repo := pg.PostgresRepository{}
 	if err := repo.Initialize(config.PgDatabaseURL); err != nil {
 		log.Fatal("Failed to initialize repository")
 	}
