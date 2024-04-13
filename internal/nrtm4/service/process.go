@@ -143,6 +143,7 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 				log.Println("WARN error unmarshalling JSON.", err)
 				return err
 			} else if i == 0 {
+				i++
 				sf := new(nrtm4model.SnapshotFile)
 				if err = json.Unmarshal(bytes, sf); err == nil {
 					return repo.SaveSnapshotFile(state, *sf)

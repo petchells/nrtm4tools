@@ -32,7 +32,7 @@ func (repo *PgRepository) SaveState(state *persist.NRTMState) error {
 			Version:  state.Version,
 			URL:      state.URL,
 			Type:     persist.NotificationFile.String(),
-			FileName: "",
+			FileName: state.FileName,
 			Created:  time.Now(),
 		}
 		state.ID = st.ID
