@@ -41,7 +41,7 @@ func (ds NrtmDataService) applyDeltas(source string, deltas []nrtm4model.Change)
 func (ds NrtmDataService) saveState(url string, nrtmFile nrtm4model.NrtmFile, fileType persist.NTRMFileType, fileName string) error {
 	state := persist.NRTMState{
 		ID:       0,
-		Created:  time.Now(),
+		Created:  time.Now().UTC(),
 		Source:   nrtmFile.Source,
 		Version:  nrtmFile.Version,
 		URL:      url,

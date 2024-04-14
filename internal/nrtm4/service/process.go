@@ -14,7 +14,7 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 )
 
-var fileBufferLength = 1024 * 8
+var fileWriteBufferLength = 1024 * 8
 
 // UpdateNRTM updates the repo using data fetched from the client at the given url, storing files in nrtmFilePath
 func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath string) {
@@ -54,7 +54,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		}
 		state := persist.NRTMState{
 			ID:       0,
-			Created:  time.Now(),
+			Created:  time.Now().UTC(),
 			Source:   notification.Source,
 			Version:  notification.Version,
 			URL:      url,
@@ -170,9 +170,8 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 					return nil
 				}
 				failedEntities++
-				log.Println("WARN error unmarshalling JSON. Expected SnapshotObject", err, "errors", failedEntities)
+				log.Println("ERROR unmarshalling JSON. Expected type SnapshotObject. err:", err, "failedEntities", failedEntities)
 				return err
-
 			}
 		} else {
 			log.Println("WARN error empty JSON", err)

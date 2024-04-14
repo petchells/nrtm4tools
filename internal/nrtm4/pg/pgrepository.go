@@ -19,8 +19,8 @@ type PostgresRepository struct {
 }
 
 // Initialize implementation of the Repository interface
-func (repo *PostgresRepository) Initialize(dbUrl string) error {
-	return db.InitializeConnectionPool(dbUrl)
+func (repo *PostgresRepository) Initialize(dbURL string) error {
+	return db.InitializeConnectionPool(dbURL)
 }
 
 // Close implementation of the interface. Nothing needed for pg (for now)
@@ -28,6 +28,7 @@ func (repo *PostgresRepository) Close() error {
 	return nil
 }
 
+// SaveState saves a reference to an NRTM file
 func (repo *PostgresRepository) SaveState(state *persist.NRTMState) error {
 	return db.WithTransaction(func(tx pgx.Tx) error {
 		st := pgpersist.NRTMState{
@@ -37,17 +38,19 @@ func (repo *PostgresRepository) SaveState(state *persist.NRTMState) error {
 			URL:      state.URL,
 			Type:     persist.NotificationFile.String(),
 			FileName: state.FileName,
-			Created:  time.Now(),
+			Created:  time.Now().UTC(),
 		}
 		state.ID = st.ID
 		return db.Create(tx, &st)
 	})
 }
 
+// SaveSnapshotFile not supported
 func (repo *PostgresRepository) SaveSnapshotFile(state persist.NRTMState, snapshotObject nrtm4model.SnapshotFile) error {
 	return nil
 }
 
+// SaveSnapshotObject save am RPSL object
 func (repo *PostgresRepository) SaveSnapshotObject(state persist.NRTMState, rpslObject rpsl.Rpsl) error {
 	return db.WithTransaction(func(tx pgx.Tx) error {
 		dbstate := new(pgpersist.NRTMState)
@@ -55,7 +58,7 @@ func (repo *PostgresRepository) SaveSnapshotObject(state persist.NRTMState, rpsl
 		if err != nil {
 			return err
 		}
-		now := time.Now()
+		now := time.Now().UTC()
 		rpslObjectDB := pgpersist.RPSLObject{
 			ID:          uint64(db.NextID()),
 			ObjectType:  rpslObject.ObjectType,
@@ -81,7 +84,7 @@ func (repo *PostgresRepository) SaveSnapshotObjects(state persist.NRTMState, rps
 			if err != nil {
 				return err
 			}
-			now := time.Now()
+			now := time.Now().UTC()
 			inputRows := [][]any{}
 			for _, rpslObject := range rpslObjects {
 				inputRow := []any{

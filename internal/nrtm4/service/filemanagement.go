@@ -97,7 +97,7 @@ func readerToFile(reader io.Reader, path string, fileName string) (*os.File, err
 }
 
 func transferReaderToFile(from io.Reader, to *os.File) error {
-	buf := make([]byte, fileBufferLength)
+	buf := make([]byte, fileWriteBufferLength)
 	for {
 		n, err := from.Read(buf)
 		if err != nil && err != io.EOF {
