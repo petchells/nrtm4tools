@@ -102,6 +102,13 @@ release-app: checkvcs install
 
 release: release-app ;
 
+run:
+ifeq (,$(wildcard ./scripts/run.sh))
+	echo "scripts/run.sh not found. copy scripts/run.example.sh and change the variables for your system"
+	exit 1
+endif
+	sh scripts/run.sh
+
 clean:
 	$(GOCLEAN) ./...
 #	rm -rf web/www

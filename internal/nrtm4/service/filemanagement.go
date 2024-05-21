@@ -12,7 +12,8 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
-var GZIP_SNAPSHOT_EXTENTION = ".gz"
+// GZIPSnapshotExtension extension GZIP files
+var GZIPSnapshotExtension = ".gz"
 
 type fileManager struct {
 	repo   persist.Repository
@@ -31,8 +32,8 @@ func (fm fileManager) readSnapshotRecords(
 	if reader, err = os.Open(snapshotFile.Name()); err != nil {
 		return err
 	}
-	bufioReader := new(bufio.Reader)
-	if snapshotFile.Name()[len(snapshotFile.Name())-len(GZIP_SNAPSHOT_EXTENTION):] == GZIP_SNAPSHOT_EXTENTION {
+	var bufioReader *bufio.Reader
+	if snapshotFile.Name()[len(snapshotFile.Name())-len(GZIPSnapshotExtension):] == GZIPSnapshotExtension {
 		var gzreader *gzip.Reader
 		if gzreader, err = gzip.NewReader(reader); err != nil {
 			return err
@@ -89,14 +90,14 @@ func readerToFile(reader io.Reader, path string, fileName string) (*os.File, err
 		}
 	}()
 	if err = transferReaderToFile(reader, outFile); err != nil {
-		log.Println("ERROR writing file")
+		log.Println("ERROR writing file:", err)
 		return nil, err
 	}
 	return outFile, err
 }
 
 func transferReaderToFile(from io.Reader, to *os.File) error {
-	buf := make([]byte, FILE_BUFFER_LENGTH)
+	buf := make([]byte, fileWriteBufferLength)
 	for {
 		n, err := from.Read(buf)
 		if err != nil && err != io.EOF {

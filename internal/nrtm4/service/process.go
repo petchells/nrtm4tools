@@ -14,8 +14,9 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 )
 
-var FILE_BUFFER_LENGTH = 1024 * 8
+var fileWriteBufferLength = 1024 * 8
 
+// UpdateNRTM updates the repo using data fetched from the client at the given url, storing files in nrtmFilePath
 func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath string) {
 	// Fetch notification
 	// -- validate
@@ -46,14 +47,19 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 	state, clientErr := repo.GetState(notification.Source)
 	if clientErr == &persist.ErrStateNotInitialized {
 		log.Println("INFO No previous state found. Initializing")
+		fileName, err := fileNameFromURLString(url)
+		if err != nil {
+			log.Println("ERROR URL:", url, err)
+			return
+		}
 		state := persist.NRTMState{
 			ID:       0,
-			Created:  time.Now(),
+			Created:  time.Now().UTC(),
 			Source:   notification.Source,
 			Version:  notification.Version,
 			URL:      url,
 			Type:     persist.NotificationFile,
-			FileName: "",
+			FileName: fileName,
 		}
 		if err = repo.SaveState(&state); err != nil {
 			log.Println("ERROR Saving state", err)
@@ -88,7 +94,7 @@ func UpdateNRTM(repo persist.Repository, client Client, url string, nrtmFilePath
 		}
 		var stateErr error
 		if state, stateErr = repo.GetState(notification.Source); stateErr != nil {
-			log.Println("ERROR failed to retrieve inital state", stateErr)
+			log.Println("ERROR failed to retrieve initial state", stateErr)
 			return
 		}
 		log.Println("INFO new state", state)
@@ -139,6 +145,7 @@ func snapshotRecordReaderFunc(repo persist.Repository, state persist.NRTMState) 
 			} else if successfulObjects == 0 {
 				sf := new(nrtm4model.SnapshotFile)
 				if err = json.Unmarshal(bytes, sf); err == nil {
+					log.Println("INFO saving snapshot file for state:", state)
 					return repo.SaveSnapshotFile(state, *sf)
 				} else {
 					log.Println("WARN error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedObjects)

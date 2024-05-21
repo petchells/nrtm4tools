@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// NRTMState describes a downloaded NRTM file
 type NRTMState struct {
 	ID       uint64
 	Created  time.Time
@@ -16,11 +17,18 @@ type NRTMState struct {
 	FileName string
 }
 
+// NTRMFileType enumerator for file types
 type NTRMFileType int
 
 const (
+
+	// NotificationFile notification file
 	NotificationFile NTRMFileType = iota
+
+	// SnapshotFile snapshot file
 	SnapshotFile
+
+	// DeltaFile delta file
 	DeltaFile
 )
 
