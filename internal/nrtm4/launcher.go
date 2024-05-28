@@ -7,15 +7,10 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/service"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
 )
 
-// AppConfig application configuration object
-// type AppConfig struct {
-// 	NrtmNotificationURL string
-// 	PgDatabaseURL       string
-// 	NrtmFilePath        string
-// 	BoltDatabasePath    string
-// }
+var logger = util.Logger
 
 // LaunchPg launch with PostgreSQL database
 func LaunchPg(config service.AppConfig) {
@@ -38,10 +33,10 @@ func LaunchPg(config service.AppConfig) {
 // }
 
 func connect(repo persist.Repository, config service.AppConfig) {
-	log.Println("DEBUG Launch()", config)
-	log.Println("DEBUG Arguments", os.Args)
+	logger.Debug("Launch()", "config", config)
+	logger.Debug("Arguments", "args", os.Args)
 	if len(os.Args) < 3 {
-		log.Println("ERROR not sure what to do. Exiting.")
+		logger.Error("Not sure what to do. Exiting.")
 		return
 	}
 	var httpClient service.HTTPClient

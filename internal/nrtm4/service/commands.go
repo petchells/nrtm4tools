@@ -29,7 +29,7 @@ func NewCommandProcessor(config AppConfig, repo persist.Repository, client Clien
 	}
 }
 
-var labelRegex = regexp.MustCompile("[A-Za-z][A-Za-z0-9._-]*[A-Za-z]")
+var labelRegex = regexp.MustCompile("^[A-Za-z][A-Za-z0-9._-]*[A-Za-z]$")
 
 // Connect establishes a new connection to a NRTM source server
 func (p CommandProcessor) Connect(notificationURL string, label string) {
@@ -38,13 +38,17 @@ func (p CommandProcessor) Connect(notificationURL string, label string) {
 		repo:   p.repo,
 		client: p.client,
 	}
+	if len(label) > 0 && !labelRegex.MatchString(label) {
+		logger.Error("Label must be alphanumeric")
+		return
+	}
 	// TODO
 	// Sanitize arguments
 	// -- ensure URL looks like a URL, make schema/host lowercase
-	// -- Label is an empty string or matches
 	err := processor.Connect(notificationURL, label)
 	if err != nil {
 		logger.Error("Failed to Connect", "url", notificationURL, err)
 		return
 	}
+	logger.Info("Connect successful", "url", notificationURL)
 }

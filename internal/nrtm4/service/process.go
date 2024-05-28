@@ -15,6 +15,7 @@ import (
 )
 
 var fileWriteBufferLength = 1024 * 8
+var rpslInsertBatchSize = 1000
 
 // NewNRTMProcessor injects repo and client into service and return a new instance
 func NewNRTMProcessor(config AppConfig, repo persist.Repository, client Client) NRTMProcessor {
@@ -240,7 +241,7 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 				}
 				successfulObjects++
 				rpslObjects = append(rpslObjects, rpsl)
-				if len(rpslObjects) >= 1000 {
+				if len(rpslObjects) >= rpslInsertBatchSize {
 					err = repo.SaveSnapshotObjects(source, rpslObjects)
 					if err != nil {
 						return err

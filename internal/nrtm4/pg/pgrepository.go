@@ -2,7 +2,6 @@ package pg
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -10,6 +9,7 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
 	pgpersist "gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
 )
 
 // PostgresRepository implementation of the Repository interface
@@ -32,7 +32,7 @@ func (repo *PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
 		return err
 	})
 	if err != nil {
-		log.Println("ERROR: in GetSources", err)
+		logger.Error("Error in GetSources", err)
 		return sources, err
 	}
 	for _, s := range pgsources {
@@ -115,7 +115,11 @@ func (repo *PostgresRepository) SaveSnapshotObjects(source persist.NRTMSource, r
 			rpslDescriptor := db.GetDescriptor(&pgpersist.RPSLObject{})
 			_, err = tx.CopyFrom(context.Background(), pgx.Identifier{rpslDescriptor.TableName()}, rpslDescriptor.ColumnNames(), pgx.CopyFromRows(inputRows))
 			if err != nil {
-				logger.Warn("Failed to save objects with error", err)
+				types := util.NewSet[string]()
+				for _, inp := range rpslObjects {
+					types.Add(inp.ObjectType)
+				}
+				logger.Warn("Failed to save objects", "types", types.String(), err)
 				return err
 			}
 			return nil

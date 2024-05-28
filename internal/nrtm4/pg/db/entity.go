@@ -259,7 +259,7 @@ func Create(tx pgx.Tx, entityPtr EntityManaged) error {
 	if err != nil {
 		return err
 	}
-	log.Println("DEBUG Insert", tag.RowsAffected(), "rows affected")
+	logger.Debug("Insert successful", "numRows", tag.RowsAffected())
 	return nil
 }
 
