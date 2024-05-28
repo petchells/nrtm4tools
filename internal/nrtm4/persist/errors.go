@@ -4,9 +4,13 @@ import (
 	"fmt"
 )
 
-var ErrStateNotInitialized = ErrNrtmClient{"state not initialized"}
-var ErrNoEntity = ErrNrtmClient{"no json entity in record"}
+// ErrStateNotInitialized source is not initialized
+var ErrStateNotInitialized = ErrNrtmClient{"source is not initialized"}
 
+// ErrNoEntity expected to find some JSON
+var ErrNoEntity = ErrNrtmClient{"no json found"}
+
+// ErrNrtmClient something went wrong in the client
 type ErrNrtmClient struct {
 	Msg string
 }

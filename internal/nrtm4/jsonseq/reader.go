@@ -9,19 +9,28 @@ import (
 	"strings"
 )
 
+// RS delimeter for records in a jsonseq
 var RS byte = 0x1E
 
+// ErrEmptyPayload returned when the payload is empty
 var ErrEmptyPayload = errors.New("empty payload")
-var ErrNotJsonSeq = errors.New("not a JSON seq file")
+
+// ErrNotJSONSeq if the RS delimiter isn't found
+var ErrNotJSONSeq = errors.New("not a JSON seq file")
+
+// ErrExtraneousBytes returned when non-JSON chars are found in the payload
 var ErrExtraneousBytes = errors.New("bytes found before record marker")
 
+// RecordReaderFunc defines the callback function for jsonseq reads
 type RecordReaderFunc func([]byte, error) error
 
+// ReadStringRecords calls fn each time it finds a jsonseq record in jsonSeq
 func ReadStringRecords(jsonSeq string, fn RecordReaderFunc) error {
 	reader := bufio.NewReader(strings.NewReader(jsonSeq))
 	return ReadRecords(reader, fn)
 }
 
+// ReadFileRecords reads a jsonseq file from path and calls fn for each record
 func ReadFileRecords(path string, fn RecordReaderFunc) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -32,10 +41,11 @@ func ReadFileRecords(path string, fn RecordReaderFunc) error {
 	return ReadRecords(reader, fn)
 }
 
+// ReadRecords reads a jsonseq file and calls fn for each record
 func ReadRecords(reader *bufio.Reader, fn RecordReaderFunc) error {
 	jsonBytes, err := reader.ReadBytes(RS)
 	if err != nil {
-		return ErrNotJsonSeq
+		return ErrNotJSONSeq
 	}
 	res := bytes.TrimSpace(jsonBytes)
 	if len(res) > 1 {

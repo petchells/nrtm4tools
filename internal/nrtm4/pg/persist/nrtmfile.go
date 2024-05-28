@@ -11,19 +11,20 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
 )
 
-type NRTMState struct {
-	db.EntityManaged `em:"nrtmstate st"`
+// NRTMFile is a binding to a PG database table
+type NRTMFile struct {
+	db.EntityManaged `em:"nrtm_file nf"`
 	ID               uint64    `em:"."`
-	Source           string    `em:"."`
-	Version          uint      `em:"."`
-	URL              string    `em:"."`
-	Type             string    `em:"."`
-	FileName         string    `em:"."`
 	Created          time.Time `em:"."`
+	FileName         string    `em:"."`
+	NRTMSourceID     uint64    `em:"."`
+	Type             string    `em:"."`
+	URL              string    `em:"."`
+	Version          uint      `em:"."`
 }
 
-func GetLastState(tx pgx.Tx, source string) *NRTMState {
-	state := new(NRTMState)
+func GetLastState(tx pgx.Tx, source string) *NRTMFile {
+	state := new(NRTMFile)
 	descriptor := db.GetDescriptor(state)
 	sql := fmt.Sprintf(`
 		SELECT %v FROM %v
@@ -42,7 +43,7 @@ func GetLastState(tx pgx.Tx, source string) *NRTMState {
 	defer rows.Close()
 	for rows.Next() {
 		log.Println(rows)
-		err = rows.Scan(db.FieldValues(state)...)
+		err = rows.Scan(db.SelectValues(state)...)
 		if err == nil {
 			return state
 		}

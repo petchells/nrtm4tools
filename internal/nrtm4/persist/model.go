@@ -4,17 +4,40 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 )
 
-// NRTMState describes a downloaded NRTM file
-type NRTMState struct {
-	ID       uint64
-	Created  time.Time
-	Source   string
-	Version  uint
-	URL      string
-	Type     NTRMFileType
-	FileName string
+// NRTMSource holds information about a remote NRTM source
+type NRTMSource struct {
+	ID              uint64
+	Source          string
+	SessionID       string
+	Version         uint32
+	NotificationURL string
+	Label           string
+	Created         time.Time
+}
+
+// NewNRTMSource prepares a new source object
+func NewNRTMSource(notification nrtm4model.NotificationJSON, label string) NRTMSource {
+	return NRTMSource{
+		Source:    notification.Source,
+		SessionID: notification.SessionID,
+		Version:   notification.Version,
+		Label:     label,
+	}
+}
+
+// NRTMFile describes a downloaded NRTM file
+type NRTMFile struct {
+	ID           uint64
+	Version      uint
+	Type         NTRMFileType
+	URL          string
+	FileName     string
+	NrtmSourceID uint64
+	Created      time.Time
 }
 
 // NTRMFileType enumerator for file types
@@ -41,6 +64,7 @@ func (ft NTRMFileType) String() string {
 	return ftstrings[ft]
 }
 
+// ToFileType returns an NRTMFileType which matches s
 func ToFileType(s string) (NTRMFileType, error) {
 	target := strings.ToLower(s)
 	for i, str := range ftstrings {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 	bolt "go.etcd.io/bbolt"
@@ -12,11 +11,13 @@ import (
 
 var stateBucketName = "state"
 
+// BoltRepository uses BoltDB as a backing store
 type BoltRepository struct {
 	path string
 	db   *bolt.DB
 }
 
+// Initialize implements the NRTM client Repository interface
 func (r *BoltRepository) Initialize(path string) error {
 	var err error
 	r.path = path
@@ -30,51 +31,39 @@ func (r *BoltRepository) Initialize(path string) error {
 	})
 }
 
-func (r *BoltRepository) GetState(source string) (persist.NRTMState, error) {
-	state := persist.NRTMState{}
-	err := r.db.View(func(tx *bolt.Tx) error {
-		stateBucket := tx.Bucket([]byte(stateBucketName))
-		if stateBucket == nil {
-			return &persist.ErrStateNotInitialized
-		}
-		stateValue := stateBucket.Get([]byte(source))
-		if stateValue == nil {
-			return &persist.ErrStateNotInitialized
-		}
-		return json.Unmarshal(stateValue, &state)
-	})
-	return state, err
+// CreateSource implements the NRTM client Repository interface
+func (r *BoltRepository) CreateSource(label string, source string, notificationURL string) (*persist.NRTMSource, error) {
+	return &persist.NRTMSource{}, nil
 }
 
-func (r *BoltRepository) SaveState(state *persist.NRTMState) error {
-	stateBytes, err := json.Marshal(*state)
+func (r *BoltRepository) SaveFile(state *persist.NRTMFile) error {
+	_, err := json.Marshal(*state)
 	if err != nil {
 		return err
 	}
-	return r.db.Update(func(tx *bolt.Tx) error {
-		stateBucket := tx.Bucket([]byte(stateBucketName))
-		if err := stateBucket.Put([]byte(state.Source), stateBytes); err != nil {
-			return err
-		}
-		_, err := tx.CreateBucket([]byte(state.Source))
-		return err
-	})
-}
-
-func (r *BoltRepository) SaveSnapshotFile(persist.NRTMState, nrtm4model.SnapshotFile) error {
+	// return r.db.Update(func(tx *bolt.Tx) error {
+	// 	stateBucket := tx.Bucket([]byte(stateBucketName))
+	// 	if err := stateBucket.Put([]byte(state.Source), stateBytes); err != nil {
+	// 		return err
+	// 	}
+	// 	_, err := tx.CreateBucket([]byte(state.Source))
+	// 	return err
+	// })
 	return nil
 }
 
-func (r *BoltRepository) SaveSnapshotObject(state persist.NRTMState, rpslObject rpsl.Rpsl) error {
+// SaveSnapshotObject implements the NRTM client Repository interface
+func (r *BoltRepository) SaveSnapshotObject(source persist.NRTMSource, rpslObject rpsl.Rpsl) error {
 	return r.db.Update(func(tx *bolt.Tx) error {
-		objectBucket := tx.Bucket([]byte(state.Source))
+		objectBucket := tx.Bucket([]byte(source.Source))
 		return objectBucket.Put([]byte(rpslObject.ObjectType+" "+rpslObject.PrimaryKey), []byte(rpslObject.Payload))
 	})
 }
 
-func (r *BoltRepository) SaveSnapshotObjects(state persist.NRTMState, rpslObjects []rpsl.Rpsl) error {
+// SaveSnapshotObjects implements the NRTM client Repository interface
+func (r *BoltRepository) SaveSnapshotObjects(source persist.NRTMSource, state persist.NRTMFile, rpslObjects []rpsl.Rpsl) error {
 	for _, rpslObject := range rpslObjects {
-		err := r.SaveSnapshotObject(state, rpslObject)
+		err := r.SaveSnapshotObject(source, rpslObject)
 		if err != nil {
 			return err
 		}
@@ -82,6 +71,7 @@ func (r *BoltRepository) SaveSnapshotObjects(state persist.NRTMState, rpslObject
 	return nil
 }
 
+// Close implements the NRTM client Repository interface
 func (r *BoltRepository) Close() error {
 	return r.db.Close()
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var testResourcePath = "../test_resources/"
+var testResourcePath = "../testresources/"
 
 func TestGZIPSnapshotReader(t *testing.T) {
 	filename := "snapshot-sample.jsonseq.gz"

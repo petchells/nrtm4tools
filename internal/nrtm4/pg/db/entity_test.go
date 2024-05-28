@@ -7,16 +7,16 @@ import (
 )
 
 type testOrg struct {
-	EntityManaged `em:"cd_test_org, o"`
+	EntityManaged `em:"cd_test_org o"`
 	ID            int64     `em:"-"`
 	Updated       time.Time `em:"-"`
 	Name          string    `em:"-"`
-	LegalName     string    `em:"-"`
+	Quantity      uint      `em:"-"`
 }
 
 func TestFieldNameConversion(t *testing.T) {
-	testStrings := [10]string{"ID", "HTML", "Data", "CashDash", "CashDASH", "BigC", "JSONString", "CDUserID", "RTimer", "XML10YAMLFormat5"}
-	expected := [10]string{"id", "html", "data", "cash_dash", "cash_dash", "big_c", "json_string", "cd_user_id", "r_timer", "xml_10_yaml_format_5"}
+	testStrings := [...]string{"ID", "HTML", "Data", "CashDash", "CashDASH", "BigC", "JSONString", "CDUserID", "RTimer", "XML10YAMLFormat5"}
+	expected := [...]string{"id", "html", "data", "cash_dash", "cash_dash", "big_c", "json_string", "cd_user_id", "r_timer", "xml_10_yaml_format_5"}
 	for i, str := range testStrings {
 		result := fieldNameToColumnName(str)
 		if result != expected[i] {
@@ -26,10 +26,10 @@ func TestFieldNameConversion(t *testing.T) {
 }
 
 func TestColumnNameConversionFromFieldTags(t *testing.T) {
-	expected := [4]string{"id", "updated", "name", "legal_name"}
+	expected := [...]string{"id", "updated", "name", "quantity"}
 	o := testOrg{}
 	dtor := GetDescriptor(&o)
-	names := dtor.columnNames
+	names := dtor.ColumnNames()
 	if len(expected) != len(names) {
 		t.Errorf("Expected '%d' fields but got '%d'", len(expected), len(names))
 	}
@@ -66,12 +66,12 @@ func TestScannableFields(t *testing.T) {
 
 func TestScannableFieldsAndValues(t *testing.T) {
 	o := filledNewOrg(t)
-	f := FieldValues(&o)
+	f := SelectValues(&o)
 	sc := []interface{}{
 		&o.ID,
 		&o.Updated,
 		&o.Name,
-		&o.LegalName,
+		&o.Quantity,
 	}
 	if len(f) != len(sc) {
 		t.Errorf("ScannableFields failed. Expected %d got %d", len(sc), len(f))
@@ -88,15 +88,15 @@ func filledNewOrg(t *testing.T) testOrg {
 	dateStr := "2020-01-18T08:15:00Z"
 	dt, _ := time.Parse(time.RFC3339, dateStr)
 	name := "VBC"
-	lname := "Very Big Corp N.V."
-	return newOrg(id, dt, name, lname)
+	qty := uint(999)
+	return newOrg(id, dt, name, qty)
 }
 
-func newOrg(id int64, dtu time.Time, name string, lname string) testOrg {
+func newOrg(id int64, dtu time.Time, name string, qty uint) testOrg {
 	return testOrg{
-		ID:        id,
-		Updated:   dtu,
-		Name:      name,
-		LegalName: lname,
+		ID:       id,
+		Updated:  dtu,
+		Name:     name,
+		Quantity: qty,
 	}
 }

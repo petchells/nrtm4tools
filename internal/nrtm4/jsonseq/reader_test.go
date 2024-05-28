@@ -16,7 +16,7 @@ func TestJSONSequenceParser(t *testing.T) {
 	i := 0
 	err := ReadStringRecords(snapshotExample, func(possJsonBytes []byte, err error) error {
 		if i == 0 {
-			snapshot := new(nrtm4model.SnapshotFile)
+			snapshot := new(nrtm4model.SnapshotFileJSON)
 			err = json.Unmarshal(possJsonBytes, snapshot)
 			if err != nil {
 				t.Fatal(err)
@@ -25,7 +25,7 @@ func TestJSONSequenceParser(t *testing.T) {
 				t.Fatal("Expected", sessionID, "but was", snapshot.SessionID)
 			}
 		} else if i == 1 {
-			object := new(nrtm4model.SnapshotObject)
+			object := new(nrtm4model.SnapshotObjectJSON)
 			err = json.Unmarshal(possJsonBytes, object)
 			if err != nil {
 				t.Fatal(err)

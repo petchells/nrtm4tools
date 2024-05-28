@@ -55,7 +55,7 @@ func WithTransaction(fn TxFn) error {
 }
 
 // NextID gets a new id from the pg sequence generator
-func NextID() int64 {
+func NextID() uint64 {
 	if pool == nil {
 		log.Fatal("Connection pool is nil. Initialize it with db.InitializeConnectionPool(connectionURL)")
 	}
@@ -64,7 +64,7 @@ func NextID() int64 {
 		log.Panic("ERROR Can't get connection for nextID", err)
 	}
 	defer conn.Release()
-	var id int64
+	var id uint64
 	err = conn.QueryRow(context.Background(), "select id_generator()").Scan(&id)
 	if err != nil {
 		log.Panic("ERROR Can't get nextID", err)

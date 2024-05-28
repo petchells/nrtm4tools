@@ -4,19 +4,16 @@ import (
 	"bufio"
 	"compress/gzip"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
 // GZIPSnapshotExtension extension GZIP files
 var GZIPSnapshotExtension = ".gz"
 
 type fileManager struct {
-	repo   persist.Repository
 	client Client
 }
 
@@ -27,7 +24,7 @@ func (fm fileManager) readSnapshotRecords(
 
 	var err error
 
-	log.Println("DEBUG opening snapshotFile for reading", snapshotFile.Name())
+	logger.Debug("opening snapshotFile for reading", "filename", snapshotFile.Name())
 	var reader io.Reader
 	if reader, err = os.Open(snapshotFile.Name()); err != nil {
 		return err
@@ -48,21 +45,6 @@ func (fm fileManager) readSnapshotRecords(
 	return err
 }
 
-// func (fm fileManager) fileToDatabase(url string, nrtmFile nrtm4model.NrtmFile, filetype persist.NTRMFileType, path string) (*os.File, error) {
-// 	var file *os.File
-// 	var err error
-// 	if file, err = fm.writeResourceToPath(url, path); err != nil {
-// 		return file, err
-// 	}
-// 	// defer func() {
-// 	// 	if err := file.Close(); err != nil {
-// 	// 		panic(err)
-// 	// 	}
-// 	// }()
-// 	ds := NrtmDataService{fm.repo}
-// 	return file, ds.saveState(url, nrtmFile, filetype, file)
-// }
-
 func (fm fileManager) writeResourceToPath(url string, path string) (*os.File, error) {
 	fileName := filepath.Base(url)
 	if f, err := os.Open(filepath.Join(path, fileName)); err == nil {
@@ -71,7 +53,7 @@ func (fm fileManager) writeResourceToPath(url string, path string) (*os.File, er
 	var reader io.Reader
 	var err error
 	if reader, err = fm.client.getResponseBody(url); err != nil {
-		log.Println("ERROR Failed to fetch file", url, err)
+		logger.Error("Failed to fetch file", url, err)
 		return nil, err
 	}
 	return readerToFile(reader, path, fileName)
@@ -81,7 +63,7 @@ func readerToFile(reader io.Reader, path string, fileName string) (*os.File, err
 	var outFile *os.File
 	var err error
 	if outFile, err = os.Create(filepath.Join(path, fileName)); err != nil {
-		log.Println("ERROR Failed to open file on disk", err)
+		logger.Error("Failed to open file on disk", err)
 		return nil, err
 	}
 	defer func() {
@@ -90,7 +72,7 @@ func readerToFile(reader io.Reader, path string, fileName string) (*os.File, err
 		}
 	}()
 	if err = transferReaderToFile(reader, outFile); err != nil {
-		log.Println("ERROR writing file:", err)
+		logger.Error("writing file:", err)
 		return nil, err
 	}
 	return outFile, err

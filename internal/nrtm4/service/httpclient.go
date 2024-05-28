@@ -8,22 +8,24 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 )
 
+// Client fetches things from the NRTM server, or anywhwere, actually
 type Client interface {
-	getUpdateNotification(string) (nrtm4model.Notification, error)
+	getUpdateNotification(string) (nrtm4model.NotificationJSON, error)
 	getResponseBody(string) (io.Reader, error)
 }
 
-type HttpClient struct{}
+// HTTPClient implementation of Client
+type HTTPClient struct{}
 
-func (cl HttpClient) getUpdateNotification(url string) (nrtm4model.Notification, error) {
-	var file nrtm4model.Notification
+func (cl HTTPClient) getUpdateNotification(url string) (nrtm4model.NotificationJSON, error) {
+	var file nrtm4model.NotificationJSON
 	if err := cl.getObject(url, &file); err != nil {
 		return file, err
 	}
 	return file, nil
 }
 
-func (cl HttpClient) getResponseBody(url string) (io.Reader, error) {
+func (cl HTTPClient) getResponseBody(url string) (io.Reader, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -31,7 +33,7 @@ func (cl HttpClient) getResponseBody(url string) (io.Reader, error) {
 	return resp.Body, err
 }
 
-func (cl HttpClient) getObject(url string, obj any) error {
+func (cl HTTPClient) getObject(url string, obj any) error {
 	var resp *http.Response
 	var err error
 	if resp, err = http.Get(url); err != nil {

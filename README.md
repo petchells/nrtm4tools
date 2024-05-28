@@ -2,7 +2,7 @@
 
 ## Introduction
 
-nrtm4client is a tool for communicating with an [NRTMv4 server](https://www.ietf.org/archive/id/draft-ietf-grow-nrtm-v4-02.html). It can synchronize NTRM sources with a database (PostgreSQL currently) and validate the synchronization status of one or more NRTM servers.
+nrtm4client is a tool for communicating with an [NRTMv4 server](https://github.com/mxsasha/nrtmv4). It can synchronize NTRM sources with a database (PostgreSQL currently) and validate the synchronization status of one or more NRTM servers.
 
 ## Build
 
@@ -11,23 +11,18 @@ nrtm4client is a tool for communicating with an [NRTMv4 server](https://www.ietf
 * [tern](https://github.com/JackC/tern) v1.13.0 for PostgreSQL migrations
 
 
-## Database
+## PostgreSQL Database
 
-### Set up a PostgreSQL database
+### Create role and DB
 
 	createuser -h localhost nrtm4
 	createdb -h localhost -O nrtm4 nrtm4
 	createuser -h localhost nrtm4_test
-	createdb -h localhost -O nrtm4_test nrtm_test
+	createdb -h localhost -O nrtm4_test nrtm4_test
 
-link to docker
+### Initialize schema
 
-* Create role and DB
-* Configure and run Tern to migrate db
-* Script for doing this on a non-dev machine
-* Configure Env/Flags PG_DATABASE_URL
-
-### Build and dev targets
+	make migrate
 
 ## Running nrtm4client
 

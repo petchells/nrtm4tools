@@ -16,7 +16,7 @@ import (
 
 type stubRepo struct {
 	t     *testing.T
-	state persist.NRTMState
+	state persist.NRTMFile
 	err   error
 }
 
@@ -24,23 +24,31 @@ func (r stubRepo) Initialize(dbURL string) error {
 	return nil
 }
 
+func (r stubRepo) GetSources() []persist.NRTMSource {
+	return []persist.NRTMSource{}
+}
+
+func (r stubRepo) CreateSource(label string, source string, notificationURL string, pathOnDisk string) (*persist.NRTMSource, error) {
+	return &persist.NRTMSource{}, nil
+}
+
 func (r stubRepo) Close() error {
 	return nil
 }
 
-func (r stubRepo) SaveSnapshotFile(state persist.NRTMState, snapshotFile nrtm4model.SnapshotFile) error {
+func (r stubRepo) SaveSnapshotFile(source persist.NRTMSource, tate persist.NRTMFile, snapshotFile nrtm4model.SnapshotFileJSON) error {
 	return nil
 }
 
-func (r stubRepo) SaveSnapshotObject(state persist.NRTMState, rpslObject rpsl.Rpsl) error {
+func (r stubRepo) SaveSnapshotObject(source persist.NRTMSource, state persist.NRTMFile, rpslObject rpsl.Rpsl) error {
 	return nil
 }
 
-func (r stubRepo) SaveSnapshotObjects(state persist.NRTMState, rpslObject []rpsl.Rpsl) error {
+func (r stubRepo) SaveSnapshotObjects(source persist.NRTMSource, state persist.NRTMFile, rpslObject []rpsl.Rpsl) error {
 	return nil
 }
 
-func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
+func (r stubRepo) GetState(source string) (persist.NRTMFile, error) {
 	state := r.state
 	if r.err != nil {
 		return state, &persist.ErrStateNotInitialized
@@ -52,13 +60,13 @@ func (r stubRepo) GetState(source string) (persist.NRTMState, error) {
 	return state, &persist.ErrStateNotInitialized
 }
 
-func (r stubRepo) SaveState(state *persist.NRTMState) error {
+func (r stubRepo) SaveFile(nrtmFile *persist.NRTMFile) error {
 	expected := "notification.json"
-	if state.FileName == expected {
-		r.state = *state
+	if nrtmFile.FileName == expected {
+		r.state = *nrtmFile
 		return nil
 	}
-	r.t.Error("SaveState failed. expected file name", expected, "but was", state.FileName)
+	r.t.Error("SaveFile failed. expected file name", expected, "but was", nrtmFile.FileName)
 	return nil
 }
 
@@ -70,8 +78,8 @@ func NewStubClient(t *testing.T) Client {
 	return stubClient{t}
 }
 
-func (c stubClient) getUpdateNotification(url string) (nrtm4model.Notification, error) {
-	var file nrtm4model.Notification
+func (c stubClient) getUpdateNotification(url string) (nrtm4model.NotificationJSON, error) {
+	var file nrtm4model.NotificationJSON
 	if url == stubNotificationURL {
 		json.Unmarshal([]byte(notificationExample), &file)
 		return file, nil
