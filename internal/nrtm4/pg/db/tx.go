@@ -23,7 +23,7 @@ func InitializeConnectionPool(url string) error {
 		return err
 	}
 	pool = p
-	log.Println("INFO maximum db pool connections", p.Config().MaxConns)
+	logger.Info("Number of db pool connections", "max", p.Config().MaxConns)
 	return nil
 }
 
@@ -46,7 +46,7 @@ func WithTransaction(fn TxFn) error {
 		} else {
 			err = tx.Commit(context.Background())
 			if err != nil {
-				log.Println("ERROR WithTransaction Commit", err)
+				logger.Error("WithTransaction Commit", err)
 			}
 		}
 	}()

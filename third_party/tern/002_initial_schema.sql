@@ -42,6 +42,7 @@ create table nrtm_rpslobject (
 );
 
 ---- create above / drop below ----
+
 drop table nrtm_rpslobject;
 drop index nrtm_file__source_version_idx;
 drop table nrtm_file;

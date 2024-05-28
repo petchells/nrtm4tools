@@ -51,7 +51,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	}
 	defer snapshotFile.Close()
 
-	source := persist.NewNRTMSource(notification, "")
+	source := persist.NewNRTMSource(notification, "", notificationURL)
 	if source, err = ds.saveNewSource(source); err != nil {
 		logger.Error("saving new source. Remove Source and restart sync", err)
 		return err
@@ -60,6 +60,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 		logger.Error("when inserting snapshot records. Remove Source and restart sync", err)
 		return err
 	}
+	//source.Version =
 	return nil
 }
 
@@ -90,6 +91,7 @@ func (p NRTMProcessor) storeSnapshotInEmptyDirectory(snapshotURL string) (*os.Fi
 func (p NRTMProcessor) insertSnapshotRecords(source persist.NRTMSource, snapshotOSFile *os.File) error {
 	defer snapshotOSFile.Close()
 	fm := fileManager{client: p.client}
+	//fm.readSnapshotRecords()
 	if err := fm.readSnapshotRecords(snapshotOSFile, snapshotObjectInsertionFunc(p.repo, source)); err != io.EOF {
 		logger.Warn("Failed to initialize source", "source", source, err)
 		return err
@@ -192,12 +194,19 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSource, error) {
 // 	ds.applyDeltas(notification.Source, []nrtm4model.Change{})
 // }
 
+func snapshotHeaderFunc(repo persist.Repository, source persist.NRTMSource) jsonseq.RecordReaderFunc {
+	return func(bytes []byte, err error) error {
+		return nil
+	}
+}
+
 func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSource) jsonseq.RecordReaderFunc {
 
 	successfulObjects := 0
 	failedObjects := 0
 
 	var rpslObjects []rpsl.Rpsl
+	var snapshotHeader *nrtm4model.SnapshotFileJSON
 
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
@@ -214,7 +223,13 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 				}
 				successfulObjects++
 				rpslObjects = append(rpslObjects, rpsl)
-				return repo.SaveSnapshotObjects(source, rpslObjects)
+				err = repo.SaveSnapshotObjects(source, rpslObjects)
+				if err != nil {
+					return err
+				}
+				source.Version = snapshotHeader.Version
+				_, err = repo.SaveSource(source)
+				return err
 			}
 			return err
 		} else if err != nil {
@@ -229,6 +244,7 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedObjects)
 				return err
 			}
+			snapshotHeader = sf
 			return nil
 		} else {
 			// Subsequent records are objects

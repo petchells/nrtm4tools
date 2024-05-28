@@ -20,12 +20,13 @@ type NRTMSource struct {
 }
 
 // NewNRTMSource prepares a new source object
-func NewNRTMSource(notification nrtm4model.NotificationJSON, label string) NRTMSource {
+func NewNRTMSource(notification nrtm4model.NotificationJSON, label string, notificationURL string) NRTMSource {
 	return NRTMSource{
-		Source:    notification.Source,
-		SessionID: notification.SessionID,
-		Version:   notification.Version,
-		Label:     label,
+		Source:          notification.Source,
+		SessionID:       notification.SessionID,
+		Version:         notification.Version,
+		Label:           label,
+		NotificationURL: notificationURL,
 	}
 }
 

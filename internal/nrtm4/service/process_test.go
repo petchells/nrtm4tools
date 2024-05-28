@@ -21,15 +21,31 @@ func TestE2EInstallSource(t *testing.T) {
 	if err != nil {
 		t.Fatal("Could not create temp test directory")
 	}
-	defer func() {
-		os.RemoveAll(tmpDir)
-	}()
+	defer os.RemoveAll(tmpDir)
+
 	conf := AppConfig{
 		NRTMFilePath: tmpDir,
 	}
 	processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
 	if err = processor.Connect(stubNotificationURL, ""); err != nil {
-		t.Error("Failed to Connect", err)
+		t.Fatal("Failed to Connect", err)
+	}
+	sources, err := processor.ListSources()
+	if len(sources) != 1 {
+		t.Error("Should only be a single source")
+	}
+	src := sources[0]
+	if src.Source != "EXAMPLE" {
+		t.Error("Source should be EXAMPLE")
+	}
+	if src.Version != 3 {
+		t.Error("Version should be 3")
+	}
+	if src.NotificationURL != stubNotificationURL {
+		t.Error("NotificationURL should be", stubNotificationURL)
+	}
+	if src.SessionID != "XXX" {
+		t.Error("SessionID should be XXX")
 	}
 }
 

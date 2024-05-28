@@ -50,7 +50,7 @@ func (repo *PostgresRepository) SaveSource(source persist.NRTMSource) (persist.N
 			return db.Create(tx, &pgSource)
 		}
 		pgSource = pgpersist.FromNRTMSource(source)
-		return db.Update(tx, pgSource)
+		return db.Update(tx, &pgSource)
 	})
 	return pgSource.AsNRTMSource(), err
 }

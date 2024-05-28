@@ -51,10 +51,11 @@ func FromNRTMSource(source persist.NRTMSource) NRTMSource {
 func (s *NRTMSource) AsNRTMSource() persist.NRTMSource {
 	return persist.NRTMSource{
 		ID:              s.ID,
-		Created:         s.Created,
-		Label:           s.Label,
 		Source:          s.Source,
-		NotificationURL: s.NotificationURL,
+		SessionID:       s.SessionID,
 		Version:         s.Version,
+		NotificationURL: s.NotificationURL,
+		Label:           s.Label,
+		Created:         s.Created,
 	}
 }
