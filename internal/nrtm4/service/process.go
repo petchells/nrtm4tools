@@ -4,12 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
-	"os"
-	"path/filepath"
+	"sort"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 )
@@ -35,8 +32,9 @@ type NRTMProcessor struct {
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {
-	dl := downloader{}
-	notification, errs := dl.downloadNotificationFile(p.client, notificationURL)
+	fm := fileManager{p.client}
+	logger.Info("Fetching notification")
+	notification, errs := fm.downloadNotificationFile(notificationURL)
 	if len(errs) > 0 {
 		return errors.New("download error(s): " + errs[0].Error())
 	}
@@ -44,59 +42,60 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	if ds.getSourceByURLAndLabel(notificationURL, label) != nil {
 		return errors.New("source already exists")
 	}
-	// Download snapshot
-	snapshotFile, err := p.storeSnapshotInEmptyDirectory(notification.SnapshotRef.URL)
+	err := fm.ensureDirectoryExists(p.config.NRTMFilePath)
 	if err != nil {
 		return err
 	}
-	defer snapshotFile.Close()
-
-	source := persist.NewNRTMSource(notification, "", notificationURL)
-	if source, err = ds.saveNewSource(source); err != nil {
-		logger.Error("saving new source. Remove Source and restart sync", err)
+	// Download snapshot
+	logger.Info("Fetching snapshot file...")
+	snapshotFile, err := fm.fetchFileAndCheckHash(notification.SnapshotRef, p.config.NRTMFilePath)
+	if err != nil {
 		return err
 	}
-	if err = p.insertSnapshotRecords(source, snapshotFile); err != nil {
+	logger.Info("Snapshot file downloaded")
+	defer snapshotFile.Close()
+
+	logger.Info("Saving new source", "source", notification.Source)
+	source := persist.NewNRTMSource(notification, label, notificationURL)
+	if source, err = ds.saveNewSource(source); err != nil {
+		logger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
+		return err
+	}
+	logger.Info("Inserting snapshot objects")
+	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification.SnapshotRef)); err != io.EOF {
 		logger.Error("when inserting snapshot records. Remove Source and restart sync", err)
 		return err
 	}
-	//source.Version =
-	return nil
+	return p.syncDeltas(notification, source)
 }
 
-func (p NRTMProcessor) storeSnapshotInEmptyDirectory(snapshotURL string) (*os.File, error) {
-	fm := fileManager{client: p.client}
-	snapshotOSFile, err := os.Open(filepath.Join(p.config.NRTMFilePath, filepath.Base(snapshotURL)))
-	if err != nil {
-		if err = os.RemoveAll(p.config.NRTMFilePath); err != nil {
-			logger.Warn("removed existing directory", err)
-		}
-		err = os.Mkdir(p.config.NRTMFilePath, 0755)
-		if err != nil {
-			log.Fatal(err)
-		}
-		logger.Info("Created path", "path", p.config.NRTMFilePath)
-		logger.Info("Downloading snapshot", "url", snapshotURL)
-		if snapshotOSFile, err = fm.writeResourceToPath(snapshotURL, p.config.NRTMFilePath); err != nil {
-			log.Fatal(err)
-		}
-		if err != nil {
-			logger.Error("failed to write snapshot", "url", snapshotURL, "path", p.config.NRTMFilePath)
-			return nil, err
-		}
+// Update brings the local mirror up to date
+func (p NRTMProcessor) Update(sourceName string, label string) error {
+	ds := NrtmDataService{Repository: p.repo}
+	source := ds.getSourceByNameAndLabel(sourceName, label)
+	if source == nil {
+		logger.Warn("No source with given name and label", "name", sourceName, "label", label)
+		return errors.New("no source found")
 	}
-	return snapshotOSFile, err
-}
-
-func (p NRTMProcessor) insertSnapshotRecords(source persist.NRTMSource, snapshotOSFile *os.File) error {
-	defer snapshotOSFile.Close()
-	fm := fileManager{client: p.client}
-	//fm.readSnapshotRecords()
-	if err := fm.readSnapshotRecords(snapshotOSFile, snapshotObjectInsertionFunc(p.repo, source)); err != io.EOF {
-		logger.Warn("Failed to initialize source", "source", source, err)
-		return err
+	fm := fileManager{p.client}
+	notification, errs := fm.downloadNotificationFile(source.NotificationURL)
+	if len(errs) > 0 {
+		for _, e := range errs {
+			logger.Error("Problem downloading notification file", "error", e)
+		}
+		return errors.New("problem downloading notification file")
 	}
-	return nil
+	if notification.SessionID != source.SessionID {
+		return errors.New("server has a new mirror session")
+	}
+	if notification.Version < source.Version {
+		return errors.New("server has old version")
+	}
+	if notification.Version == source.Version {
+		logger.Info("Already at latest version")
+		return nil
+	}
+	return p.syncDeltas(notification, *source)
 }
 
 // ListSources shows all sources
@@ -105,108 +104,85 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSource, error) {
 	return ds.getSources()
 }
 
-// UpdateNRTM updates the repo using data fetched from the client at the given url, storing files in nrtmFilePath
-// func (p NRTMProcessor) UpdateNRTM(source string, label string) {
-// 	ds := NrtmDataService{Repository: p.repo}
-// 	src, err := ds.fetchSource(source, label)
-// 	if err != nil {
-// 		log.Println("ERROR UpdateNRTM", err)
-// 		return
-// 	}
+func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source persist.NRTMSource) error {
+	logger.Info("Looking for deltas")
+	deltaRefs := []persist.FileRefJSON{}
+	for _, deltaRef := range *notification.DeltaRefs {
+		if deltaRef.Version > source.Version {
+			deltaRefs = append(deltaRefs, deltaRef)
+		}
+	}
+	if len(deltaRefs) == 0 {
+		return errors.New("restart sync mirror is too old")
+	}
+	logger.Info("Found deltas", "numdeltas", len(deltaRefs))
+	sort.Sort(fileRefsByVersion(deltaRefs))
+	fm := fileManager{p.client}
+	for _, deltaRef := range deltaRefs {
+		logger.Info("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
+		file, err := fm.fetchFileAndCheckHash(deltaRef, p.config.NRTMFilePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, deltaRef)); err != io.EOF {
+			logger.Warn("Failed to apply delta", "source", source, err)
+			return err
+		}
+	}
+	logger.Info("Finished syncing deltas")
+	return nil
+}
 
-// 	dl := downloader{}
-// 	notification, err := dl.downloadNotificationFile(p.client, src.URL)
-// 	if err != nil {
-// 		log.Println("ERROR UpdateNRTM", err)
-// 		return
-// 	}
-// 	state, clientErr := repo.GetState(notification.Source)
-// 	if clientErr == &persist.ErrStateNotInitialized {
-// 		log.Println("INFO No previous state found. Initializing")
-// 		fileName, err := fileNameFromURLString(url)
-// 		if err != nil {
-// 			log.Println("ERROR URL:", url, err)
-// 			return
-// 		}
-// 		state := persist.NRTMFile{
-// 			ID:           0,
-// 			Created:      time.Now().UTC(),
-// 			NrtmSourceID: notification.Source,
-// 			Version:      notification.Version,
-// 			URL:          url,
-// 			Type:         persist.NotificationFile,
-// 			FileName:     fileName,
-// 		}
-// 		if err = repo.SaveFile(&state); err != nil {
-// 			log.Println("ERROR Saving state", err)
-// 			return
-// 		}
-// 		fm := fileManager{repo: repo, client: client}
-// 		// save notification file to disk and nrtmstate table
-// 		snapshotOSFile, err := os.Open(filepath.Join(nrtmFilePath, filepath.Base(notification.Snapshot.Url)))
-// 		if err != nil {
-// 			if err = os.RemoveAll(nrtmFilePath); err != nil {
-// 				log.Println("WARNING removed existing directory", err)
-// 			}
-// 			err = os.Mkdir(nrtmFilePath, 0755)
-// 			if err != nil {
-// 				log.Fatal(err)
-// 			}
-// 			log.Println("INFO Created path", nrtmFilePath)
-// 			log.Println("INFO Downloading snapshot", notification.Snapshot.Url)
-// 			if snapshotOSFile, err = fm.writeResourceToPath(notification.Snapshot.Url, nrtmFilePath); err != nil {
-// 				log.Fatal(err)
-// 			}
-// 			if err != nil {
-// 				log.Println("ERROR failed to write snapshot", notification.Snapshot.Url, "to", nrtmFilePath)
-// 				return
-// 			}
-// 		}
-// 		defer snapshotOSFile.Close()
-
-// 		if err = fm.readSnapshotRecords(snapshotOSFile, snapshotRecordReaderFunc(repo, state)); err != io.EOF {
-// 			log.Println("WARN failed to initialize source", state, err)
-// 			return
-// 		}
-// 		var stateErr error
-// 		if state, stateErr = repo.GetState(notification.Source); stateErr != nil {
-// 			log.Println("ERROR failed to retrieve initial state", stateErr)
-// 			return
-// 		}
-// 		log.Println("INFO new state", state)
-// 	} else if clientErr != nil {
-// 		log.Println("ERROR Database error", clientErr)
-// 		return
-// 	}
-
-// 	// -- compare with latest notification
-// 	//    * is version newer? if not then blow
-// 	//    * are there contiguous deltas since our last delta? if not, download snapshot
-// 	//    * apply deltas
-// 	log.Println("DEBUG Current:", state.Version, "Notification file:", notification.Version)
-// 	if state.Version >= notification.Version {
-// 		log.Println("INFO Nothing to do: version is up to date.")
-// 		return
-// 	}
-// 	log.Println("DEBUG Applying deltas >", state.Version, "up to", notification.Version)
-// 	// TODO:
-// 	// Get the actual deltas
-// 	ds.applyDeltas(notification.Source, []nrtm4model.Change{})
-// }
-
-func snapshotHeaderFunc(repo persist.Repository, source persist.NRTMSource) jsonseq.RecordReaderFunc {
+func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
+	var header *persist.DeltaFileJSON
 	return func(bytes []byte, err error) error {
-		return nil
+		if err == &persist.ErrNoEntity {
+			logger.Warn("error empty JSON", err)
+			return err
+		}
+		if err == nil || err == io.EOF {
+			if header == nil {
+				deltaHeader := new(persist.DeltaFileJSON)
+				if err = json.Unmarshal(bytes, deltaHeader); err != nil {
+					return err
+				}
+				if err = validateDeltaHeader(deltaHeader.NrtmFileJSON, source, deltaRef); err != nil {
+					return err
+				}
+				header = deltaHeader
+				source.Version = deltaRef.Version
+				_, err = repo.SaveSource(source)
+				return err
+			}
+			delta := new(persist.DeltaJSON)
+			if err = json.Unmarshal(bytes, delta); err != nil {
+				return err
+			}
+			if delta.Action == persist.DeltaAddModifyAction {
+				rpsl, err := rpsl.ParseString(*delta.Object)
+				if err != nil {
+					return err
+				}
+				repo.AddModifyObject(source, rpsl, header.NrtmFileJSON)
+			} else if delta.Action == persist.DeltaDeleteAction {
+				repo.DeleteObject(source, *delta.ObjectClass, *delta.PrimaryKey, header.NrtmFileJSON)
+			} else {
+				return errors.New("no action available: " + delta.Action)
+			}
+			return nil
+		}
+		return err
 	}
 }
 
-func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSource) jsonseq.RecordReaderFunc {
+func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, fileRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
 
 	successfulObjects := 0
 	failedObjects := 0
 
 	var rpslObjects []rpsl.Rpsl
-	var snapshotHeader *nrtm4model.SnapshotFileJSON
+	var snapshotHeader *persist.SnapshotFileJSON
 
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
@@ -214,8 +190,8 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 			return err
 		}
 		if err == io.EOF {
-			// Expected error: end of snapshot objects. Round them up and save them.
-			so := new(nrtm4model.SnapshotObjectJSON)
+			// Expected error reading to end of snapshot objects. Round them up and save them.
+			so := new(persist.SnapshotObjectJSON)
 			if err = json.Unmarshal(bytes, so); err == nil {
 				rpsl, err := rpsl.ParseString(so.Object)
 				if err != nil {
@@ -223,7 +199,7 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 				}
 				successfulObjects++
 				rpslObjects = append(rpslObjects, rpsl)
-				err = repo.SaveSnapshotObjects(source, rpslObjects)
+				err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
 				if err != nil {
 					return err
 				}
@@ -239,16 +215,19 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 		} else if successfulObjects == 0 {
 			// First record is the Snapshot header
 			successfulObjects++
-			sf := new(nrtm4model.SnapshotFileJSON)
+			sf := new(persist.SnapshotFileJSON)
 			if err = json.Unmarshal(bytes, sf); err != nil {
 				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedObjects)
 				return err
+			}
+			if sf.Version != fileRef.Version {
+				return errors.New("snapshot header version does not match its reference")
 			}
 			snapshotHeader = sf
 			return nil
 		} else {
 			// Subsequent records are objects
-			so := new(nrtm4model.SnapshotObjectJSON)
+			so := new(persist.SnapshotObjectJSON)
 			if err = json.Unmarshal(bytes, so); err == nil {
 				rpsl, err := rpsl.ParseString(so.Object)
 				if err != nil {
@@ -258,7 +237,7 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 				successfulObjects++
 				rpslObjects = append(rpslObjects, rpsl)
 				if len(rpslObjects) >= rpslInsertBatchSize {
-					err = repo.SaveSnapshotObjects(source, rpslObjects)
+					err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
 					if err != nil {
 						return err
 					}
@@ -271,4 +250,23 @@ func snapshotObjectInsertionFunc(repo persist.Repository, source persist.NRTMSou
 			return err
 		}
 	}
+}
+
+func validateDeltaHeader(file persist.NrtmFileJSON, source persist.NRTMSource, deltaRef persist.FileRefJSON) error {
+	if file.NrtmVersion != 4 {
+		return errors.New("nrtm version is not 4")
+	}
+	if file.SessionID != source.SessionID {
+		return errors.New("session id does not match source")
+	}
+	if file.Source != source.Source {
+		return errors.New("source name does not match source")
+	}
+	if file.Version != deltaRef.Version {
+		return errors.New("file version does not match its reference")
+	}
+	if file.Version < source.Version {
+		return errors.New("version is lower than source")
+	}
+	return nil
 }

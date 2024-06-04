@@ -2,7 +2,6 @@ package nrtm4
 
 import (
 	"log"
-	"os"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg"
@@ -13,13 +12,13 @@ import (
 var logger = util.Logger
 
 // LaunchPg launch with PostgreSQL database
-func LaunchPg(config service.AppConfig) {
+func LaunchPg(config service.AppConfig, args []string) {
 	repo := pg.PostgresRepository{}
 	if err := repo.Initialize(config.PgDatabaseURL); err != nil {
 		log.Fatal("Failed to initialize repository")
 	}
 	defer repo.Close()
-	connect(&repo, config)
+	launch(&repo, config, args)
 }
 
 // LaunchBolt launch with Bolt database
@@ -32,14 +31,38 @@ func LaunchPg(config service.AppConfig) {
 // 	update(&repo, config)
 // }
 
-func connect(repo persist.Repository, config service.AppConfig) {
+func launch(repo persist.Repository, config service.AppConfig, args []string) {
 	logger.Debug("Launch()", "config", config)
-	logger.Debug("Arguments", "args", os.Args)
-	if len(os.Args) < 3 {
+	logger.Info("Arguments", "args", args)
+	if len(args) < 2 {
 		logger.Error("Not sure what to do. Exiting.")
 		return
 	}
 	var httpClient service.HTTPClient
-	commander := service.NewCommandProcessor(config, repo, httpClient)
-	commander.Connect(os.Args[2], "")
+	processor := service.NewNRTMProcessor(config, repo, httpClient)
+	commander := service.NewCommandProcessor(processor)
+	cmd := args[0]
+	if cmd == "connect" {
+		url := args[1]
+		var label string
+		if len(args) > 3 {
+			logger.Error("Not a command")
+		}
+		if len(args) == 3 {
+			label = args[2]
+		}
+		commander.Connect(url, label)
+	} else if cmd == "update" {
+		var sourceName = args[1]
+		var label string
+		if len(args) > 3 {
+			logger.Error("Not a command")
+		}
+		if len(args) == 3 {
+			label = args[2]
+		}
+		commander.Update(sourceName, label)
+	} else {
+		logger.Error("Not a command")
+	}
 }

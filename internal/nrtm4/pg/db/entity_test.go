@@ -41,7 +41,7 @@ func TestColumnNameConversionFromFieldTags(t *testing.T) {
 }
 
 func TestColumnNameWithAliasConversionFromFieldTags(t *testing.T) {
-	expected := [4]string{"o.id o_id", "o.updated o_updated", "o.name o_name", "o.legal_name o_legal_name"}
+	expected := [4]string{"o.id o_id", "o.updated o_updated", "o.name o_name", "o.quantity o_quantity"}
 	o := testOrg{}
 	names := columnNamesWithAlias(&o)
 	if len(expected) != len(names) {
@@ -58,14 +58,14 @@ func TestScannableFields(t *testing.T) {
 	u := new(testOrg)
 	dtor := GetDescriptor(u)
 	ns := dtor.columnNames
-	expect := "id, updated, name, legal_name"
+	expect := "id, updated, name, quantity"
 	if expect != strings.Join(ns, ", ") {
 		t.Errorf("got '%v' expected '%v'", strings.Join(ns, ", "), expect)
 	}
 }
 
 func TestScannableFieldsAndValues(t *testing.T) {
-	o := filledNewOrg(t)
+	o := filledNewOrg()
 	f := SelectValues(&o)
 	sc := []interface{}{
 		&o.ID,
@@ -83,7 +83,7 @@ func TestScannableFieldsAndValues(t *testing.T) {
 	}
 }
 
-func filledNewOrg(t *testing.T) testOrg {
+func filledNewOrg() testOrg {
 	id := int64(123)
 	dateStr := "2020-01-18T08:15:00Z"
 	dt, _ := time.Parse(time.RFC3339, dateStr)

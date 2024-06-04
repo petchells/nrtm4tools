@@ -1,4 +1,4 @@
-package nrtm4model
+package persist
 
 const (
 	// DeltaDeleteAction NRTM4 code for a delete operation
@@ -9,7 +9,7 @@ const (
 
 // FileRefJSON json model of a file reference in a Notification file
 type FileRefJSON struct {
-	Version uint   `json:"version"`
+	Version uint32 `json:"version"`
 	URL     string `json:"url"`
 	Hash    string `json:"hash"`
 }

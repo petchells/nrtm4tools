@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
 func TestJSONSequenceParser(t *testing.T) {
@@ -16,7 +16,7 @@ func TestJSONSequenceParser(t *testing.T) {
 	i := 0
 	err := ReadStringRecords(snapshotExample, func(possJsonBytes []byte, err error) error {
 		if i == 0 {
-			snapshot := new(nrtm4model.SnapshotFileJSON)
+			snapshot := new(persist.SnapshotFileJSON)
 			err = json.Unmarshal(possJsonBytes, snapshot)
 			if err != nil {
 				t.Fatal(err)
@@ -25,7 +25,7 @@ func TestJSONSequenceParser(t *testing.T) {
 				t.Fatal("Expected", sessionID, "but was", snapshot.SessionID)
 			}
 		} else if i == 1 {
-			object := new(nrtm4model.SnapshotObjectJSON)
+			object := new(persist.SnapshotObjectJSON)
 			err = json.Unmarshal(possJsonBytes, object)
 			if err != nil {
 				t.Fatal(err)
@@ -36,7 +36,7 @@ func TestJSONSequenceParser(t *testing.T) {
 		} else if i > 2 {
 			t.Fatal("Expected three JSON entities")
 		}
-		i += 1
+		i++
 		return nil
 	})
 	if err != io.EOF {

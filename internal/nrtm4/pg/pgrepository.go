@@ -2,6 +2,8 @@ package pg
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -77,23 +79,12 @@ func (repo *PostgresRepository) SaveFile(nrtmFile *persist.NRTMFile) error {
 	})
 }
 
-// SaveSnapshotObject save am RPSL object
-func (repo *PostgresRepository) SaveSnapshotObject(source persist.NRTMSource, rpslObject rpsl.Rpsl) error {
-	return db.WithTransaction(func(tx pgx.Tx) error {
-		rpslObjectDB := pgpersist.RPSLObject{
-			ID:           uint64(db.NextID()),
-			ObjectType:   rpslObject.ObjectType,
-			RPSL:         rpslObject.Payload,
-			PrimaryKey:   rpslObject.PrimaryKey,
-			NRTMSourceID: source.ID,
-			FromVersion:  source.Version,
-		}
-		return db.Create(tx, &rpslObjectDB)
-	})
-}
-
 // SaveSnapshotObjects saves a list of rpsl object in a go routine
-func (repo *PostgresRepository) SaveSnapshotObjects(source persist.NRTMSource, rpslObjects []rpsl.Rpsl) error {
+func (repo *PostgresRepository) SaveSnapshotObjects(
+	source persist.NRTMSource,
+	rpslObjects []rpsl.Rpsl,
+	file persist.NrtmFileJSON,
+) error {
 
 	ch := make(chan error)
 	updateDB := func(ch chan error) {
@@ -105,15 +96,20 @@ func (repo *PostgresRepository) SaveSnapshotObjects(source persist.NRTMSource, r
 					uint64(db.NextID()),
 					rpslObject.ObjectType,
 					rpslObject.PrimaryKey,
-					rpslObject.Payload,
 					source.ID,
-					source.Version,
+					file.Version,
 					0,
+					rpslObject.Payload,
 				}
 				inputRows = append(inputRows, inputRow)
 			}
 			rpslDescriptor := db.GetDescriptor(&pgpersist.RPSLObject{})
-			_, err = tx.CopyFrom(context.Background(), pgx.Identifier{rpslDescriptor.TableName()}, rpslDescriptor.ColumnNames(), pgx.CopyFromRows(inputRows))
+			_, err = tx.CopyFrom(
+				context.Background(),
+				pgx.Identifier{rpslDescriptor.TableName()},
+				rpslDescriptor.ColumnNames(),
+				pgx.CopyFromRows(inputRows),
+			)
 			if err != nil {
 				types := util.NewSet[string]()
 				for _, inp := range rpslObjects {
@@ -130,25 +126,81 @@ func (repo *PostgresRepository) SaveSnapshotObjects(source persist.NRTMSource, r
 	return <-ch
 }
 
-// GetState get the last known state for the source
-func (repo *PostgresRepository) GetState(source string) (persist.NRTMFile, error) {
-	var state persist.NRTMFile
-	var dbstate *pgpersist.NRTMFile
-	err := db.WithTransaction(func(tx pgx.Tx) error {
-		dbstate = pgpersist.GetLastState(tx, source)
-		if dbstate == nil {
-			return &persist.ErrStateNotInitialized
-		}
-		return nil
-	})
-	if err != nil {
-		return state, err
+// AddModifyObject updates an RPSL object by setting `to_version` and inserting a new row
+func (repo *PostgresRepository) AddModifyObject(
+	source persist.NRTMSource,
+	rpsl rpsl.Rpsl,
+	file persist.NrtmFileJSON,
+) error {
+	rpslObject := new(pgpersist.RPSLObject)
+	newRow := pgpersist.RPSLObject{
+		ID:           db.NextID(),
+		ObjectType:   rpsl.ObjectType,
+		PrimaryKey:   rpsl.PrimaryKey,
+		NRTMSourceID: source.ID,
+		FromVersion:  file.Version,
+		RPSL:         rpsl.Payload,
 	}
-	state.ID = dbstate.ID
-	state.Created = dbstate.Created
-	state.Version = dbstate.Version
-	state.URL = dbstate.URL
-	state.Type, _ = persist.ToFileType(dbstate.Type)
-	state.FileName = dbstate.FileName
-	return state, nil
+	return db.WithTransaction(func(tx pgx.Tx) error {
+		err := deleteObject(tx, source, rpslObject, rpsl.ObjectType, rpsl.PrimaryKey, file)
+		if err == nil || err == pgx.ErrNoRows {
+			return db.Create(tx, &newRow)
+		}
+		return err
+	})
+}
+
+// DeleteObject deletes an RPSL object by setting `to_version`
+func (repo *PostgresRepository) DeleteObject(
+	source persist.NRTMSource,
+	objectType string,
+	primaryKey string,
+	file persist.NrtmFileJSON,
+) error {
+	rpslObject := new(pgpersist.RPSLObject)
+	return db.WithTransaction(func(tx pgx.Tx) error {
+		return deleteObject(tx, source, rpslObject, objectType, primaryKey, file)
+	})
+}
+
+func deleteObject(
+	tx pgx.Tx,
+	source persist.NRTMSource,
+	rpslObject *pgpersist.RPSLObject,
+	objectType string,
+	primaryKey string,
+	file persist.NrtmFileJSON,
+) error {
+	sql := selectObjectQuery(source, rpslObject)
+	err := tx.QueryRow(context.Background(), sql, source.Source, primaryKey, objectType).Scan(db.SelectValues(rpslObject)...)
+	if err != nil {
+		return err
+	}
+	rpslObject.ToVersion = file.Version
+	return db.Update(tx, rpslObject)
+}
+
+func selectObjectQuery(source persist.NRTMSource, rpslObject *pgpersist.RPSLObject) string {
+	src := pgpersist.FromNRTMSource(source)
+	srcDesc := db.GetDescriptor(&src)
+	rpslObjectDesc := db.GetDescriptor(rpslObject)
+	return fmt.Sprintf(`
+		SELECT %v
+		FROM %v
+		JOIN %v ON %v.id = %v.nrtm_source_id
+		WHERE
+			%v.source ilike($1)
+			AND upper(%v.primary_key) = upper($2)
+			AND %v.object_type = upper($3)
+			AND %v.to_version = 0`,
+		strings.Join(rpslObjectDesc.ColumnNamesWithAlias(), ", "),
+		rpslObjectDesc.TableNameWithAlias(),
+		srcDesc.TableNameWithAlias(),
+		srcDesc.TableAlias(),
+		rpslObjectDesc.TableAlias(),
+		srcDesc.TableAlias(),
+		rpslObjectDesc.TableAlias(),
+		rpslObjectDesc.TableAlias(),
+		rpslObjectDesc.TableAlias(),
+	)
 }

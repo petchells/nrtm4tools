@@ -48,9 +48,8 @@ func TestErrorThrownForBadRPSL(t *testing.T) {
 }
 
 func TestRpslParsePerson(t *testing.T) {
-	str := `#
-	#
-	person:      Daniel Karrenberg
+	str := `
+	person:      Daniel Karrenberg # is a person
     address:     RIPE Network Coordination Centre (NCC)
     address:     Singel 258
     address:     NL-1016 AB  Amsterdam
@@ -58,10 +57,10 @@ func TestRpslParsePerson(t *testing.T) {
     phone:       +31 20 535 4444
     fax-no:      +31 20 535 4445
     e-mail:      Daniel.Karrenberg@ripe.net
-    nic-hdl:     DK58
+    nic-hdl:     DK58 # xxxxxx
     changed:     Daniel.Karrenberg@ripe.net 19970616
     source:      RIPE`
-	objectType := "person"
+	objectType := "PERSON"
 	source := "RIPE"
 	primaryKey := "DK58"
 
@@ -82,7 +81,7 @@ func TestRpslParsePerson(t *testing.T) {
 }
 
 func TestRpslParseRoute(t *testing.T) {
-	str := `route:          37.37.37.0/24
+	str := `route:          37.37.37.0/24 # road to nowhere
 	descr:          XYZ Network
 	origin:         AS9876
 	mnt-by:         XYZ-MNT
@@ -90,7 +89,7 @@ func TestRpslParseRoute(t *testing.T) {
 	last-modified:  2021-02-22T14:30:00Z
 	source:         RIPE # Filtered
 	`
-	objectType := "route"
+	objectType := "ROUTE"
 	source := "RIPE"
 	primaryKey := "37.37.37.0/24AS9876"
 
@@ -111,7 +110,7 @@ func TestRpslParseRoute(t *testing.T) {
 }
 
 func TestRpslParseASBlock(t *testing.T) {
-	str := `AS-BLOCK:       AS3209 - AS3353
+	str := `AS-BLOCK:       as3209 - as3353
 	descr:          RIPE NCC ASN block
 	remarks:        These AS Numbers are assigned to network operators in the RIPE NCC service region.
 	mnt-by:         RIPE-NCC-HM-MNT
@@ -119,7 +118,7 @@ func TestRpslParseASBlock(t *testing.T) {
 	last-modified:  2018-11-22T15:27:19Z
 	source:         RIPE
 	`
-	objectType := "as-block"
+	objectType := "AS-BLOCK"
 	source := "RIPE"
 	primaryKey := "AS3209 - AS3353"
 

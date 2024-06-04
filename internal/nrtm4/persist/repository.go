@@ -10,7 +10,8 @@ type Repository interface {
 	SaveSource(NRTMSource) (NRTMSource, error)
 	GetSources() ([]NRTMSource, error)
 	SaveFile(*NRTMFile) error
-	SaveSnapshotObject(NRTMSource, rpsl.Rpsl) error
-	SaveSnapshotObjects(NRTMSource, []rpsl.Rpsl) error
+	SaveSnapshotObjects(NRTMSource, []rpsl.Rpsl, NrtmFileJSON) error
+	AddModifyObject(NRTMSource, rpsl.Rpsl, NrtmFileJSON) error
+	DeleteObject(NRTMSource, string, string, NrtmFileJSON) error
 	Close() error
 }

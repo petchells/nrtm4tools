@@ -6,12 +6,12 @@ import (
 
 // RPSLObject is an RPSL object
 type RPSLObject struct {
-	db.EntityManaged `em:"nrtm_rpslobject ro"`
+	db.EntityManaged `em:"nrtm_rpslobject rpsl"`
 	ID               uint64 `em:"."`
 	ObjectType       string `em:"."`
 	PrimaryKey       string `em:"."`
-	RPSL             string `em:"."`
 	NRTMSourceID     uint64 `em:"."`
 	FromVersion      uint32 `em:"."`
 	ToVersion        uint32 `em:"."`
+	RPSL             string `em:"."`
 }

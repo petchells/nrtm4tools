@@ -6,4 +6,12 @@ import (
 )
 
 // Logger global logger
-var Logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+var Logger = slog.New(
+	slog.NewTextHandler(
+		os.Stdout,
+		&slog.HandlerOptions{
+			AddSource: true,
+			Level:     slog.LevelDebug,
+		},
+	),
+)

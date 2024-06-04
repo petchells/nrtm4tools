@@ -5,20 +5,20 @@ import (
 	"io"
 	"net/http"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
 // Client fetches things from the NRTM server, or anywhwere, actually
 type Client interface {
-	getUpdateNotification(string) (nrtm4model.NotificationJSON, error)
+	getUpdateNotification(string) (persist.NotificationJSON, error)
 	getResponseBody(string) (io.Reader, error)
 }
 
 // HTTPClient implementation of Client
 type HTTPClient struct{}
 
-func (cl HTTPClient) getUpdateNotification(url string) (nrtm4model.NotificationJSON, error) {
-	var file nrtm4model.NotificationJSON
+func (cl HTTPClient) getUpdateNotification(url string) (persist.NotificationJSON, error) {
+	var file persist.NotificationJSON
 	if err := cl.getObject(url, &file); err != nil {
 		return file, err
 	}

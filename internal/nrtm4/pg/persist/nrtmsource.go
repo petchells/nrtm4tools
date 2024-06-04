@@ -9,7 +9,7 @@ import (
 
 // NRTMSource pg database mapping for nrtm_source
 type NRTMSource struct {
-	db.EntityManaged `em:"nrtm_source ns"`
+	db.EntityManaged `em:"nrtm_source src"`
 	ID               uint64    `em:"."`
 	Source           string    `em:"."`
 	SessionID        string    `em:"."`
@@ -26,7 +26,7 @@ func NewNRTMSource(source persist.NRTMSource) NRTMSource {
 		ID:              id,
 		Source:          source.Source,
 		SessionID:       source.SessionID,
-		Version:         0,
+		Version:         source.Version,
 		NotificationURL: source.NotificationURL,
 		Label:           source.Label,
 		Created:         time.Now().UTC(),

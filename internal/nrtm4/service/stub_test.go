@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/nrtm4model"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 )
@@ -28,36 +27,16 @@ func (r stubRepo) GetSources() []persist.NRTMSource {
 	return []persist.NRTMSource{}
 }
 
-func (r stubRepo) CreateSource(label string, source string, notificationURL string, pathOnDisk string) (*persist.NRTMSource, error) {
-	return &persist.NRTMSource{}, nil
+func (r stubRepo) SaveSource(src persist.NRTMSource) (persist.NRTMSource, error) {
+	return persist.NRTMSource{}, nil
 }
 
 func (r stubRepo) Close() error {
 	return nil
 }
 
-func (r stubRepo) SaveSnapshotFile(source persist.NRTMSource, tate persist.NRTMFile, snapshotFile nrtm4model.SnapshotFileJSON) error {
-	return nil
-}
-
-func (r stubRepo) SaveSnapshotObject(source persist.NRTMSource, state persist.NRTMFile, rpslObject rpsl.Rpsl) error {
-	return nil
-}
-
 func (r stubRepo) SaveSnapshotObjects(source persist.NRTMSource, state persist.NRTMFile, rpslObject []rpsl.Rpsl) error {
 	return nil
-}
-
-func (r stubRepo) GetState(source string) (persist.NRTMFile, error) {
-	state := r.state
-	if r.err != nil {
-		return state, &persist.ErrStateNotInitialized
-	}
-	if source == "EXAMPLE" {
-		return state, nil
-	}
-	r.t.Fatal("Unexpected request for source", source)
-	return state, &persist.ErrStateNotInitialized
 }
 
 func (r stubRepo) SaveFile(nrtmFile *persist.NRTMFile) error {
@@ -70,6 +49,14 @@ func (r stubRepo) SaveFile(nrtmFile *persist.NRTMFile) error {
 	return nil
 }
 
+func (r stubRepo) AddModifyObject(src persist.NRTMSource, rpsl rpsl.Rpsl, file persist.NrtmFileJSON) error {
+	return nil
+}
+
+func (r stubRepo) DeleteObject(src persist.NRTMSource, objectType string, primaryKey string, file persist.NrtmFileJSON) error {
+	return nil
+}
+
 type stubClient struct {
 	t *testing.T
 }
@@ -78,8 +65,8 @@ func NewStubClient(t *testing.T) Client {
 	return stubClient{t}
 }
 
-func (c stubClient) getUpdateNotification(url string) (nrtm4model.NotificationJSON, error) {
-	var file nrtm4model.NotificationJSON
+func (c stubClient) getUpdateNotification(url string) (persist.NotificationJSON, error) {
+	var file persist.NotificationJSON
 	if url == stubNotificationURL {
 		json.Unmarshal([]byte(notificationExample), &file)
 		return file, nil
@@ -118,13 +105,13 @@ var notificationExample = `
 	"snapshot": {
 	  "version": 3,
 	  "url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz",
-	  "hash": "9a..86"
+	  "hash": "c5779875fcac9fb8fa0002da153083d0ec8f58099a3f1b52851a62d6fa3a2acc"
 	},
 	"deltas": [
 	  {
 		"version": 2,
 		"url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.1.784a2a65aba22e001fd25a1b9e8544e058fbc703.json",
-		"hash": "62..a2"
+		"hash": "bb65420644b598cdd7eb3b101f26ac033667d5edfe5c4f4fa005ff136e9eb8f8"
 	  },
 	  {
 		"version": 3,

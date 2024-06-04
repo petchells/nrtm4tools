@@ -1,14 +1,20 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
+	"runtime/pprof"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/service"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var memprofile = flag.String("memprofile", "", "write memory profile to this file")
+
 func main() {
+	flag.Parse()
 	envVars := []string{"PG_DATABASE_URL", "NRTM4_FILE_PATH", "BOLT_DATABASE_PATH"}
 	for _, ev := range envVars {
 		if len(os.Getenv(ev)) <= 0 {
@@ -23,8 +29,22 @@ func main() {
 		PgDatabaseURL:    dbURL,
 		BoltDatabasePath: boltDBPath,
 	}
-	// TODO
-	// Parse multiple URLs and file path
-	// Start one goroutine for each source
-	nrtm4.LaunchPg(config)
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.WriteHeapProfile(f)
+		f.Close()
+		return
+	}
+	nrtm4.LaunchPg(config, flag.Args())
 }

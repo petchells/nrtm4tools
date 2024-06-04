@@ -11,6 +11,19 @@ create table nrtm_source (
 	constraint nrtm_source__source__label__uid unique (notification_url, label)
 );
 
+create table nrtm_notification (
+	id bigint not null,
+	version integer not null,
+	nrtm_source_id bigint not null,
+	payload jsonb not null,
+	created timestamp without time zone not null,
+
+	constraint nrtm_notification__pk primary key (id),
+	constraint nrtm_notification__nrtm_source__fk foreign key(nrtm_source_id) references nrtm_source(id)
+);
+
+create index nrtm_notification__version__idx on nrtm_notification(version);
+
 create table nrtm_file (
 	id bigint not null,
 	version integer not null,
@@ -30,20 +43,22 @@ create table nrtm_rpslobject (
 	id bigint not null,
 	object_type varchar(255) not null,
 	primary_key varchar(255) not null,
-	rpsl text not null,
 	nrtm_source_id bigint not null,
 	from_version integer not null,
 	to_version integer not null,
+	rpsl text not null,
 
 	constraint rpslobject__pk primary key (id),
+	constraint rpslobject__nrtm_source__fk foreign key (nrtm_source_id) references nrtm_source(id),
 	constraint rpslobject__nrtm_source__object_type__primary_key__from_version__uid unique (nrtm_source_id, object_type, primary_key, from_version),
-	constraint rpslobject__nrtm_source__object_type__primary_key__to_version__uid unique (nrtm_source_id, object_type, primary_key, to_version),
-	constraint rpslobject__nrtm_source__fk foreign key (nrtm_source_id) references nrtm_source(id)
+	constraint rpslobject__nrtm_source__object_type__primary_key__to_version__uid unique (nrtm_source_id, object_type, primary_key, to_version)
 );
+
+create index rpslobject__primary_key__idx on nrtm_rpslobject(upper(primary_key));
 
 ---- create above / drop below ----
 
 drop table nrtm_rpslobject;
-drop index nrtm_file__source_version_idx;
 drop table nrtm_file;
+drop table nrtm_notification;
 drop table nrtm_source;

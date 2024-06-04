@@ -27,7 +27,7 @@ func parseString(str string) (Rpsl, error) {
 	var source, objectType string
 	var primaryKey []string
 	for _, rawLine := range lines {
-		line := string(trimHashChar.Find([]byte(strings.TrimSpace(rawLine))))
+		line := stripComment(rawLine)
 		if len(line) == 0 {
 			continue
 		}
@@ -37,7 +37,7 @@ func parseString(str string) (Rpsl, error) {
 				log.Println("Cannot determine ObjectType")
 				return Rpsl{}, ErrCannotParseRPSL
 			}
-			objectType = trimToLower(parts[0])
+			objectType = trimToUpper(parts[0])
 			if isPrimaryKeyAttribute(objectType, objectType) {
 				primaryKey = append(primaryKey, trimToUpper(parts[1]))
 			}
@@ -70,11 +70,24 @@ func trimToUpper(str string) string {
 }
 
 func isPrimaryKeyAttribute(objectType string, attributeName string) bool {
-	if objectType == "person" || objectType == "role" {
+	if objectType == "PERSON" || objectType == "ROLE" {
 		return attributeName == "nic-hdl"
 	}
-	if objectType == "route" || objectType == "route6" {
-		return attributeName == objectType || attributeName == "origin"
+	if objectType == "ROUTE" || objectType == "ROUTE6" {
+		return strings.EqualFold(attributeName, objectType) || attributeName == "origin"
 	}
-	return attributeName == objectType
+	return strings.EqualFold(attributeName, objectType)
+}
+
+func stripComment(str string) string {
+	var b strings.Builder
+	b.Grow(len(str))
+	for _, ch := range str {
+		if ch != '#' {
+			b.WriteRune(ch)
+		} else {
+			break
+		}
+	}
+	return strings.TrimSpace(b.String())
 }
