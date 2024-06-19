@@ -64,7 +64,7 @@ func TestRpslParsePerson(t *testing.T) {
 	source := "RIPE"
 	primaryKey := "DK58"
 
-	obj, err := parseString(str)
+	obj, err := ParseString(str)
 
 	if err != nil {
 		t.Error("Parser doesn't work", err)

@@ -63,7 +63,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	}
 	logger.Info("Inserting snapshot objects")
 	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification.SnapshotRef)); err != io.EOF {
-		logger.Error("when inserting snapshot records. Remove Source and restart sync", err)
+		logger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
 		return err
 	}
 	return p.syncDeltas(notification, source)

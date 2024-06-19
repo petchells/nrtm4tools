@@ -12,7 +12,7 @@ GOBUILD:=$(GOCMD) build
 GOCLEAN:=$(GOCMD) clean
 GOTEST:=$(GOCMD) test
 GOGET:=$(GOCMD) get
-GOMODDOWNLOAD:=$(GOCMD) mod download
+#GOMODDOWNLOAD:=$(GOCMD) mod download
 
 # Name of the remote rsync production host for migrations
 BASTION:=bastion
@@ -44,13 +44,11 @@ list:
 web/node_modules: ; cd web && $(NPMCMD) install
 
 buildgo:
-	$(GOMODDOWNLOAD)
 	cd $(APP_DIR) && $(GOBUILD) -o $(BINARY_NAME_APP) -v
 
 build: buildgo
 
 build-linux:
-	$(GOMODDOWNLOAD) && \
 	cd $(APP_DIR) && \
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 	$(GOBUILD) -o $(BINARY_NAME_APP_UNIX) -v

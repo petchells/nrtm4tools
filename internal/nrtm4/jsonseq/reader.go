@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"os"
 	"strings"
 )
 
@@ -30,16 +29,16 @@ func ReadStringRecords(jsonSeq string, fn RecordReaderFunc) error {
 	return ReadRecords(reader, fn)
 }
 
-// ReadFileRecords reads a jsonseq file from path and calls fn for each record
-func ReadFileRecords(path string, fn RecordReaderFunc) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	return ReadRecords(reader, fn)
-}
+// // ReadFileRecords reads a jsonseq file from path and calls fn for each record
+// func ReadFileRecords(path string, fn RecordReaderFunc) error {
+// 	file, err := os.Open(path)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer file.Close()
+// 	reader := bufio.NewReader(file)
+// 	return ReadRecords(reader, fn)
+// }
 
 // ReadRecords reads a jsonseq file and calls fn for each record
 func ReadRecords(reader *bufio.Reader, fn RecordReaderFunc) error {
@@ -74,7 +73,6 @@ func trimBytes(b []byte, fn RecordReaderFunc) error {
 	res := bytes.TrimSpace(b)
 	if len(res) > 0 {
 		return fn(res, nil)
-	} else {
-		return fn(res, ErrEmptyPayload)
 	}
+	return fn(res, ErrEmptyPayload)
 }

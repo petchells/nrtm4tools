@@ -19,9 +19,9 @@ func TestSelectObjectSQL(t *testing.T) {
 		FROM nrtm_rpslobject rpsl
 		JOIN nrtm_source src ON src.id = rpsl.nrtm_source_id
 		WHERE
-			src.source = $1
-			AND rpsl.object_type = $2
-			AND rpsl.primary_key = $3
+			src.source ILIKE($1)
+			AND UPPER(rpsl.primary_key) = UPPER($2)
+			AND rpsl.object_type = UPPER($3)
 			AND rpsl.to_version = 0`
 	if reduceWhiteSpace(sql) != reduceWhiteSpace(expected) {
 		t.Errorf("Got unexpected SQL\n%v\nbut wanted\n%v\n", sql, expected)

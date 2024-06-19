@@ -189,9 +189,9 @@ func selectObjectQuery(source persist.NRTMSource, rpslObject *pgpersist.RPSLObje
 		FROM %v
 		JOIN %v ON %v.id = %v.nrtm_source_id
 		WHERE
-			%v.source ilike($1)
-			AND upper(%v.primary_key) = upper($2)
-			AND %v.object_type = upper($3)
+			%v.source ILIKE($1)
+			AND UPPER(%v.primary_key) = UPPER($2)
+			AND %v.object_type = UPPER($3)
 			AND %v.to_version = 0`,
 		strings.Join(rpslObjectDesc.ColumnNamesWithAlias(), ", "),
 		rpslObjectDesc.TableNameWithAlias(),

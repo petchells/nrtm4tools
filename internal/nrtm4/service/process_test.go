@@ -77,8 +77,8 @@ func TestE2EInstallSource(t *testing.T) {
 	if src.NotificationURL != stubNotificationURL {
 		t.Error("NotificationURL should be", stubNotificationURL)
 	}
-	if src.SessionID != "XXX" {
-		t.Error("SessionID should be XXX")
+	if src.SessionID != "ca128382-78d9-41d1-8927-1ecef15275be" {
+		t.Error("SessionID should be", "ca128382-78d9-41d1-8927-1ecef15275be")
 	}
 }
 

@@ -84,7 +84,7 @@ func (c stubClient) getResponseBody(url string) (io.Reader, error) {
 		zw.Write([]byte(snapshotExample))
 		zw.Close()
 		return bytes.NewReader(buf.Bytes()), nil
-	} else if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.1.784a2a65aba22e001fd25a1b9e8544e058fbc703.json" {
+	} else if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json" {
 		reader = strings.NewReader(deltaExample)
 	} else {
 		c.t.Error("Call to unexpected URL", url)
@@ -101,27 +101,17 @@ var notificationExample = `
 	"next_signing_key": "96..ae",
 	"source": "EXAMPLE",
 	"session_id": "ca128382-78d9-41d1-8927-1ecef15275be",
-	"version": 4,
+	"version": 3,
 	"snapshot": {
-	  "version": 3,
+	  "version": 2,
 	  "url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz",
-	  "hash": "c5779875fcac9fb8fa0002da153083d0ec8f58099a3f1b52851a62d6fa3a2acc"
+	  "hash": "07396d52396a96b80eb4a5febbff2053ad945dbdbfdd020492d6fec7cf8cb526"
 	},
 	"deltas": [
 	  {
-		"version": 2,
-		"url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.1.784a2a65aba22e001fd25a1b9e8544e058fbc703.json",
-		"hash": "bb65420644b598cdd7eb3b101f26ac033667d5edfe5c4f4fa005ff136e9eb8f8"
-	  },
-	  {
 		"version": 3,
-		"url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.2.0f681f07cfab5611f3681bf030ec9f6fa3442fb0.json",
-		"hash": "25..9a"
-	  },
-	  {
-		"version": 4,
 		"url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json",
-		"hash": "b4..13"
+		"hash": "bb65420644b598cdd7eb3b101f26ac033667d5edfe5c4f4fa005ff136e9eb8f8"
 	  }
 	]
   }
@@ -133,7 +123,7 @@ var snapshotExample = `
 	"type": "snapshot",
 	"source": "EXAMPLE",
 	"session_id": "ca128382-78d9-41d1-8927-1ecef15275be",
-	"version": 3
+	"version": 2
 }
 {"object": "route: 192.0.2.0/24\norigin: AS65530\nsource: EXAMPLE"}
 {"object": "route: 2001:db8::/32\norigin: AS65530\nsource: EXAMPLE"}
