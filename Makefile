@@ -34,7 +34,7 @@ CHECK_VCS:=scripts/checkvcs.sh
 
 MAKEFLAGS += --silent
 
-.PHONY: build build-linux buildgo buildweb checkvcs clean cleanall deploy docker-app-prep coverage emptydb install list migrate migrate-production release rewinddb run test testgo testweb testimage webdev
+.PHONY: build build-linux buildgo buildweb checkvcs clean cleanall deploy docker-app-prep coverage emptydb install list migrate migrate-production preparetests release rewinddb run test testgo testweb testimage webdev
 
 defaulttarget: list
 
@@ -72,9 +72,12 @@ migratetest: ; $(TERN) migrate --config third_party/tern/tern.test.conf --migrat
 # 	mkdir -p $(DOCKERFILE_API_DIR)/app
 # 	cp $(APP_DIR)/$(BINARY_NAME_API_UNIX) $(DOCKERFILE_API_DIR)/app
 
-coverage: ;	sh scripts/coverage.sh
+preparetests: emptytestdb migratetest buildgo
 
-testgo: emptytestdb migratetest buildgo
+coverage: preparetests
+	sh scripts/coverage.sh
+
+testgo: preparetests
 	$(GOTEST) ./internal/...
 
 testweb: web/node_modules

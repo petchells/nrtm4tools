@@ -74,5 +74,5 @@ func trimBytes(b []byte, fn RecordReaderFunc) error {
 	if len(res) > 0 {
 		return fn(res, nil)
 	}
-	return fn(res, ErrEmptyPayload)
+	return ErrEmptyPayload
 }

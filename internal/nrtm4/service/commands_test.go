@@ -2,6 +2,26 @@ package service
 
 import "testing"
 
+type ProcessorStub struct{}
+
+func (ps ProcessorStub) Connect(url string, label string) error {
+	return nil
+}
+
+func (ps ProcessorStub) Update(srcName string, label string) error {
+	return nil
+}
+
+func TestCommandExecutorConnect(t *testing.T) {
+	ce := CommandExecutor{ProcessorStub{}}
+	ce.Connect("url", "label")
+}
+
+func TestCommandExecutorUpdate(t *testing.T) {
+	ce := CommandExecutor{ProcessorStub{}}
+	ce.Connect("srcName", "label")
+}
+
 func TestLabelRegex(t *testing.T) {
 	lbls := [...]string{
 		"This_one_is-100.OK",

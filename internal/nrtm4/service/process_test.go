@@ -46,7 +46,7 @@ func TestFileRefSorter(t *testing.T) {
 	}
 }
 
-func TestE2EInstallSource(t *testing.T) {
+func TestE2EConnect(t *testing.T) {
 	testresources.SetEnvVarsFromFile(t, "../testresources/env.test.conf")
 	pgTestRepo := pgRepo()
 	stubClient := NewStubClient(t)

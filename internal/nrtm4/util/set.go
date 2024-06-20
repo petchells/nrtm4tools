@@ -5,8 +5,6 @@ import "fmt"
 type Set[E comparable] map[E]struct{}
 type FilterFn[E comparable] func(E) bool
 
-//type MapFn[E comparable, F comparable] func(E) F
-
 func NewSet[E comparable](vals ...E) Set[E] {
 	s := Set[E]{}
 	for _, v := range vals {

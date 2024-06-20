@@ -47,6 +47,49 @@ func TestJSONSequenceParser(t *testing.T) {
 	}
 }
 
+func TestJSONSequenceParserErrors(t *testing.T) {
+	var err error
+	err = ReadStringRecords(" ", unmarshalFunc)
+	if err != ErrNotJSONSeq {
+		t.Fatal(err)
+	}
+	err = ReadStringRecords("X ", unmarshalFunc)
+	if err != ErrExtraneousBytes {
+		t.Fatal(err)
+	}
+	err = ReadStringRecords(" ", unmarshalFunc)
+	if err != ErrEmptyPayload {
+		t.Fatal(err)
+	}
+	err = ReadStringRecords(" x ", unmarshalFunc)
+	if _, ok := err.(*json.SyntaxError); !ok {
+		t.Fatal(err)
+	}
+	err = ReadStringRecords("", unmarshalFunc)
+	if _, ok := err.(*json.SyntaxError); !ok {
+		t.Fatal(err)
+	}
+}
+
+func unmarshalFunc(possJSONBytes []byte, err error) error {
+	i := 0
+	if i == 0 {
+		snapshot := new(persist.SnapshotFileJSON)
+		err = json.Unmarshal(possJSONBytes, snapshot)
+		if err != nil {
+			return err
+		}
+	} else if i > 0 {
+		object := new(persist.SnapshotObjectJSON)
+		err = json.Unmarshal(possJSONBytes, object)
+		if err != nil {
+			return err
+		}
+	}
+	i++
+	return nil
+}
+
 var snapshotExample = `
 {
 	"nrtm_version": 4,
