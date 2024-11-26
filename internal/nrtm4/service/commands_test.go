@@ -1,11 +1,14 @@
 package service
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 type ProcessorStub struct{}
 
 func (ps ProcessorStub) Connect(url string, label string) error {
-	return nil
+	return errors.New("test error")
 }
 
 func (ps ProcessorStub) Update(srcName string, label string) error {

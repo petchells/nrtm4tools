@@ -2,9 +2,12 @@ package util
 
 import "fmt"
 
+// Set is a mathematical set of values
 type Set[E comparable] map[E]struct{}
-type FilterFn[E comparable] func(E) bool
 
+type filterFn[E comparable] func(E) bool
+
+// NewSet creates a new set from a list of values, or an empty set of a certain type
 func NewSet[E comparable](vals ...E) Set[E] {
 	s := Set[E]{}
 	for _, v := range vals {
@@ -75,7 +78,7 @@ func (s Set[E]) IsEmpty() bool {
 	return len(s) == 0
 }
 
-func (s Set[E]) Filter(fn FilterFn[E]) Set[E] {
+func (s Set[E]) Filter(fn filterFn[E]) Set[E] {
 	result := NewSet[E]()
 	for _, ele := range s.Members() {
 		if fn(ele) {

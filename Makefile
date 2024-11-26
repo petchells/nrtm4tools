@@ -34,7 +34,7 @@ CHECK_VCS:=scripts/checkvcs.sh
 
 MAKEFLAGS += --silent
 
-.PHONY: build build-linux buildgo buildweb checkvcs clean cleanall deploy docker-app-prep coverage emptydb install list migrate migrate-production preparetests release rewinddb run test testgo testweb testimage webdev
+.PHONY: build build-linux buildgo checkvcs clean cleanall coverage emptydb install list migrate migrate-production preparetests release rewinddb run test testgo testweb testimage webdev
 
 defaulttarget: list
 

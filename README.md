@@ -15,6 +15,8 @@ nrtm4client is a tool for communicating with an [NRTMv4 server](https://github.c
 
 ### Create role and DB
 
+Assuming your database is running on localhost...
+
 	createuser -h localhost nrtm4
 	createdb -h localhost -O nrtm4 nrtm4
 	createuser -h localhost nrtm4_test
