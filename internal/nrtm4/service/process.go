@@ -4,15 +4,30 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"sort"
+	"sync"
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 )
 
-var fileWriteBufferLength = 1024 * 8
-var rpslInsertBatchSize = 1000
+var (
+	// ErrNRTMVersionMismatch nrtm version is not 4
+	ErrNRTMVersionMismatch = errors.New("nrtm version is not 4")
+	// ErrNRTMSourceMismatch session id does not match source
+	ErrNRTMSourceMismatch = errors.New("session id does not match source")
+	// ErrNRTMSourceNameMismatch source name does not match source
+	ErrNRTMSourceNameMismatch = errors.New("source name does not match source")
+	// ErrNRTMFileVersionMismatch file version does not match its reference
+	ErrNRTMFileVersionMismatch = errors.New("file version does not match its reference")
+	// ErrNRTMFileVersionInconsistency version is lower than source
+	ErrNRTMFileVersionInconsistency = errors.New("version is lower than source")
+
+	fileWriteBufferLength = 1024 * 8
+	rpslInsertBatchSize   = 1000
+)
 
 // NewNRTMProcessor injects repo and client into service and return a new instance
 func NewNRTMProcessor(config AppConfig, repo persist.Repository, client Client) NRTMProcessor {
@@ -126,7 +141,7 @@ func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source 
 		}
 		defer file.Close()
 		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, deltaRef)); err != io.EOF {
-			logger.Warn("Failed to apply delta", "source", source, err)
+			logger.Warn("Failed to apply delta", "source", source, "error", err)
 			return err
 		}
 	}
@@ -138,7 +153,7 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef
 	var header *persist.DeltaFileJSON
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
-			logger.Warn("error empty JSON", err)
+			logger.Warn("error empty JSON", "error", err)
 			return err
 		}
 		if err == nil || err == io.EOF {
@@ -168,7 +183,7 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef
 			} else if delta.Action == persist.DeltaDeleteAction {
 				repo.DeleteObject(source, *delta.ObjectClass, *delta.PrimaryKey, header.NrtmFileJSON)
 			} else {
-				return errors.New("no action available: " + delta.Action)
+				return errors.New("no delta action available: " + delta.Action)
 			}
 			return nil
 		}
@@ -184,9 +199,11 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 	var rpslObjects []rpsl.Rpsl
 	var snapshotHeader *persist.SnapshotFileJSON
 
+	var wg sync.WaitGroup
+
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
-			logger.Warn("error empty JSON", err)
+			logger.Warn("error empty JSON", "error", err)
 			return err
 		}
 		if err == io.EOF {
@@ -199,6 +216,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 				}
 				successfulObjects++
 				rpslObjects = append(rpslObjects, rpsl)
+				wg.Wait()
 				err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
 				if err != nil {
 					return err
@@ -210,18 +228,18 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			return err
 		} else if err != nil {
 			// Unexpected error. Should be able to read snapshot header or objects.
-			logger.Warn("error unmarshalling JSON.", err)
+			logger.Warn("error unmarshalling JSON.", "error", err)
 			return err
 		} else if successfulObjects == 0 {
 			// First record is the Snapshot header
 			successfulObjects++
 			sf := new(persist.SnapshotFileJSON)
 			if err = json.Unmarshal(bytes, sf); err != nil {
-				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", err, "errors", failedObjects)
+				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects)
 				return err
 			}
 			if sf.Version != fileRef.Version {
-				return errors.New("snapshot header version does not match its reference")
+				return ErrNRTMFileVersionMismatch
 			}
 			snapshotHeader = sf
 			return nil
@@ -237,16 +255,20 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 				successfulObjects++
 				rpslObjects = append(rpslObjects, rpsl)
 				if len(rpslObjects) >= rpslInsertBatchSize {
-					err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-					if err != nil {
-						return err
-					}
-					rpslObjects = nil
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
+						if err != nil {
+							log.Fatalln("Error saving snapshot object", err)
+						}
+						rpslObjects = nil
+					}()
 				}
 				return nil
 			}
 			failedObjects++
-			logger.Warn("Error unmarshalling JSON. Expected SnapshotObject", err, "numErrors", failedObjects)
+			logger.Warn("Error unmarshalling JSON. Expected SnapshotObject", "error", err, "numFailures", failedObjects)
 			return err
 		}
 	}
@@ -254,19 +276,19 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 
 func validateDeltaHeader(file persist.NrtmFileJSON, source persist.NRTMSource, deltaRef persist.FileRefJSON) error {
 	if file.NrtmVersion != 4 {
-		return errors.New("nrtm version is not 4")
+		return ErrNRTMVersionMismatch
 	}
 	if file.SessionID != source.SessionID {
-		return errors.New("session id does not match source")
+		return ErrNRTMSourceMismatch
 	}
 	if file.Source != source.Source {
-		return errors.New("source name does not match source")
+		return ErrNRTMSourceNameMismatch
 	}
 	if file.Version != deltaRef.Version {
-		return errors.New("file version does not match its reference")
+		return ErrNRTMFileVersionMismatch
 	}
 	if file.Version < source.Version {
-		return errors.New("version is lower than source")
+		return ErrNRTMFileVersionInconsistency
 	}
 	return nil
 }

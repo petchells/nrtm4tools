@@ -108,7 +108,7 @@ func (fm fileManager) downloadNotificationFile(url string) (persist.Notification
 	var notification persist.NotificationJSON
 	var err error
 	if notification, err = fm.client.getUpdateNotification(url); err != nil {
-		logger.Error("fetching notificationFile", err)
+		logger.Error("fetching notificationFile", "error", err)
 		return notification, []error{err}
 	}
 	errs := fm.validateNotificationFile(notification)
