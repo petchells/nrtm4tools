@@ -191,15 +191,100 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef
 	}
 }
 
+// Counter is a counter with a mutex
+type Counter struct {
+	mu sync.Mutex
+	n  int64
+}
+
+// Increment increments the counter
+func (c *Counter) Increment() {
+	c.mu.Lock()
+	c.n++
+	c.mu.Unlock()
+}
+
+// RPSLObjectList an ummutable list of objects
+type RPSLObjectList struct {
+	mu      sync.Mutex
+	objects []rpsl.Rpsl
+}
+
+// Add adds an object the list
+func (l *RPSLObjectList) Add(obj rpsl.Rpsl) {
+	l.mu.Lock()
+	l.objects = append(l.objects, obj)
+	l.mu.Unlock()
+}
+
+// GetBatch will return a slice of objects only if 'size' are available. They are removed from the list
+func (l *RPSLObjectList) GetBatch(size int) []rpsl.Rpsl {
+	res := []rpsl.Rpsl{}
+	l.mu.Lock()
+	if len(l.objects) >= size {
+		res = l.objects[:size-1]
+		l.objects = l.objects[size-1:]
+	}
+	l.mu.Unlock()
+	return res
+}
+
+// GetAll returns all RPSL objects and empties the internal list.
+func (l *RPSLObjectList) GetAll() []rpsl.Rpsl {
+	l.mu.Lock()
+	res := l.objects
+	l.objects = []rpsl.Rpsl{}
+	l.mu.Unlock()
+	return res
+}
+
 func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, fileRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
 
-	successfulObjects := 0
-	failedObjects := 0
-
-	var rpslObjects []rpsl.Rpsl
+	//	var rpslObjects []rpsl.Rpsl
 	var snapshotHeader *persist.SnapshotFileJSON
 
 	var wg sync.WaitGroup
+
+	objectCh := make(chan rpsl.Rpsl, 10000)
+	objectList := RPSLObjectList{}
+	successfulObjects := Counter{}
+	failedObjects := Counter{}
+
+	unmarshalBytesToChan := func(bytes []byte) {
+		so := new(persist.SnapshotObjectJSON)
+		if err := json.Unmarshal(bytes, so); err == nil {
+			rpsl, err := rpsl.ParseString(so.Object)
+			if err != nil {
+				failedObjects.Increment()
+				logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
+			}
+			objectCh <- rpsl
+			successfulObjects.Increment()
+		} else {
+			logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
+		}
+	}
+
+	saveObjects := func(ch chan rpsl.Rpsl) {
+		for {
+			select {
+			case rpsl := <-ch:
+				objectList.Add(rpsl)
+				rpslObjects := objectList.GetBatch(rpslInsertBatchSize)
+				if len(rpslObjects) > 0 {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
+						if err != nil {
+							log.Fatalln("Error saving snapshot object", err)
+						}
+					}()
+				}
+			default:
+			}
+		}
+	}
 
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
@@ -214,8 +299,9 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 				if err != nil {
 					return err
 				}
-				successfulObjects++
-				rpslObjects = append(rpslObjects, rpsl)
+				successfulObjects.Increment()
+				objectList.Add(rpsl)
+				rpslObjects := objectList.GetAll()
 				wg.Wait()
 				err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
 				if err != nil {
@@ -230,9 +316,9 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			// Unexpected error. Should be able to read snapshot header or objects.
 			logger.Warn("error unmarshalling JSON.", "error", err)
 			return err
-		} else if successfulObjects == 0 {
+		} else if successfulObjects.n == 0 {
 			// First record is the Snapshot header
-			successfulObjects++
+			successfulObjects.Increment()
 			sf := new(persist.SnapshotFileJSON)
 			if err = json.Unmarshal(bytes, sf); err != nil {
 				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects)
@@ -245,33 +331,12 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			return nil
 		} else {
 			// Subsequent records are objects
-			so := new(persist.SnapshotObjectJSON)
-			if err = json.Unmarshal(bytes, so); err == nil {
-				rpsl, err := rpsl.ParseString(so.Object)
-				if err != nil {
-					failedObjects++
-					return err
-				}
-				successfulObjects++
-				rpslObjects = append(rpslObjects, rpsl)
-				if len(rpslObjects) >= rpslInsertBatchSize {
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-						if err != nil {
-							log.Fatalln("Error saving snapshot object", err)
-						}
-						rpslObjects = nil
-					}()
-				}
-				return nil
-			}
-			failedObjects++
-			logger.Warn("Error unmarshalling JSON. Expected SnapshotObject", "error", err, "numFailures", failedObjects)
-			return err
+			go unmarshalBytesToChan(bytes)
+			go saveObjects(objectCh)
+			return nil
 		}
 	}
+
 }
 
 func validateDeltaHeader(file persist.NrtmFileJSON, source persist.NRTMSource, deltaRef persist.FileRefJSON) error {

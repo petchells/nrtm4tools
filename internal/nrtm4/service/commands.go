@@ -40,7 +40,7 @@ func (ce CommandExecutor) Connect(notificationURL string, label string) {
 	// -- ensure URL looks like a URL, make schema/host lowercase
 	err := ce.processor.Connect(notificationURL, label)
 	if err != nil {
-		logger.Error("Failed to Connect", "url", notificationURL, err)
+		logger.Error("Failed to Connect", "url", notificationURL, "error", err)
 		return
 	}
 	logger.Info("Connect successful", "url", notificationURL)
