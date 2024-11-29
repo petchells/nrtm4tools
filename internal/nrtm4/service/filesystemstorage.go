@@ -139,16 +139,16 @@ func readerToFile(reader io.Reader, path string, fileName string) (*os.File, err
 	var outFile *os.File
 	var err error
 	if outFile, err = os.Create(filepath.Join(path, fileName)); err != nil {
-		logger.Error("Failed to open file on disk", err)
+		logger.Error("Failed to open file on disk", "error", err)
 		return nil, err
 	}
-	// defer func() {
-	// 	if err := outFile.Close(); err != nil {
-	// 		panic(err)
-	// 	}
-	// }()
+	defer func() {
+		if err := outFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
 	if err = transferReaderToFile(reader, outFile); err != nil {
-		logger.Error("writing file:", err)
+		logger.Error("writing file:", "error", err)
 		return nil, err
 	}
 	return outFile, err

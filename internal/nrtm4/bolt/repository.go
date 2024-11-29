@@ -36,6 +36,7 @@ func (r *BoltRepository) CreateSource(label string, source string, notificationU
 	return &persist.NRTMSource{}, nil
 }
 
+// SaveFile implements interface
 func (r *BoltRepository) SaveFile(state *persist.NRTMFile) error {
 	_, err := json.Marshal(*state)
 	if err != nil {

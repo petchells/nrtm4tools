@@ -46,7 +46,7 @@ func WithTransaction(fn TxFn) error {
 		} else {
 			err = tx.Commit(context.Background())
 			if err != nil {
-				logger.Error("WithTransaction Commit", err)
+				logger.Error("WithTransaction Commit", "error", err)
 			}
 		}
 	}()

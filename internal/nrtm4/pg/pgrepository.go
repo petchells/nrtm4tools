@@ -34,7 +34,7 @@ func (repo *PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
 		return err
 	})
 	if err != nil {
-		logger.Error("Error in GetSources", err)
+		logger.Error("Error in GetSources", "error", err)
 		return sources, err
 	}
 	for _, s := range pgsources {
@@ -85,45 +85,38 @@ func (repo *PostgresRepository) SaveSnapshotObjects(
 	rpslObjects []rpsl.Rpsl,
 	file persist.NrtmFileJSON,
 ) error {
-
-	ch := make(chan error)
-	updateDB := func(ch chan error) {
-		err := db.WithTransaction(func(tx pgx.Tx) error {
-			var err error
-			inputRows := [][]any{}
-			for _, rpslObject := range rpslObjects {
-				inputRow := []any{
-					uint64(db.NextID()),
-					rpslObject.ObjectType,
-					rpslObject.PrimaryKey,
-					source.ID,
-					file.Version,
-					0,
-					rpslObject.Payload,
-				}
-				inputRows = append(inputRows, inputRow)
+	return db.WithTransaction(func(tx pgx.Tx) error {
+		var err error
+		inputRows := make([][]any, len(rpslObjects))
+		for i, rpslObject := range rpslObjects {
+			inputRow := []any{
+				uint64(db.NextID()),
+				rpslObject.ObjectType,
+				rpslObject.PrimaryKey,
+				source.ID,
+				file.Version,
+				0,
+				rpslObject.Payload,
 			}
-			rpslDescriptor := db.GetDescriptor(&pgpersist.RPSLObject{})
-			_, err = tx.CopyFrom(
-				context.Background(),
-				pgx.Identifier{rpslDescriptor.TableName()},
-				rpslDescriptor.ColumnNames(),
-				pgx.CopyFromRows(inputRows),
-			)
-			if err != nil {
-				types := util.NewSet[string]()
-				for _, inp := range rpslObjects {
-					types.Add(inp.ObjectType)
-				}
-				logger.Warn("Failed to save objects", "types", types.String(), err)
-				return err
+			inputRows[i] = inputRow
+		}
+		rpslDescriptor := db.GetDescriptor(&pgpersist.RPSLObject{})
+		_, err = tx.CopyFrom(
+			context.Background(),
+			pgx.Identifier{rpslDescriptor.TableName()},
+			rpslDescriptor.ColumnNames(),
+			pgx.CopyFromRows(inputRows),
+		)
+		if err != nil {
+			types := util.NewSet[string]()
+			for _, inp := range rpslObjects {
+				types.Add(inp.ObjectType)
 			}
-			return nil
-		})
-		ch <- err
-	}
-	go updateDB(ch)
-	return <-ch
+			logger.Warn("Failed to save objects", "types", types.String(), "error", err)
+			return err
+		}
+		return nil
+	})
 }
 
 // AddModifyObject updates an RPSL object by setting `to_version` and inserting a new row

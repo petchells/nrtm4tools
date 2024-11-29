@@ -206,35 +206,40 @@ func (c *Counter) Increment() {
 
 // RPSLObjectList an ummutable list of objects
 type RPSLObjectList struct {
-	mu      sync.Mutex
+	//mu      sync.Mutex
 	objects []rpsl.Rpsl
+}
+
+// NewRPSLObjectList returns an initialized RPSLObjectList
+func NewRPSLObjectList() RPSLObjectList {
+	return RPSLObjectList{make([]rpsl.Rpsl, rpslInsertBatchSize, rpslInsertBatchSize*2)}
 }
 
 // Add adds an object the list
 func (l *RPSLObjectList) Add(obj rpsl.Rpsl) {
-	l.mu.Lock()
+	//l.mu.Lock()
 	l.objects = append(l.objects, obj)
-	l.mu.Unlock()
+	//l.mu.Unlock()
 }
 
 // GetBatch will return a slice of objects only if 'size' are available. They are removed from the list
 func (l *RPSLObjectList) GetBatch(size int) []rpsl.Rpsl {
 	res := []rpsl.Rpsl{}
-	l.mu.Lock()
+	//l.mu.Lock()
 	if len(l.objects) >= size {
-		res = l.objects[:size-1]
-		l.objects = l.objects[size-1:]
+		res = l.objects[:size]
+		l.objects = l.objects[size:]
 	}
-	l.mu.Unlock()
+	//l.mu.Unlock()
 	return res
 }
 
 // GetAll returns all RPSL objects and empties the internal list.
 func (l *RPSLObjectList) GetAll() []rpsl.Rpsl {
-	l.mu.Lock()
+	//l.mu.Lock()
 	res := l.objects
 	l.objects = []rpsl.Rpsl{}
-	l.mu.Unlock()
+	//l.mu.Unlock()
 	return res
 }
 
@@ -245,46 +250,47 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 
 	var wg sync.WaitGroup
 
-	objectCh := make(chan rpsl.Rpsl, 10000)
+	//objectCh := make(chan rpsl.Rpsl, 2000)
 	objectList := RPSLObjectList{}
+	//objectList := make([]rpsl.Rpsl, rpslInsertBatchSize, rpslInsertBatchSize*2)
 	successfulObjects := Counter{}
 	failedObjects := Counter{}
 
-	unmarshalBytesToChan := func(bytes []byte) {
-		so := new(persist.SnapshotObjectJSON)
-		if err := json.Unmarshal(bytes, so); err == nil {
-			rpsl, err := rpsl.ParseString(so.Object)
-			if err != nil {
-				failedObjects.Increment()
-				logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
-			}
-			objectCh <- rpsl
-			successfulObjects.Increment()
-		} else {
-			logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
-		}
-	}
+	// unmarshalBytesToChan := func(bytes []byte) {
+	// 	so := new(persist.SnapshotObjectJSON)
+	// 	if err := json.Unmarshal(bytes, so); err == nil {
+	// 		rpsl, err := rpsl.ParseString(so.Object)
+	// 		if err != nil {
+	// 			failedObjects.Increment()
+	// 			logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
+	// 		}
+	// 		objectCh <- rpsl
+	// 		successfulObjects.Increment()
+	// 	} else {
+	// 		logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
+	// 	}
+	// }
 
-	saveObjects := func(ch chan rpsl.Rpsl) {
-		for {
-			select {
-			case rpsl := <-ch:
-				objectList.Add(rpsl)
-				rpslObjects := objectList.GetBatch(rpslInsertBatchSize)
-				if len(rpslObjects) > 0 {
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-						if err != nil {
-							log.Fatalln("Error saving snapshot object", err)
-						}
-					}()
-				}
-			default:
-			}
-		}
-	}
+	// saveObjects := func(ch chan rpsl.Rpsl) {
+	// 	for {
+	// 		select {
+	// 		case rpsl := <-ch:
+	// 			objectListSync.Add(rpsl)
+	// 			rpslObjects := objectListSync.GetBatch(rpslInsertBatchSize)
+	// 			if len(rpslObjects) > 0 {
+	// 				wg.Add(1)
+	// 				go func() {
+	// 					defer wg.Done()
+	// 					err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
+	// 					if err != nil {
+	// 						log.Fatalln("Error saving snapshot object", err)
+	// 					}
+	// 				}()
+	// 			}
+	// 		default:
+	// 		}
+	// 	}
+	// }
 
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
@@ -321,7 +327,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			successfulObjects.Increment()
 			sf := new(persist.SnapshotFileJSON)
 			if err = json.Unmarshal(bytes, sf); err != nil {
-				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects)
+				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects.n)
 				return err
 			}
 			if sf.Version != fileRef.Version {
@@ -331,8 +337,25 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			return nil
 		} else {
 			// Subsequent records are objects
-			go unmarshalBytesToChan(bytes)
-			go saveObjects(objectCh)
+			so := new(persist.SnapshotObjectJSON)
+			if err := json.Unmarshal(bytes, so); err == nil {
+				rpsl, err := rpsl.ParseString(so.Object)
+				if err != nil {
+					failedObjects.Increment()
+					logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
+				}
+				objectList.Add(rpsl)
+				successfulObjects.Increment()
+			} else {
+				logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
+			}
+			rpslObjects := objectList.GetBatch(rpslInsertBatchSize)
+			if len(rpslObjects) > 0 {
+				err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
+				if err != nil {
+					log.Fatalln("Error saving snapshot object", err)
+				}
+			}
 			return nil
 		}
 	}
