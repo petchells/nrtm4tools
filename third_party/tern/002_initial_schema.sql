@@ -22,7 +22,7 @@ create table nrtm_notification (
 	constraint nrtm_notification__nrtm_source__fk foreign key(nrtm_source_id) references nrtm_source(id)
 );
 
-create index nrtm_notification__version__idx on nrtm_notification(version);
+create index nrtm_notification__version__idx on nrtm_notification(nrtm_source_id, version);
 
 create table nrtm_file (
 	id bigint not null,

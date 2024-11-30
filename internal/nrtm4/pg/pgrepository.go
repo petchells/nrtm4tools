@@ -44,7 +44,7 @@ func (repo *PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
 }
 
 // SaveSource updates a source if ID is non-zero, or creates a new one if it is
-func (repo *PostgresRepository) SaveSource(source persist.NRTMSource) (persist.NRTMSource, error) {
+func (repo *PostgresRepository) SaveSource(source persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
 	var pgSource pgpersist.NRTMSource
 	err := db.WithTransaction(func(tx pgx.Tx) error {
 		if source.ID == 0 {

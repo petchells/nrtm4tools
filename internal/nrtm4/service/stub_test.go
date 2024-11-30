@@ -27,7 +27,7 @@ func (r stubRepo) GetSources() []persist.NRTMSource {
 	return []persist.NRTMSource{}
 }
 
-func (r stubRepo) SaveSource(src persist.NRTMSource) (persist.NRTMSource, error) {
+func (r stubRepo) SaveSource(src persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
 	return persist.NRTMSource{}, nil
 }
 

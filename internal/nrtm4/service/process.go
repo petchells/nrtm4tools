@@ -72,12 +72,12 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 
 	logger.Info("Saving new source", "source", notification.Source)
 	source := persist.NewNRTMSource(notification, label, notificationURL)
-	if source, err = ds.saveNewSource(source); err != nil {
+	if source, err = ds.saveNewSource(source, notification); err != nil {
 		logger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
 		return err
 	}
 	logger.Info("Inserting snapshot objects")
-	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification.SnapshotRef)); err != io.EOF {
+	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification)); err != io.EOF {
 		logger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
 		return err
 	}
@@ -140,7 +140,7 @@ func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source 
 			return err
 		}
 		defer file.Close()
-		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, deltaRef)); err != io.EOF {
+		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, notification, deltaRef)); err != io.EOF {
 			logger.Warn("Failed to apply delta", "source", source, "error", err)
 			return err
 		}
@@ -149,7 +149,7 @@ func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source 
 	return nil
 }
 
-func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
+func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON, deltaRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
 	var header *persist.DeltaFileJSON
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
@@ -167,7 +167,7 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef
 				}
 				header = deltaHeader
 				source.Version = deltaRef.Version
-				_, err = repo.SaveSource(source)
+				_, err = repo.SaveSource(source, notification)
 				return err
 			}
 			delta := new(persist.DeltaJSON)
@@ -243,7 +243,7 @@ func (l *RPSLObjectList) GetAll() []rpsl.Rpsl {
 	return res
 }
 
-func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, fileRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
+func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON) jsonseq.RecordReaderFunc {
 
 	//	var rpslObjects []rpsl.Rpsl
 	var snapshotHeader *persist.SnapshotFileJSON
@@ -314,7 +314,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 					return err
 				}
 				source.Version = snapshotHeader.Version
-				_, err = repo.SaveSource(source)
+				_, err = repo.SaveSource(source, notification)
 				return err
 			}
 			return err
@@ -330,7 +330,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects.n)
 				return err
 			}
-			if sf.Version != fileRef.Version {
+			if sf.Version != notification.SnapshotRef.Version {
 				return ErrNRTMFileVersionMismatch
 			}
 			snapshotHeader = sf

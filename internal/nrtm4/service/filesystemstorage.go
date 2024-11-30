@@ -43,10 +43,10 @@ func (fm fileManager) fetchFileAndCheckHash(fileRef persist.FileRefJSON, path st
 			logger.Error("Failed to write file", "url", fileRef.URL, "path", path)
 			return nil, err
 		}
-	} else {
-		if file, err = os.Open(filepath.Join(path, filepath.Base(fileRef.URL))); err != nil {
-			return nil, err
-		}
+	}
+	if file, err = os.Open(filepath.Join(path, filepath.Base(fileRef.URL))); err != nil {
+		logger.Error("Failed to open file", "url", fileRef.URL, "path", path)
+		return nil, err
 	}
 	sum, err := calcHash256(file)
 	if err != nil {

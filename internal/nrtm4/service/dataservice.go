@@ -58,6 +58,6 @@ func (ds NrtmDataService) getSources() ([]persist.NRTMSource, error) {
 	return ds.Repository.GetSources()
 }
 
-func (ds NrtmDataService) saveNewSource(source persist.NRTMSource) (persist.NRTMSource, error) {
-	return ds.Repository.SaveSource(source)
+func (ds NrtmDataService) saveNewSource(source persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
+	return ds.Repository.SaveSource(source, notification)
 }
