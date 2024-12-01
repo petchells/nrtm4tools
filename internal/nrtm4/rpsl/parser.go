@@ -7,10 +7,12 @@ import (
 	"strings"
 )
 
+// ErrCannotParseRPSL is returned when the parser can't make sense of the RPSL
 var ErrCannotParseRPSL = errors.New("invalid RPSL")
 
 var trimHashChar = regexp.MustCompile("[^#]*")
 
+// Rpsl is a data structure representing an NRTM object
 type Rpsl struct {
 	PrimaryKey string
 	Source     string
@@ -18,6 +20,7 @@ type Rpsl struct {
 	Payload    string
 }
 
+// ParseString parses a string and returns it as an RPSL object
 func ParseString(str string) (Rpsl, error) {
 	return parseString(str)
 }

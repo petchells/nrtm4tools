@@ -19,7 +19,7 @@ type stubRepo struct {
 	err   error
 }
 
-func (r stubRepo) Initialize(dbURL string) error {
+func (r *stubRepo) Initialize(dbURL string) error {
 	return nil
 }
 
@@ -27,19 +27,19 @@ func (r stubRepo) GetSources() []persist.NRTMSource {
 	return []persist.NRTMSource{}
 }
 
-func (r stubRepo) SaveSource(src persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
+func (r *stubRepo) SaveSource(src persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
 	return persist.NRTMSource{}, nil
 }
 
-func (r stubRepo) Close() error {
+func (r *stubRepo) Close() error {
 	return nil
 }
 
-func (r stubRepo) SaveSnapshotObjects(source persist.NRTMSource, state persist.NRTMFile, rpslObject []rpsl.Rpsl) error {
+func (r *stubRepo) SaveSnapshotObjects(source persist.NRTMSource, state persist.NRTMFile, rpslObject []rpsl.Rpsl) error {
 	return nil
 }
 
-func (r stubRepo) SaveFile(nrtmFile *persist.NRTMFile) error {
+func (r *stubRepo) SaveFile(nrtmFile *persist.NRTMFile) error {
 	expected := "notification.json"
 	if nrtmFile.FileName == expected {
 		r.state = *nrtmFile
@@ -49,11 +49,11 @@ func (r stubRepo) SaveFile(nrtmFile *persist.NRTMFile) error {
 	return nil
 }
 
-func (r stubRepo) AddModifyObject(src persist.NRTMSource, rpsl rpsl.Rpsl, file persist.NrtmFileJSON) error {
+func (r *stubRepo) AddModifyObject(src persist.NRTMSource, rpsl rpsl.Rpsl, file persist.NrtmFileJSON) error {
 	return nil
 }
 
-func (r stubRepo) DeleteObject(src persist.NRTMSource, objectType string, primaryKey string, file persist.NrtmFileJSON) error {
+func (r *stubRepo) DeleteObject(src persist.NRTMSource, objectType string, primaryKey string, file persist.NrtmFileJSON) error {
 	return nil
 }
 

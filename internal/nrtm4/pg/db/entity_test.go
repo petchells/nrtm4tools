@@ -15,8 +15,8 @@ type testOrg struct {
 }
 
 func TestFieldNameConversion(t *testing.T) {
-	testStrings := [...]string{"ID", "HTML", "Data", "CashDash", "CashDASH", "BigC", "JSONString", "CDUserID", "RTimer", "XML10YAMLFormat5"}
-	expected := [...]string{"id", "html", "data", "cash_dash", "cash_dash", "big_c", "json_string", "cd_user_id", "r_timer", "xml_10_yaml_format_5"}
+	testStrings := [...]string{"ID", "HTML", "Data", "CashDash", "CashDASH", "BigC", "JSONString", "CDUserID", "RTimer", "XML10YAMLFormat5", "Under_Score"}
+	expected := [...]string{"id", "html", "data", "cash_dash", "cash_dash", "big_c", "json_string", "cd_user_id", "r_timer", "xml_10_yaml_format_5", "under_score"}
 	for i, str := range testStrings {
 		result := fieldNameToColumnName(str)
 		if result != expected[i] {

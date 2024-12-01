@@ -49,6 +49,7 @@ func TestFileRefSorter(t *testing.T) {
 func TestE2EConnect(t *testing.T) {
 	testresources.SetEnvVarsFromFile(t, "../testresources/env.test.conf")
 	pgTestRepo := pgRepo()
+	testresources.TruncateDatabase(t)
 	stubClient := NewStubClient(t)
 	tmpDir, err := os.MkdirTemp("", "nrtmtest*")
 	if err != nil {

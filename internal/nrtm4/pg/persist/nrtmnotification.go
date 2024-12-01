@@ -1,6 +1,9 @@
 package persist
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -20,16 +23,44 @@ type Notification struct {
 }
 
 // NewNotification saves a notification in the database
-func NewNotification(tx pgx.Tx, version uint32, sourceID uint64, payload persist.NotificationJSON) (*Notification, error) {
-	n := Notification{
-		ID:           db.NextID(),
-		Version:      version,
-		NRTMSourceID: sourceID,
-		Payload:      payload,
-		Created:      util.AppClock.Now(),
+func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSON) error {
+	lastN := new(Notification)
+	descr := db.GetDescriptor(lastN)
+	sql := fmt.Sprintf(`
+		SELECT %v
+		FROM %v
+		WHERE nrtm_source_id = $1
+		ORDER BY
+			version DESC,
+			created DESC
+		LIMIT 1
+	`, descr.ColumnNamesCommaSeparated(), descr.TableName())
+
+	newNotification := func(tx pgx.Tx) error {
+		logger.Debug("Saving new notification")
+		return db.Create(tx, &Notification{
+			ID:           db.NextID(),
+			Version:      payload.Version,
+			NRTMSourceID: sourceID,
+			Payload:      payload,
+			Created:      util.AppClock.Now(),
+		})
 	}
-	if err := db.Create(tx, &n); err != nil {
-		return nil, err
+
+	err := tx.QueryRow(context.Background(), sql, sourceID).Scan(db.SelectValues(lastN)...)
+	if err == pgx.ErrNoRows {
+		return newNotification(tx)
+	} else if err != nil {
+		return err
 	}
-	return &n, nil
+	if payload.Version == lastN.Version {
+		if payload.SnapshotRef.Version == lastN.Payload.SnapshotRef.Version {
+			// Nothing to do
+			return nil
+		}
+		return newNotification(tx)
+	} else if payload.Version == lastN.Version+1 {
+		return newNotification(tx)
+	}
+	return errors.New("Expected next consecutive notification version")
 }

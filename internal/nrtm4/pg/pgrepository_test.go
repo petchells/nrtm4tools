@@ -4,15 +4,10 @@ import (
 	"strings"
 	"testing"
 	"unicode"
-
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
-	pgpersist "gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/persist"
 )
 
 func TestSelectObjectSQL(t *testing.T) {
-	var source persist.NRTMSource
-	var rpslObject *pgpersist.RPSLObject
-	sql := selectObjectQuery(source, rpslObject)
+	sql := selectObjectQuery()
 
 	expected := `
 		SELECT rpsl.id rpsl_id, rpsl.object_type rpsl_object_type, rpsl.primary_key rpsl_primary_key, rpsl.nrtm_source_id rpsl_nrtm_source_id, rpsl.from_version rpsl_from_version, rpsl.to_version rpsl_to_version, rpsl.rpsl rpsl_rpsl

@@ -70,6 +70,11 @@ func (d *Descriptor) ColumnNamesWithAlias() []string {
 	return names
 }
 
+// ColumnNamesCommaSeparated returns a string of column names separated by commas
+func (d *Descriptor) ColumnNamesCommaSeparated() string {
+	return strings.Join(d.ColumnNames(), ", ")
+}
+
 // SelectValues returns field pointers so an EntityManaged row can be 'Scan(...)'ed
 func SelectValues(e EntityManaged) []any {
 	sflds := []any{}
@@ -311,6 +316,8 @@ var cre []*regexp.Regexp = []*regexp.Regexp{
 	regexp.MustCompile("[A-Z]+"),
 }
 
+var ure = regexp.MustCompile(`[_]+`)
+
 func fieldNameToColumnName(fieldname string) string {
 	s := fieldname
 	for i := 0; i < len(cre); i++ {
@@ -318,5 +325,5 @@ func fieldNameToColumnName(fieldname string) string {
 			return "_" + strings.ToLower(str)
 		})
 	}
-	return s[1:]
+	return ure.ReplaceAllString(s[1:], "_")
 }

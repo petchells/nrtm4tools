@@ -52,7 +52,12 @@ func (repo *PostgresRepository) SaveSource(source persist.NRTMSource, notificati
 			return db.Create(tx, &pgSource)
 		}
 		pgSource = pgpersist.FromNRTMSource(source)
-		return db.Update(tx, &pgSource)
+		err := db.Update(tx, &pgSource)
+		if err != nil {
+			return err
+		}
+		return pgpersist.NewNotification(tx, source.ID, notification)
+
 	})
 	return pgSource.AsNRTMSource(), err
 }
@@ -86,7 +91,6 @@ func (repo *PostgresRepository) SaveSnapshotObjects(
 	file persist.NrtmFileJSON,
 ) error {
 	return db.WithTransaction(func(tx pgx.Tx) error {
-		var err error
 		inputRows := make([][]any, len(rpslObjects))
 		for i, rpslObject := range rpslObjects {
 			inputRow := []any{
@@ -101,7 +105,7 @@ func (repo *PostgresRepository) SaveSnapshotObjects(
 			inputRows[i] = inputRow
 		}
 		rpslDescriptor := db.GetDescriptor(&pgpersist.RPSLObject{})
-		_, err = tx.CopyFrom(
+		_, err := tx.CopyFrom(
 			context.Background(),
 			pgx.Identifier{rpslDescriptor.TableName()},
 			rpslDescriptor.ColumnNames(),
@@ -143,7 +147,7 @@ func (repo *PostgresRepository) AddModifyObject(
 	})
 }
 
-// DeleteObject deletes an RPSL object by setting `to_version`
+// DeleteObject doesn't remove any rows, instead it sets `to_version` to the file version
 func (repo *PostgresRepository) DeleteObject(
 	source persist.NRTMSource,
 	objectType string,
@@ -164,7 +168,7 @@ func deleteObject(
 	primaryKey string,
 	file persist.NrtmFileJSON,
 ) error {
-	sql := selectObjectQuery(source, rpslObject)
+	sql := selectObjectQuery()
 	err := tx.QueryRow(context.Background(), sql, source.Source, primaryKey, objectType).Scan(db.SelectValues(rpslObject)...)
 	if err != nil {
 		return err
@@ -173,10 +177,9 @@ func deleteObject(
 	return db.Update(tx, rpslObject)
 }
 
-func selectObjectQuery(source persist.NRTMSource, rpslObject *pgpersist.RPSLObject) string {
-	src := pgpersist.FromNRTMSource(source)
-	srcDesc := db.GetDescriptor(&src)
-	rpslObjectDesc := db.GetDescriptor(rpslObject)
+func selectObjectQuery() string {
+	srcDesc := db.GetDescriptor(&pgpersist.NRTMSource{})
+	rpslObjectDesc := db.GetDescriptor(&pgpersist.RPSLObject{})
 	return fmt.Sprintf(`
 		SELECT %v
 		FROM %v
