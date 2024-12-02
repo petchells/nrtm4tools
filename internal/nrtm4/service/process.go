@@ -206,41 +206,82 @@ func (c *Counter) Increment() {
 
 // RPSLObjectList an ummutable list of objects
 type RPSLObjectList struct {
-	//mu      sync.Mutex
+	mu      sync.Mutex
 	objects []rpsl.Rpsl
 }
 
 // NewRPSLObjectList returns an initialized RPSLObjectList
 func NewRPSLObjectList() RPSLObjectList {
-	return RPSLObjectList{make([]rpsl.Rpsl, rpslInsertBatchSize, rpslInsertBatchSize*2)}
+	return RPSLObjectList{objects: make([]rpsl.Rpsl, 0, rpslInsertBatchSize*2)}
 }
 
 // Add adds an object the list
 func (l *RPSLObjectList) Add(obj rpsl.Rpsl) {
-	//l.mu.Lock()
+	l.mu.Lock()
 	l.objects = append(l.objects, obj)
-	//l.mu.Unlock()
+	l.mu.Unlock()
 }
 
 // GetBatch will return a slice of objects only if 'size' are available. They are removed from the list
 func (l *RPSLObjectList) GetBatch(size int) []rpsl.Rpsl {
 	res := []rpsl.Rpsl{}
-	//l.mu.Lock()
+	l.mu.Lock()
 	if len(l.objects) >= size {
 		res = l.objects[:size]
 		l.objects = l.objects[size:]
 	}
-	//l.mu.Unlock()
+	l.mu.Unlock()
 	return res
 }
 
 // GetAll returns all RPSL objects and empties the internal list.
 func (l *RPSLObjectList) GetAll() []rpsl.Rpsl {
-	//l.mu.Lock()
+	l.mu.Lock()
 	res := l.objects
 	l.objects = []rpsl.Rpsl{}
-	//l.mu.Unlock()
+	l.mu.Unlock()
 	return res
+}
+
+type rpslObjectParser struct{}
+
+type rpslParserPool struct {
+	Parsers chan rpslObjectParser
+}
+
+func newParserPool(limit int) *rpslParserPool {
+	pool := rpslParserPool{}
+	pool.Parsers = make(chan rpslObjectParser, limit)
+	for range limit {
+		pool.Parsers <- rpslObjectParser{}
+	}
+	return &pool
+}
+
+func (pool *rpslParserPool) Acquire() rpslObjectParser {
+	return <-pool.Parsers
+}
+
+func (pool *rpslParserPool) Release(p rpslObjectParser) {
+	pool.Parsers <- p
+}
+
+func (pool *rpslParserPool) Close() {
+	close(pool.Parsers)
+}
+
+func (p *rpslObjectParser) bytesToRPSL(bytes []byte) *rpsl.Rpsl {
+	so := new(persist.SnapshotObjectJSON)
+	if err := json.Unmarshal(bytes, so); err != nil {
+		logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
+		return nil
+	}
+	rpsl, err := rpsl.ParseString(so.Object)
+	if err != nil {
+		logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
+	}
+	return &rpsl
+
 }
 
 func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON) jsonseq.RecordReaderFunc {
@@ -292,31 +333,43 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 	// 	}
 	// }
 
+	parserPool := newParserPool(4)
+	incrementCounters := func(res *rpsl.Rpsl) {
+		if obj := res; obj != nil {
+			objectList.Add(*obj)
+			successfulObjects.Increment()
+		} else {
+			failedObjects.Increment()
+		}
+		rpslObjects := objectList.GetBatch(rpslInsertBatchSize)
+		if len(rpslObjects) > 0 {
+			err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
+			if err != nil {
+				log.Fatalln("Error saving snapshot object", err)
+			}
+		}
+	}
+
 	return func(bytes []byte, err error) error {
 		if err == &persist.ErrNoEntity {
-			logger.Warn("error empty JSON", "error", err)
-			return err
+			logger.Warn("empty JSON record", "error", err)
+			return nil
 		}
 		if err == io.EOF {
-			// Expected error reading to end of snapshot objects. Round them up and save them.
-			so := new(persist.SnapshotObjectJSON)
-			if err = json.Unmarshal(bytes, so); err == nil {
-				rpsl, err := rpsl.ParseString(so.Object)
-				if err != nil {
-					return err
-				}
-				successfulObjects.Increment()
-				objectList.Add(rpsl)
-				rpslObjects := objectList.GetAll()
-				wg.Wait()
-				err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-				if err != nil {
-					return err
-				}
-				source.Version = snapshotHeader.Version
-				_, err = repo.SaveSource(source, notification)
+			// Expected error reading to end of snapshot objects
+			parser := parserPool.Acquire()
+			incrementCounters(parser.bytesToRPSL(bytes))
+			parserPool.Release(parser)
+			wg.Wait()
+			parserPool.Close()
+
+			rpslObjects := objectList.GetAll()
+			err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
+			if err != nil {
 				return err
 			}
+			source.Version = snapshotHeader.Version
+			_, err = repo.SaveSource(source, notification)
 			return err
 		} else if err != nil {
 			// Unexpected error. Should be able to read snapshot header or objects.
@@ -337,25 +390,13 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			return nil
 		} else {
 			// Subsequent records are objects
-			so := new(persist.SnapshotObjectJSON)
-			if err := json.Unmarshal(bytes, so); err == nil {
-				rpsl, err := rpsl.ParseString(so.Object)
-				if err != nil {
-					failedObjects.Increment()
-					logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
-				}
-				objectList.Add(rpsl)
-				successfulObjects.Increment()
-			} else {
-				logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
-			}
-			rpslObjects := objectList.GetBatch(rpslInsertBatchSize)
-			if len(rpslObjects) > 0 {
-				err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-				if err != nil {
-					log.Fatalln("Error saving snapshot object", err)
-				}
-			}
+			parser := parserPool.Acquire()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer parserPool.Release(parser)
+				incrementCounters(parser.bytesToRPSL(bytes))
+			}()
 			return nil
 		}
 	}

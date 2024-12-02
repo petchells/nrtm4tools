@@ -89,6 +89,9 @@ func (repo *PostgresRepository) SaveSnapshotObjects(
 	rpslObjects []rpsl.Rpsl,
 	file persist.NrtmFileJSON,
 ) error {
+	if len(rpslObjects) == 0 {
+		return nil
+	}
 	return db.WithTransaction(func(tx pgx.Tx) error {
 		inputRows := make([][]any, len(rpslObjects))
 		for i, rpslObject := range rpslObjects {

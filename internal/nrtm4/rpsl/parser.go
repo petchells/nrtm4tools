@@ -2,7 +2,6 @@ package rpsl
 
 import (
 	"errors"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -12,7 +11,7 @@ var ErrCannotParseRPSL = errors.New("invalid RPSL")
 
 var trimHashChar = regexp.MustCompile("[^#]*")
 
-// Rpsl is a data structure representing an NRTM object
+// Rpsl is a data structure representing an RPSL object
 type Rpsl struct {
 	PrimaryKey string
 	Source     string
@@ -37,7 +36,7 @@ func parseString(str string) (Rpsl, error) {
 		if len(objectType) == 0 {
 			parts := strings.SplitN(line, ":", 2)
 			if len(parts) != 2 {
-				log.Println("Cannot determine ObjectType")
+				logger.Warn("Cannot determine ObjectType")
 				return Rpsl{}, ErrCannotParseRPSL
 			}
 			objectType = trimToUpper(parts[0])
