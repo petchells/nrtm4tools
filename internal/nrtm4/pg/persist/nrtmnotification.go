@@ -59,8 +59,9 @@ func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSO
 			return nil
 		}
 		return newNotification(tx)
-	} else if payload.Version == lastN.Version+1 {
+	} else if payload.Version > lastN.Version {
 		return newNotification(tx)
 	}
-	return errors.New("Expected next consecutive notification version")
+	logger.Error("Expected higher notification version", "lastN.Version", lastN.Version, "payload.Version", payload.Version)
+	return errors.New("expected higher notification version than the one found")
 }

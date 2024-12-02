@@ -57,7 +57,6 @@ func (repo *PostgresRepository) SaveSource(source persist.NRTMSource, notificati
 			return err
 		}
 		return pgpersist.NewNotification(tx, source.ID, notification)
-
 	})
 	return pgSource.AsNRTMSource(), err
 }
