@@ -286,52 +286,12 @@ func (p *rpslObjectParser) bytesToRPSL(bytes []byte) *rpsl.Rpsl {
 
 func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON) jsonseq.RecordReaderFunc {
 
-	//	var rpslObjects []rpsl.Rpsl
 	var snapshotHeader *persist.SnapshotFileJSON
-
 	var wg sync.WaitGroup
 
-	//objectCh := make(chan rpsl.Rpsl, 2000)
 	objectList := RPSLObjectList{}
-	//objectList := make([]rpsl.Rpsl, rpslInsertBatchSize, rpslInsertBatchSize*2)
 	successfulObjects := Counter{}
 	failedObjects := Counter{}
-
-	// unmarshalBytesToChan := func(bytes []byte) {
-	// 	so := new(persist.SnapshotObjectJSON)
-	// 	if err := json.Unmarshal(bytes, so); err == nil {
-	// 		rpsl, err := rpsl.ParseString(so.Object)
-	// 		if err != nil {
-	// 			failedObjects.Increment()
-	// 			logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
-	// 		}
-	// 		objectCh <- rpsl
-	// 		successfulObjects.Increment()
-	// 	} else {
-	// 		logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
-	// 	}
-	// }
-
-	// saveObjects := func(ch chan rpsl.Rpsl) {
-	// 	for {
-	// 		select {
-	// 		case rpsl := <-ch:
-	// 			objectListSync.Add(rpsl)
-	// 			rpslObjects := objectListSync.GetBatch(rpslInsertBatchSize)
-	// 			if len(rpslObjects) > 0 {
-	// 				wg.Add(1)
-	// 				go func() {
-	// 					defer wg.Done()
-	// 					err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-	// 					if err != nil {
-	// 						log.Fatalln("Error saving snapshot object", err)
-	// 					}
-	// 				}()
-	// 			}
-	// 		default:
-	// 		}
-	// 	}
-	// }
 
 	parserPool := newParserPool(4)
 	incrementCounters := func(res *rpsl.Rpsl) {
