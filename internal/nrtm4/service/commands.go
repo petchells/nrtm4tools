@@ -27,7 +27,7 @@ func NewCommandProcessor(processor Processor) CommandExecutor {
 	return CommandExecutor{processor}
 }
 
-var labelRegex = regexp.MustCompile("^[A-Za-z][A-Za-z0-9._-]*[A-Za-z]$")
+var labelRegex = regexp.MustCompile("^[A-Za-z0-9._-]*[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 // Connect establishes a new connection to a NRTM source server
 func (ce CommandExecutor) Connect(notificationURL string, label string) {

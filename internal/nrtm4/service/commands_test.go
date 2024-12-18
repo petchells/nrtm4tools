@@ -25,20 +25,30 @@ func TestCommandExecutorUpdate(t *testing.T) {
 	ce.Connect("srcName", "label")
 }
 
+type labelExpectation struct {
+	label  string
+	expect bool
+}
+
 func TestLabelRegex(t *testing.T) {
-	lbls := [...]string{
-		"This_one_is-100.OK",
-		"This_one_is not OK",
-		"1not_ok",
-		"ALSO-NOT!",
-		"F",
+	lbls := [...]labelExpectation{{
+		"This_one_is-100.OK", true},
+		{"1_is_ok", true},
+		{"YES$nowerky", false},
+		{"F", true},
+		{"1970-01-01", true},
+		{"This one is not OK", false},
+		{"-------", false},
+		{"------1", true},
 	}
-	for idx, lbl := range lbls {
-		match := labelRegex.MatchString(lbl)
-		if match && idx > 0 {
-			t.Error("Invalid label should not match", lbl, match)
-		} else if !match && idx == 0 {
-			t.Error("Valid label should match", lbl, match)
+	for _, lbl := range lbls {
+		match := labelRegex.MatchString(lbl.label)
+		if match != lbl.expect {
+			if lbl.expect {
+				t.Error("Label regex should succeed", lbl.label)
+			} else {
+				t.Error("Label regex should fail", lbl.label)
+			}
 		}
 	}
 }

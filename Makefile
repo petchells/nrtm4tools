@@ -34,7 +34,7 @@ CHECK_VCS:=scripts/checkvcs.sh
 
 MAKEFLAGS += --silent
 
-.PHONY: build build-linux buildgo checkvcs clean cleanall coverage emptydb install list migrate migrate-production preparetests release rewinddb run test testgo testweb testimage webdev
+.PHONY: build buildweb build-linux buildgo checkvcs clean cleanall coverage emptydb install list migrate migrate-production preparetests release rewinddb run test testgo testweb testimage webdev
 
 defaulttarget: list
 
@@ -46,7 +46,10 @@ web/node_modules: ; cd web && $(NPMCMD) install
 buildgo:
 	cd $(APP_DIR) && $(GOBUILD) -o $(BINARY_NAME_APP) -v
 
-build: buildgo
+buildweb: web/node_modules
+	cd web && npm run build
+
+build: buildgo buildweb ;
 
 build-linux:
 	cd $(APP_DIR) && \
@@ -77,6 +80,9 @@ preparetests: emptytestdb migratetest buildgo
 coverage: preparetests
 	sh scripts/coverage.sh
 
+webdev: buildweb
+	cd web && npm run dev
+
 testgo: preparetests
 	$(GOTEST) ./internal/...
 
@@ -105,7 +111,7 @@ release: release-app ;
 
 run:
 ifeq (,$(wildcard ./scripts/run.sh))
-	echo "scripts/run.sh not found. copy scripts/run.example.sh and change the variables for your system"
+	echo "scripts/run.sh not found. copy scripts/run.example.sh and edit the variables for your system"
 	exit 1
 endif
 	sh scripts/run.sh
@@ -118,6 +124,7 @@ clean:
 #	-$(DOCKERCMD) image rm $(IMAGE_APP_NAME) >/dev/null 2>&1
 #	-$(DOCKERCMD) rmi $(shell docker images --filter=reference="$(IMAGE_APP_NAME_RELEASE):*" -q) 2>/dev/null
 
-cleanall: clean ;
+cleanall: clean
+	cd web && rm -rf node_modules
 
 uninstall: cleanall ;
