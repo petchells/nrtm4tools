@@ -3,16 +3,22 @@ package service
 import (
 	"errors"
 	"testing"
+
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
 type ProcessorStub struct{}
 
-func (ps ProcessorStub) Connect(url string, label string) error {
+func (ps ProcessorStub) Connect(url, label string) error {
 	return errors.New("test error")
 }
 
-func (ps ProcessorStub) Update(srcName string, label string) error {
+func (ps ProcessorStub) Update(srcName, label string) error {
 	return nil
+}
+
+func (ps ProcessorStub) ListSources() ([]persist.NRTMSource, error) {
+	return []persist.NRTMSource{}, nil
 }
 
 func TestCommandExecutorConnect(t *testing.T) {

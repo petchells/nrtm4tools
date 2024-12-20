@@ -4,12 +4,19 @@
 
 nrtm4client is a tool for communicating with an [NRTMv4 server](https://github.com/mxsasha/nrtmv4).
 It retrieves IRR data from NTRM mirror servers and stores them in a database (only PostgreSQL
-currently). History is maintained and can be queried
+currently). History is maintained and can be queried.
 
 ## Development Status
 
-The `main` branch supports `connect` and `update` commands. See [run.example.sh](./scripts/run.example.sh)
-for example uses.
+The `main` branch supports `connect` and `update` commands. See the `run*.sh` commands in
+the `./scripts` directory. Create a file `./scripts/env.dev.conf`, set the vars to your
+environment and you can use the scripts. Currently the only available source is RIPE, so
+it's hard-coded.
+
+## Set up environment
+
+- NRTM4_FILE_PATH An empty directory where NRTMv4 snapshot and delta files will be stored.
+- PG_DATABASE_URL Connection string to PostgreSQL database
 
 To try it out yourself follow the build steps below, then set up a PostgreSQL data before
 making a connection to an NRTMv4 mirror server.
@@ -30,6 +37,16 @@ servers remove old delta files so you should get them while they're available.
 - go 1.23+
 - [tern](https://github.com/JackC/tern) v2.3.0 for PostgreSQL migrations
 
+  make clean testgo # uses a db to when testing. see below for PostgreSQL setup
+  make clean buildgo # creates a binary at ./cmd/nrtmclient/nrtmclient
+  make migrate # creates database schema. See `tern.conf`
+
+This builds the frontend, though I wouldn't bother until it can do cool stuff.
+It's rather poor at the mo.
+
+    make clean test
+    make clean build
+
 ## PostgreSQL Database
 
 ### Create role and DB
@@ -46,6 +63,8 @@ Assuming your database is running on localhost...
     make migrate
 
 ## Running nrtm4client
+
+### Build and test
 
 Create a directory, e.g. `$HOME/nrtm4/RIPE` to store downloaded files, then run it with these
 environment variables (assumes the nrtm4client binary is at $HOME/Projects/nrtm4client/cmd/nrtm4client/nrtm4client):

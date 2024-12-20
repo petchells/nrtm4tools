@@ -43,6 +43,11 @@ func (repo PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
 	return sources, nil
 }
 
+// GetSourceDetails gets all sources with notification history
+func (repo PostgresRepository) GetSourceDetails() ([]persist.NRTMSourceDetails, error) {
+	return []persist.NRTMSourceDetails{}, nil
+}
+
 // SaveSource updates a source if ID is non-zero, or creates a new one if it is
 func (repo PostgresRepository) SaveSource(source persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
 	var pgSource pgpersist.NRTMSource

@@ -1,7 +1,10 @@
 package service
 
 import (
+	"fmt"
 	"regexp"
+
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 )
 
 // AppConfig application configuration object
@@ -15,6 +18,7 @@ type AppConfig struct {
 type Processor interface {
 	Connect(string, string) error
 	Update(string, string) error
+	ListSources() ([]persist.NRTMSource, error)
 }
 
 // CommandExecutor top-level processing for input commands
@@ -54,4 +58,20 @@ func (ce CommandExecutor) Update(source string, label string) {
 	} else {
 		logger.Info("Update finished successfully")
 	}
+}
+
+// ListSources shows all sources in db
+func (ce CommandExecutor) ListSources(src, label string) {
+	logger.Info("Not doing anything with these args for now", "src", src, "label", label)
+	sources, err := ce.processor.ListSources()
+	if err != nil {
+		logger.Warn("Error occurred when listing sources", "error", err)
+		return
+	}
+	fmt.Printf("   Source                         Label                         \n")
+	fmt.Printf("----------------------------------------------------------------\n")
+	for i, src := range sources {
+		fmt.Printf("%2d %-30v %-30v\n", i+1, src.Source, src.Label)
+	}
+	logger.Info("List finished successfully")
 }

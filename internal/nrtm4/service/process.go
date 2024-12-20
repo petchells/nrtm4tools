@@ -332,8 +332,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			_, err = repo.SaveSource(source, notification)
 			return err
 		} else if err != nil {
-			// Unexpected error. Should be able to read snapshot header or objects.
-			logger.Warn("error unmarshalling JSON.", "error", err)
+			logger.Warn("error reading jsonseq records.", "error", err)
 			return err
 		} else if successfulObjects.n == 0 {
 			// First record is the Snapshot header

@@ -17,6 +17,12 @@ type NRTMSource struct {
 	Created         time.Time
 }
 
+// NRTMSourceDetails is a source with notification objects
+type NRTMSourceDetails struct {
+	NRTMSource
+	Notifications []Notification
+}
+
 // NewNRTMSource prepares a new source object
 func NewNRTMSource(notification NotificationJSON, label string, notificationURL string) NRTMSource {
 	return NRTMSource{

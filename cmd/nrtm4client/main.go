@@ -32,7 +32,7 @@ func main() {
 		PgDatabaseURL:    dbURL,
 		BoltDatabasePath: boltDBPath,
 	}
-
+	commander := nrtm4.InitializeCommandProcessor(config)
 	connectCommand := func(args []string) {
 		// A real program (not an example) would use flag.ExitOnError.
 		fs := flag.NewFlagSet("connect", flag.ExitOnError)
@@ -43,7 +43,7 @@ func main() {
 		if len(*notificationURL) == 0 {
 			log.Fatal("URL must be provided")
 		}
-		nrtm4.Connect(config, *notificationURL, *sourceLabel)
+		commander.Connect(*notificationURL, *sourceLabel)
 	}
 
 	updateCommand := func(args []string) {
@@ -57,7 +57,18 @@ func main() {
 		if len(*src) == 0 {
 			log.Fatalf("Source name must be provided")
 		}
-		nrtm4.Update(config, *src, *lbl)
+		commander.Update(*src, *lbl)
+	}
+
+	listCommand := func(args []string) {
+		fs := flag.NewFlagSet("list", flag.ExitOnError)
+		src := fs.String("source", "", "The name of the source")
+		lbl := fs.String("label", "", "The label for the source. Can be empty.")
+		if err := fs.Parse(args); err != nil {
+			fmt.Printf("error: %s", err)
+			return
+		}
+		commander.ListSources(*src, *lbl)
 	}
 
 	runCmd := func(args []string) {
@@ -69,6 +80,9 @@ func main() {
 				return
 			case "update":
 				updateCommand(subArgs)
+				return
+			case "list":
+				listCommand(subArgs)
 				return
 			default:
 			}

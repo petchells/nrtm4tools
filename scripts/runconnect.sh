@@ -13,6 +13,6 @@ then
 	exit 1
 fi
 
-env ${envvars} go run \
+env $(cat "$varsfile" | xargs) go run \
 	cmd/nrtm4client/main.go connect \
 	--url "https://nrtm.db.ripe.net/nrtmv4/RIPE/update-notification-file.json"

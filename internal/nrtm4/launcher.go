@@ -10,8 +10,8 @@ import (
 
 var logger = util.Logger
 
-// Connect sets up the execution environment then invokes the connect command
-func Connect(config service.AppConfig, url, label string) {
+// InitializeCommandProcessor starts a db connection pool
+func InitializeCommandProcessor(config service.AppConfig) service.CommandExecutor {
 	var httpClient service.HTTPClient
 	repo := pg.PostgresRepository{}
 	if err := repo.Initialize(config.PgDatabaseURL); err != nil {
@@ -19,19 +19,5 @@ func Connect(config service.AppConfig, url, label string) {
 	}
 	defer repo.Close()
 	processor := service.NewNRTMProcessor(config, repo, httpClient)
-	commander := service.NewCommandProcessor(processor)
-	commander.Connect(url, label)
-}
-
-// Update sets up the execution environment then invokes the update command
-func Update(config service.AppConfig, sourceName, label string) {
-	var httpClient service.HTTPClient
-	repo := pg.PostgresRepository{}
-	if err := repo.Initialize(config.PgDatabaseURL); err != nil {
-		log.Fatal("Failed to initialize repository")
-	}
-	defer repo.Close()
-	processor := service.NewNRTMProcessor(config, repo, httpClient)
-	commander := service.NewCommandProcessor(processor)
-	commander.Update(sourceName, label)
+	return service.NewCommandProcessor(processor)
 }
