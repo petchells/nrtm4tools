@@ -60,7 +60,14 @@ export default function SideMenuMobile({
         </Stack>
         <Divider />
         <Stack sx={{ flexGrow: 1 }}>
-          <MenuContent />
+          <MenuContent
+            mainItems={[]}
+            secondaryItems={[]}
+            menuItemSelectedIdx={0}
+            onSelected={function (idx: number): void {
+              console.log("selected idx", idx);
+            }}
+          />
           <Divider />
         </Stack>
         <CardAlert />

@@ -6,6 +6,7 @@ Session.vim
 .vscode/
 
 cmd/nrtm4client/nrtm4client
+cmd/nrtm4serve/nrtm4serve
 cmd/*/__debug_bin*
 scripts/env.dev.conf
 work/

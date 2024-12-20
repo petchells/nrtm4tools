@@ -16,7 +16,7 @@ it's hard-coded.
 ## Set up environment
 
 - NRTM4_FILE_PATH An empty directory where NRTMv4 snapshot and delta files will be stored.
-- PG_DATABASE_URL Connection string to PostgreSQL database
+- PG_DATABASE_URL Connection string to PostgreSQL database.
 
 To try it out yourself follow the build steps below, then set up a PostgreSQL data before
 making a connection to an NRTMv4 mirror server.
@@ -31,6 +31,41 @@ delta files and re-synchronize the database with the NRTM mirror server. If you 
 keep the history of changes to IRR records over time, you'll need to update regularly -- mirror
 servers remove old delta files so you should get them while they're available.
 
+## PostgreSQL Database
+
+### (Optional) Use Docker to run a local instance of Postgres
+
+Set an environment variable `POSTGRES_HOST_AUTH_METHOD=trust` so you won't need to use passwords.
+It's very insecure but also very handy for a local setup just to get things up and running. You
+can always `pg_dump` the data and put it on a more securely configured server later.
+
+    docker pull postgres:16
+    docker run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:16
+
+Or with podman
+
+    podman pull docker.io/library/postgres:16
+    podman run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:16
+
+From then on:
+
+    docker stop db
+    docker start db
+
+### Create role and DB
+
+Assuming your database is running on localhost...
+
+    createuser -h localhost nrtm4
+    createdb -h localhost -O nrtm4 nrtm4
+
+    createuser -h localhost nrtm4_test
+    createdb -h localhost -O nrtm4_test nrtm4_test
+
+### Initialize schema
+
+    make migrate  # creates database schema. See `tern.conf`
+
 ## Build
 
 - make
@@ -39,44 +74,22 @@ servers remove old delta files so you should get them while they're available.
 
   make clean testgo # uses a db to when testing. see below for PostgreSQL setup
   make clean buildgo # creates a binary at ./cmd/nrtmclient/nrtmclient
-  make migrate # creates database schema. See `tern.conf`
 
-This builds the frontend, though I wouldn't bother until it can do cool stuff.
-It's rather poor at the mo.
+This builds the frontend as well, though I wouldn't bother until it can do cool stuff.
 
     make clean test
     make clean build
 
-## PostgreSQL Database
-
-### Create role and DB
-
-Assuming your database is running on localhost...
-
-    createuser -h localhost nrtm4
-    createdb -h localhost -O nrtm4 nrtm4
-    createuser -h localhost nrtm4_test
-    createdb -h localhost -O nrtm4_test nrtm4_test
-
-### Initialize schema
-
-    make migrate
-
 ## Running nrtm4client
 
-### Build and test
+Create a directory, e.g. `$HOME/nrtm4/RIPE` to store downloaded files,
+then copy file [./scripts/env.dev.example.conf] to ./scripts/env.dev.conf, and change the variables
+to your system:
 
-Create a directory, e.g. `$HOME/nrtm4/RIPE` to store downloaded files, then run it with these
-environment variables (assumes the nrtm4client binary is at $HOME/Projects/nrtm4client/cmd/nrtm4client/nrtm4client):
+    PG_DATABASE_URL=postgres://nrtm4:nrtm4@localhost:5432/nrtm4?sslmode=disable
+    NRTM4_FILE_PATH=$HOME/tmp/RIPE
 
-    envvars="PG_DATABASE_URL=postgres://nrtm4:nrtm4@localhost:5432/nrtm4?sslmode=disable \
-        NRTM4_FILE_PATH=$HOME/tmp/RIPE"
-    env ${envvars} ./cmd/nrtm4client/nrtm4client
-
-Describe modes: Syncing and validating
-
-- Environment variables
-- Command line flags
+Now run one of one of the `run*.sh` scripts in the [./scripts](./scripts) dir.
 
 # Tips
 

@@ -1,13 +1,16 @@
+import { StrictMode } from "react";
 import { useRouteError } from "react-router-dom";
+
+//import type {} from "@mui/material/themeCssVarsAugmentation";
+import { alpha, ThemeProvider } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import CssBaseline from "@mui/material/CssBaseline";
 import type {} from "@mui/x-date-pickers/themeAugmentation";
 import type {} from "@mui/x-charts/themeAugmentation";
 import type {} from "@mui/x-data-grid/themeAugmentation";
 import type {} from "@mui/x-tree-view/themeAugmentation";
-import { ThemeProvider } from "@mui/material/styles";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import CssBaseline from "@mui/material/CssBaseline";
-import { StrictMode } from "react";
+
 import AppTheme from "./components/shared-theme/AppTheme";
 import theme from "./theme";
 

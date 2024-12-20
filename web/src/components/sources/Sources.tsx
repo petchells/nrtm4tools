@@ -65,6 +65,7 @@ export default function Sources() {
     );
   };
   const onUrlEntered = (url: string) => {
+    console.log("url", url);
     setLoading(1);
   };
 
