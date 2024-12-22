@@ -20,6 +20,7 @@ export default function Sources() {
   const [err, setErr] = useState<string>("");
   const [sources, setSources] = useState<SourceModel[]>([]);
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
+  const [refresh, setRefresh] = useState<number>(0);
 
   useEffect(() => {
     const rpcService = new RpcClientService();
@@ -50,7 +51,9 @@ export default function Sources() {
     } else {
       selectedIDs.splice(idx, 1);
     }
+    console.log(selectedIDs);
     setSelectedIDs(selectedIDs);
+    setRefresh(refresh ^ 1);
   };
 
   const noSources = () => {

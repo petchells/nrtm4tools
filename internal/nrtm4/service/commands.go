@@ -14,20 +14,20 @@ type AppConfig struct {
 	BoltDatabasePath string
 }
 
-// Processor top-level processing for app functions
-type Processor interface {
+// ExecutionProcessor top-level processing for app functions
+type ExecutionProcessor interface {
 	Connect(string, string) error
 	Update(string, string) error
-	ListSources() ([]persist.NRTMSource, error)
+	ListSources() ([]persist.NRTMSourceDetails, error)
 }
 
 // CommandExecutor top-level processing for input commands
 type CommandExecutor struct {
-	processor Processor
+	processor ExecutionProcessor
 }
 
 // NewCommandProcessor creates a CommandProcessor
-func NewCommandProcessor(processor Processor) CommandExecutor {
+func NewCommandProcessor(processor ExecutionProcessor) CommandExecutor {
 	return CommandExecutor{processor}
 }
 

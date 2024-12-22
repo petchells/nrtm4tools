@@ -43,9 +43,42 @@ func (repo PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
 	return sources, nil
 }
 
-// GetSourceDetails gets all sources with notification history
-func (repo PostgresRepository) GetSourceDetails() ([]persist.NRTMSourceDetails, error) {
-	return []persist.NRTMSourceDetails{}, nil
+// GetNotificationHistory gets the last 100 notification versions
+func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource, fromVersion, toVersion uint32) ([]persist.Notification, error) {
+	if toVersion < fromVersion {
+		return []persist.Notification{}, nil
+	}
+	notif := new(persist.Notification)
+	notifDesc := db.GetDescriptor(notif)
+	sql := fmt.Sprintf(`
+		SELECT %v
+		FROM %v
+		WHERE nrtm_source_id = $1
+		AND version >= $2
+		AND version <= $3
+		ORDER BY version DESC
+		LIMIT 1000
+		`,
+		notifDesc.ColumnNamesCommaSeparated(),
+		notifDesc.TableName(),
+	)
+	notifs := make([]persist.Notification, 0, 100)
+	err := db.WithTransaction(func(tx pgx.Tx) error {
+		rows, err := tx.Query(context.Background(), sql, source.ID, fromVersion, toVersion)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			ent := *notif
+			err = rows.Scan(db.SelectValues(&ent)...)
+			if err != nil {
+				return err
+			}
+			notifs = append(notifs, ent)
+		}
+		return nil
+	})
+	return []persist.Notification{}, err
 }
 
 // SaveSource updates a source if ID is non-zero, or creates a new one if it is

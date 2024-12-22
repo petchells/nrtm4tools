@@ -9,7 +9,7 @@ type Repository interface {
 	Initialize(dbURL string) error
 	SaveSource(NRTMSource, NotificationJSON) (NRTMSource, error)
 	GetSources() ([]NRTMSource, error)
-	GetSourceDetails() ([]NRTMSourceDetails, error)
+	GetNotificationHistory(NRTMSource, uint32, uint32) ([]Notification, error)
 	SaveFile(*NRTMFile) error
 	SaveSnapshotObjects(NRTMSource, []rpsl.Rpsl, NrtmFileJSON) error
 	AddModifyObject(NRTMSource, rpsl.Rpsl, NrtmFileJSON) error

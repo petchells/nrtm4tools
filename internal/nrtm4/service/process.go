@@ -11,6 +11,7 @@ import (
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
 )
 
 var (
@@ -24,6 +25,10 @@ var (
 	ErrNRTMFileVersionMismatch = errors.New("file version does not match its reference")
 	// ErrNRTMFileVersionInconsistency version is lower than source
 	ErrNRTMFileVersionInconsistency = errors.New("version is lower than source")
+	// ErrNRTMNextConsecutiveDeltaUnavaliable cannot find the next consecutive delta to apply to our repo
+	ErrNRTMNextConsecutiveDeltaUnavaliable = errors.New("cannot find deltas to apply to repository")
+	// ErrNRTMDeltaSequenceBroken the NRTM server has an incontiguous list of delta version
+	ErrNRTMDeltaSequenceBroken = errors.New("server has incontiguous list of delta versions")
 
 	fileWriteBufferLength = 1024 * 8
 	rpslInsertBatchSize   = 1000
@@ -114,21 +119,56 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 }
 
 // ListSources shows all sources
-func (p NRTMProcessor) ListSources() ([]persist.NRTMSource, error) {
+func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	ds := NrtmDataService{Repository: p.repo}
-	return ds.getSources()
+	sources, err := ds.getSources()
+	deets := []persist.NRTMSourceDetails{}
+	if err != nil {
+		return deets, err
+	}
+	for _, src := range sources {
+		to := src.Version
+		from := src.Version - 99
+		if src.Version <= 99 {
+			from = 1
+		}
+		notifs, err := p.repo.GetNotificationHistory(src, from, to)
+		if err != nil {
+			return deets, err
+		}
+		deets = append(deets, persist.NRTMSourceDetails{NRTMSource: src, Notifications: notifs})
+	}
+	return deets, nil
 }
 
 func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source persist.NRTMSource) error {
-	logger.Info("Looking for deltas")
 	deltaRefs := []persist.FileRefJSON{}
+	versions := util.NewSet[uint32]()
 	for _, deltaRef := range *notification.DeltaRefs {
+		versions.Add(deltaRef.Version)
 		if deltaRef.Version > source.Version {
 			deltaRefs = append(deltaRefs, deltaRef)
 		}
 	}
 	if len(deltaRefs) == 0 {
 		return errors.New("restart sync mirror is too old")
+	}
+	if len(versions) > 1 {
+		sorted := versions.Members()
+		sort.Slice(sorted, func(i, j int) bool {
+			return sorted[i] < sorted[j]
+		})
+		lo := sorted[0]
+		for i := 1; i < len(sorted); i++ {
+			if sorted[i] != lo+uint32(i) {
+				logger.Error("Delta version is missing from notification file", "version", lo+uint32(i))
+				return ErrNRTMDeltaSequenceBroken
+			}
+		}
+	}
+	if !versions.Contains(source.Version + 1) {
+		logger.Error("Repository is too old to update from this server", "version", source.Version)
+		return ErrNRTMNextConsecutiveDeltaUnavaliable
 	}
 	logger.Info("Found deltas", "numdeltas", len(deltaRefs))
 	sort.Sort(fileRefsByVersion(deltaRefs))

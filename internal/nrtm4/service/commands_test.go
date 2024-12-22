@@ -17,8 +17,8 @@ func (ps ProcessorStub) Update(srcName, label string) error {
 	return nil
 }
 
-func (ps ProcessorStub) ListSources() ([]persist.NRTMSource, error) {
-	return []persist.NRTMSource{}, nil
+func (ps ProcessorStub) ListSources() ([]persist.NRTMSourceDetails, error) {
+	return []persist.NRTMSourceDetails{}, nil
 }
 
 func TestCommandExecutorConnect(t *testing.T) {
