@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
 )
 
 var testResourcePath = "../testresources/"
@@ -35,7 +36,7 @@ func (c dlClientStub) getUpdateNotification(string) (persist.NotificationJSON, e
 			Source:      "ZZZZ",
 			Version:     22,
 		},
-		Timestamp:      time.Now().UTC().Format(time.RFC3339),
+		Timestamp:      util.AppClock.Now().Format(time.RFC3339),
 		NextSigningKey: new(string),
 		SnapshotRef: persist.FileRefJSON{
 			URL: "https://xxx.xxx.xx/notification.json",

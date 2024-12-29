@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
@@ -114,7 +113,7 @@ func (repo PostgresRepository) SaveFile(nrtmFile *persist.NRTMFile) error {
 			Type:         nrtmFile.Type.String(),
 			NRTMSourceID: nrtmFile.NrtmSourceID,
 			FileName:     nrtmFile.FileName,
-			Created:      time.Now().UTC(),
+			Created:      util.AppClock.Now(),
 		}
 		nrtmFile.ID = st.ID
 		return db.Create(tx, &st)

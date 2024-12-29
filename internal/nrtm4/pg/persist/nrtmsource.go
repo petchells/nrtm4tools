@@ -5,6 +5,7 @@ import (
 
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
 )
 
 // NRTMSource pg database mapping for nrtm_source
@@ -29,7 +30,7 @@ func NewNRTMSource(source persist.NRTMSource) NRTMSource {
 		Version:         source.Version,
 		NotificationURL: source.NotificationURL,
 		Label:           source.Label,
-		Created:         time.Now().UTC(),
+		Created:         util.AppClock.Now(),
 	}
 	return sourceObj
 }

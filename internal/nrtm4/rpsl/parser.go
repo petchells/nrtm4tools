@@ -11,7 +11,7 @@ var ErrCannotParseRPSL = errors.New("invalid RPSL")
 
 var trimHashChar = regexp.MustCompile("[^#]*")
 
-// Rpsl is a data structure representing an RPSL object
+// Rpsl is a data structure used for processing
 type Rpsl struct {
 	PrimaryKey string
 	Source     string

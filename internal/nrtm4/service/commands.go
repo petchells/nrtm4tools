@@ -75,3 +75,8 @@ func (ce CommandExecutor) ListSources(src, label string) {
 	}
 	logger.Info("List finished successfully")
 }
+
+// ReplaceLabel Replaces a label for a source/label
+func (ce CommandExecutor) ReplaceLabel(src, fromLabel, toLabel string) {
+	logger.Debug("Not doing anything with these args for now", "src", src, "toLabel", toLabel, "fromLabel", fromLabel)
+}
