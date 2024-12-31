@@ -13,7 +13,6 @@ import (
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 var memprofile = flag.String("memprofile", "", "write memory profile to this file")
-var notificationURL = flag.String("url", "", "URL to notification JSON")
 var sourceName = flag.String("source", "", "The name of the source")
 var sourceLabel = flag.String("label", "", "The label for the source. Can be empty.")
 
@@ -36,14 +35,15 @@ func main() {
 	connectCommand := func(args []string) {
 		// A real program (not an example) would use flag.ExitOnError.
 		fs := flag.NewFlagSet("connect", flag.ExitOnError)
+		url := fs.String("url", "", "The URL of the notification file")
 		if err := fs.Parse(args); err != nil {
 			fmt.Printf("error: %s", err)
 			return
 		}
-		if len(*notificationURL) == 0 {
+		if len(*url) == 0 {
 			log.Fatal("URL must be provided")
 		}
-		commander.Connect(*notificationURL, *sourceLabel)
+		commander.Connect(*url, *sourceLabel)
 	}
 
 	updateCommand := func(args []string) {
