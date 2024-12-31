@@ -19,6 +19,7 @@ type ExecutionProcessor interface {
 	Connect(string, string) error
 	Update(string, string) error
 	ListSources() ([]persist.NRTMSourceDetails, error)
+	ReplaceLabel(string, string, string) error
 }
 
 // CommandExecutor top-level processing for input commands
@@ -78,5 +79,7 @@ func (ce CommandExecutor) ListSources(src, label string) {
 
 // ReplaceLabel Replaces a label for a source/label
 func (ce CommandExecutor) ReplaceLabel(src, fromLabel, toLabel string) {
-	logger.Debug("Not doing anything with these args for now", "src", src, "toLabel", toLabel, "fromLabel", fromLabel)
+	if err := ce.processor.ReplaceLabel(src, fromLabel, toLabel); err != nil {
+		logger.Error("ReplaceLabel failed with error", "error", err)
+	}
 }

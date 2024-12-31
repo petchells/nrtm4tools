@@ -21,6 +21,8 @@ func (ps ProcessorStub) ListSources() ([]persist.NRTMSourceDetails, error) {
 	return []persist.NRTMSourceDetails{}, nil
 }
 
+func (ps ProcessorStub) ReplaceLabel(src, fromLabel, toLabel string) error { return nil }
+
 func TestCommandExecutorConnect(t *testing.T) {
 	ce := CommandExecutor{ProcessorStub{}}
 	ce.Connect("url", "label")

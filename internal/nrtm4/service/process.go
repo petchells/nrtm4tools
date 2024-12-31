@@ -8,8 +8,10 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/jackc/pgx/v5"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
 	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
 )
@@ -139,6 +141,23 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 		deets = append(deets, persist.NRTMSourceDetails{NRTMSource: src, Notifications: notifs})
 	}
 	return deets, nil
+}
+
+// ReplaceLabel replaces a label name
+func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) error {
+	ds := NrtmDataService{Repository: p.repo}
+	target := ds.getSourceByNameAndLabel(src, fromLabel)
+	if target == nil {
+		return errors.New("cannot find source with given name and label")
+	}
+	possDupe := ds.getSourceByNameAndLabel(src, toLabel)
+	if possDupe != nil {
+		return errors.New("a source with the given label already exists")
+	}
+	target.Label = toLabel
+	return db.WithTransaction(func(tx pgx.Tx) error {
+		return db.Update(tx, target)
+	})
 }
 
 func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source persist.NRTMSource) error {
@@ -399,7 +418,6 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			return nil
 		}
 	}
-
 }
 
 func validateDeltaHeader(file persist.NrtmFileJSON, source persist.NRTMSource, deltaRef persist.FileRefJSON) error {
