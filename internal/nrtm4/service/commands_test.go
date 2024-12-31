@@ -30,7 +30,7 @@ func TestCommandExecutorConnect(t *testing.T) {
 
 func TestCommandExecutorUpdate(t *testing.T) {
 	ce := CommandExecutor{ProcessorStub{}}
-	ce.Connect("srcName", "label")
+	ce.Update("srcName", "label")
 }
 
 type labelExpectation struct {
