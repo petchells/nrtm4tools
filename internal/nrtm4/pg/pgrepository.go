@@ -47,7 +47,7 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 	if toVersion < fromVersion {
 		return []persist.Notification{}, nil
 	}
-	notif := new(persist.Notification)
+	notif := new(pgpersist.Notification)
 	notifDesc := db.GetDescriptor(notif)
 	sql := fmt.Sprintf(`
 		SELECT %v
@@ -73,11 +73,11 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 			if err != nil {
 				return err
 			}
-			notifs = append(notifs, ent)
+			notifs = append(notifs, asNotification(ent))
 		}
 		return nil
 	})
-	return []persist.Notification{}, err
+	return notifs, err
 }
 
 // SaveSource updates a source if ID is non-zero, or creates a new one if it is
@@ -238,4 +238,14 @@ func selectObjectQuery() string {
 		rpslObjectDesc.TableAlias(),
 		rpslObjectDesc.TableAlias(),
 	)
+}
+
+func asNotification(n pgpersist.Notification) persist.Notification {
+	return persist.Notification{
+		ID:           n.ID,
+		Version:      n.Version,
+		NRTMSourceID: n.NRTMSourceID,
+		Payload:      n.Payload,
+		Created:      n.Created,
+	}
 }

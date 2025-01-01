@@ -17,7 +17,7 @@ func Launch(config service.AppConfig, port int, webRoot string) {
 		log.Fatal("Failed to initialize repository")
 	}
 	defer repo.Close()
-	rpcHandler := rpc.Handler{API: WebAPI{Repo: repo}}
+	rpcHandler := rpc.Handler{API: WebAPI{Repo: repo, AppConfig: config}}
 	logger.Info("NRTM4serve is starting", "port", port)
 	defer func() {
 		if r := recover(); r != nil {

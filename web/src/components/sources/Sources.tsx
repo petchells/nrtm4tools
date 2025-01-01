@@ -26,7 +26,7 @@ export default function Sources() {
     const rpcService = new RpcClientService();
     setPageLoading(1);
     rpcService
-      .execute<SourceModel[]>("GetSources")
+      .execute<SourceModel[]>("ListSources")
       .then(
         (ss) => {
           setSources(ss);

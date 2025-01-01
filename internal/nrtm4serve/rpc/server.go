@@ -31,7 +31,7 @@ func (s *Server) Serve(port int) {
 	s.r.Walk(
 		func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 			ht, err := route.GetPathRegexp()
-			log.Println("INFO serving route", ht)
+			logger.Info("INFO serving route", "path", ht)
 			return err
 		},
 	)
