@@ -61,7 +61,7 @@ export default function SourcesInput(props: {
         </InputAdornment>
       }
       inputProps={{
-        "aria-label": "search",
+        "aria-label": "URL input",
       }}
     />
   );

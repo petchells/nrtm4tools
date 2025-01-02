@@ -144,18 +144,18 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 }
 
 // ReplaceLabel replaces a label name
-func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) error {
+func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NRTMSource, error) {
 	ds := NrtmDataService{Repository: p.repo}
 	target := ds.getSourceByNameAndLabel(src, fromLabel)
 	if target == nil {
-		return errors.New("cannot find source with given name and label")
+		return nil, errors.New("cannot find source with given name and label")
 	}
 	possDupe := ds.getSourceByNameAndLabel(src, toLabel)
 	if possDupe != nil {
-		return errors.New("a source with the given label already exists")
+		return nil, errors.New("a source with the given label already exists")
 	}
 	target.Label = toLabel
-	return db.WithTransaction(func(tx pgx.Tx) error {
+	return target, db.WithTransaction(func(tx pgx.Tx) error {
 		return db.Update(tx, target)
 	})
 }

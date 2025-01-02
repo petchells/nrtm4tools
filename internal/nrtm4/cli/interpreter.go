@@ -21,7 +21,6 @@ const mandatorySourceMessage = "Source name must be provided with the -source fl
 func Exec(commander service.CommandExecutor) {
 
 	connectCommand := func(args []string) {
-		// A real program (not an example) would use flag.ExitOnError.
 		fs := flag.NewFlagSet("connect", flag.ExitOnError)
 		notificationURL := fs.String("url", "", "URL to notification JSON")
 		sourceLabel := fs.String("label", "", "The label for the source. Can be empty.")
@@ -61,7 +60,7 @@ func Exec(commander service.CommandExecutor) {
 	}
 
 	replaceLabelCommand := func(args []string) {
-		fs := flag.NewFlagSet("list", flag.ExitOnError)
+		fs := flag.NewFlagSet("rename", flag.ExitOnError)
 		src := fs.String("source", "", "The name of the source")
 		lbl := fs.String("label", "", "The label for the source. Can be empty.")
 		tolbl := fs.String("to", "", "The replacement label text")

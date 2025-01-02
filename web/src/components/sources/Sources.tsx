@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 import WarningIcon from "@mui/icons-material/Warning";
 
-import RpcClientService from "../../client/rpcClientService.ts";
 import SourcesTable from "./SourcesTable.tsx";
 import SourcesError from "./SourcesError.tsx";
 import { SourceModel } from "../../client/models.ts";
 import SourcesInput from "./SourcesInput.tsx";
+import { WebAPIClient } from "../../client/WebAPIClient.ts";
+import Source from "./Source.tsx";
 
 export default function Sources() {
   const [pageLoading, setPageLoading] = useState<number>(1);
@@ -21,21 +20,21 @@ export default function Sources() {
   const [sources, setSources] = useState<SourceModel[]>([]);
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
   const [refresh, setRefresh] = useState<number>(0);
+  const client = new WebAPIClient();
 
   useEffect(() => {
-    const rpcService = new RpcClientService();
     setPageLoading(1);
-    rpcService
-      .execute<SourceModel[]>("ListSources")
+    client
+      .listSources()
       .then(
         (ss) => {
           setSources(ss);
           setErr("");
         },
-        () => {
+        (err) => {
           setSources([]);
           setSelectedIDs([]);
-          setErr("No connection to the server");
+          setErr("Connection error: " + err);
         }
       )
       .then(() => {
@@ -44,7 +43,7 @@ export default function Sources() {
   }, []);
 
   const handleOnSelected = (row: SourceModel) => {
-    const key = row.Source + "." + row.Label;
+    const key = sourceKey(row);
     const idx = selectedIDs.indexOf(key);
     if (idx < 0) {
       selectedIDs.push(key);
@@ -67,9 +66,21 @@ export default function Sources() {
       </Alert>
     );
   };
+
   const onUrlEntered = (url: string) => {
     console.log("url", url);
     setLoading(1);
+  };
+
+  const lookupSource = (key: string) => {
+    const src = sources.filter((s) => {
+      return key === sourceKey(s);
+    });
+    return src[0];
+  };
+
+  const sourceKey = (src: SourceModel): string => {
+    return src.Source + "." + src.Label;
   };
 
   return (
@@ -94,12 +105,12 @@ export default function Sources() {
               onSelected={handleOnSelected}
             />
           )}
-          {selectedIDs.length > 0 && (
-            <ButtonGroup variant="outlined" aria-label="Actions for source">
-              <Button>Label</Button>
-              <Button>Update</Button>
-            </ButtonGroup>
-          )}
+          {selectedIDs.length > 0 &&
+            selectedIDs
+              .map((key) => lookupSource(key))
+              .map((src) => (
+                <Source key={sourceKey(src)} source={src}></Source>
+              ))}
           {!err && selectedIDs.length === 0 && (
             <SourcesInput onUrlEntered={onUrlEntered} disabled={!!loading} />
           )}

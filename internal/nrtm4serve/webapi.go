@@ -26,3 +26,10 @@ func (api WebAPI) ListSources() ([]persist.NRTMSourceDetails, error) {
 	processor := service.NewNRTMProcessor(api.AppConfig, api.Repo, httpClient)
 	return processor.ListSources()
 }
+
+// ReplaceLabel replaces a label on a source
+func (api WebAPI) ReplaceLabel(source, fromLabel, toLabel string) (*persist.NRTMSource, error) {
+	var httpClient service.HTTPClient
+	processor := service.NewNRTMProcessor(api.AppConfig, api.Repo, httpClient)
+	return processor.ReplaceLabel(source, fromLabel, toLabel)
+}

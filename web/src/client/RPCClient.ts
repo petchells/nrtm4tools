@@ -15,7 +15,7 @@ interface RpcCommand {
   params?: any[];
 }
 
-export default class RpcClientService {
+export default class RPCClient {
   // return codes for errors
   public static ErrRedirectToLogin = -32302;
 
