@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/rpsl"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/rpsl"
 )
 
 type stubRepo struct {

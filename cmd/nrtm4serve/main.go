@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/service"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4serve"
+	"github.com/petchells/nrtm4client/internal/nrtm4/service"
+	"github.com/petchells/nrtm4client/internal/nrtm4serve"
 )
 
 var port = flag.Int("port", 8080, "server port number")

@@ -7,7 +7,7 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/service"
+	"github.com/petchells/nrtm4client/internal/nrtm4/service"
 )
 
 var (

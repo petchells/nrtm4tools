@@ -1,57 +1,65 @@
-version: '3'
+version: "3"
 
 vars:
-  FIRST_VAR: "hello"
+  WEB_DIR: "./web"
   SECOND_VAR: "{{.FIRST_VAR}} world"
 
 tasks:
-
   buildgo:
     cmds:
       - echo {{.SECOND_VAR}}
       - cd ./cmd/nrtm4client && go build -o nrtm4client -v
       - cd ./cmd/nrtm4serve && go build -o nrtm4serve -v
+    silent: true
 
   testgo:
     cmds:
       - go test ./internal/...
+    silent: true
 
   installweb:
     precondition: test ! -d node_modules
-    dir: ./web
     cmds:
-      - npm install --verbose
+      - cd {{.WEB_DIR}} && npm install --verbose
+    silent: true
 
   buildweb:
     deps: [installweb]
-    dir: ./web
     cmds:
-      - npm run build
+      - cd {{.WEB_DIR}} && npm run build
+    silent: true
 
   testweb:
     deps: [installweb]
-    dir: ./web
     cmds:
-      - npm run test
+      - cd {{.WEB_DIR}} && npx vitest run
+    silent: true
 
   webdev:
     deps: [installweb]
-    dir: ./web
     cmds:
-      - npm run dev
+      - cd {{.WEB_DIR}} && npm run dev
+    silent: true
 
-  install:
+  build:
     deps: [buildgo, buildweb]
     silent: true
 
   test:
     deps: [testgo, testweb]
+    silent: true
+
+  install:
+    deps: [buildgo, testgo, buildweb, testweb]
+    silent: true
 
   clean:
     cmds:
-      - rm -rf ./nrtm4client ./nrtm4serve ./web/dist
+      - rm -rf ./web/dist ./cmd/nrtmclient/__debug_* ./cmd/nrtmserve/__debug_*
+    silent: true
 
   cleanall:
     deps: [clean]
     cmds:
-      - rm -rf ./web/node_modules
+      - rm -rf {{.WEB_DIR}}/node_modules
+    silent: true

@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/jsonseq"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/jsonseq"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 )
 
 // GZIPSnapshotExtension extension GZIP files

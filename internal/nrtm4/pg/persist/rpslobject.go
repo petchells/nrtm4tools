@@ -1,7 +1,7 @@
 package persist
 
 import (
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
+	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
 )
 
 // RPSLObject is an RPSL object

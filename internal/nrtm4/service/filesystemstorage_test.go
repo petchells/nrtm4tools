@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/util"
 )
 
 var testResourcePath = "../testresources/"

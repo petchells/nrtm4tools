@@ -41,6 +41,6 @@ a function, then GetAuth should return nil, nil.
 */
 package rpc
 
-import "gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
+import "github.com/petchells/nrtm4client/internal/nrtm4/util"
 
 var logger = util.Logger

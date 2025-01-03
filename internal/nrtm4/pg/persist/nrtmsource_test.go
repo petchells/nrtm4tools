@@ -3,7 +3,7 @@ package persist
 import (
 	"testing"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
+	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
 )
 
 func TestNRTMSourceMapping(t *testing.T) {

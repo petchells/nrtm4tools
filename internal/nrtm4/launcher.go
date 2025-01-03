@@ -3,9 +3,9 @@ package nrtm4
 import (
 	"log"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/service"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/util"
+	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
+	"github.com/petchells/nrtm4client/internal/nrtm4/service"
+	"github.com/petchells/nrtm4client/internal/nrtm4/util"
 )
 
 var logger = util.Logger

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 )
 
 // AppConfig application configuration object

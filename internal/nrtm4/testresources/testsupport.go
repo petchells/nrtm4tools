@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg/db"
+	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
 )
 
 // SetEnvVarsFromFile sets environment variables from a file

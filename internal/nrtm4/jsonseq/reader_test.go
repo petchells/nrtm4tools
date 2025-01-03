@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 )
 
 func TestJSONSequenceParser(t *testing.T) {

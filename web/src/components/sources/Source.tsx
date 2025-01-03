@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import CircularProgress from "@mui/material/CircularProgress";
-import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid2";
+import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 
 import { SourceModel } from "../../client/models";
@@ -104,6 +104,7 @@ export default function Source(props: { source: SourceModel }) {
           <Item>
             {formatDateWithStyle(
               parseISOString(source.Notifications[0].Created),
+              "en-gb",
               "longdatetime"
             )}
           </Item>

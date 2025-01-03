@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/cli"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/service"
+	"github.com/petchells/nrtm4client/internal/nrtm4"
+	"github.com/petchells/nrtm4client/internal/nrtm4/cli"
+	"github.com/petchells/nrtm4client/internal/nrtm4/service"
 )
 
 const mandatorySourceMessage = "Source name must be provided with the -source flag"

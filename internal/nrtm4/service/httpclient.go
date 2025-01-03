@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 )
 
 // Client fetches things from the NRTM server, or anywhwere, actually

@@ -50,7 +50,6 @@ export default function Sources() {
     } else {
       selectedIDs.splice(idx, 1);
     }
-    console.log(selectedIDs);
     setSelectedIDs(selectedIDs);
     setRefresh(refresh ^ 1);
   };

@@ -6,9 +6,9 @@ import (
 	"sort"
 	"testing"
 
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/persist"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/pg"
-	"gitlab.com/etchells/nrtm4client/internal/nrtm4/testresources"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
+	"github.com/petchells/nrtm4client/internal/nrtm4/testresources"
 )
 
 var stubNotificationURL = "https://example.com/source1/notification.json"
