@@ -1,4 +1,4 @@
-module gitlab.com/etchells/nrtm4client
+module github.com/petchells/nrtm4client
 
 go 1.23
 
