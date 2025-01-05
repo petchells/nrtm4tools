@@ -69,10 +69,12 @@ func (ce CommandExecutor) ListSources(src, label string) {
 		logger.Warn("Error occurred when listing sources", "error", err)
 		return
 	}
-	fmt.Printf("   Source                         Label                         \n")
-	fmt.Printf("----------------------------------------------------------------\n")
 	for i, src := range sources {
-		fmt.Printf("%2d %-30v %-30v\n", i+1, src.Source, src.Label)
+		fmt.Printf(`		%02d Source    : %v
+		Label        : %v
+		Version      : %v
+		Last updated : %v
+		`, i+1, src.Source, src.Label, src.Version, src.Notifications[0].Created)
 	}
 	logger.Info("List finished successfully")
 }

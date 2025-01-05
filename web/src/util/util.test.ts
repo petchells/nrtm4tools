@@ -42,9 +42,24 @@ test("parseISOString() should convert an ISO date to a native date", () => {
   expect(dt.getUTCMinutes()).toBe(0);
 });
 
-test("formatDateWithStyle() from a date string works for a full datetime", () => {
+test("formatDateWithStyle() from a date or date string works for a full datetime", () => {
   const dateStr = "2023-10-10T15:15:15.987654321Z";
-  const result = formatDateWithStyle(dateStr, "en-gb", "longdatetime");
-  const expected = " October 2023 at "; // the rest depends on the tz of the machine running the test
-  expect(result).toContain(expected);
+  {
+    const result = formatDateWithStyle(dateStr, "en-gb", "longdatetime");
+    const expected = " October 2023 at "; // the rest depends on the tz of the machine running the test
+    expect(result).toContain(expected);
+  }
+  {
+    const result = formatDateWithStyle(
+      parseISOString(dateStr),
+      "en-gb",
+      "longdatetime"
+    );
+    const expected = " October 2023 at "; // the rest depends on the tz of the machine running the test
+    expect(result).toContain(expected);
+  }
+  {
+    const result = formatDateWithStyle(new Date(), "en-gb", "longdatetime");
+    expect(result).toBeTruthy();
+  }
 });

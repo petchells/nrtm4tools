@@ -2,8 +2,6 @@ import { useState } from "react";
 
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import ButtonGroup from "@mui/material/ButtonGroup";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Paper from "@mui/material/Paper";
@@ -12,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import { SourceModel } from "../../client/models";
 import { WebAPIClient } from "../../client/WebAPIClient.ts";
 import { formatDateWithStyle, parseISOString } from "../../util/dates";
-import LabelInput from "./LabelInput";
+import LabelControl from "./LabelControl.tsx";
 
 export default function Source(props: { source: SourceModel }) {
   const client = new WebAPIClient();
@@ -75,10 +73,10 @@ export default function Source(props: { source: SourceModel }) {
           {!!loading ? (
             <CircularProgress />
           ) : (
-            <LabelInput
+            <LabelControl
               value={source.Label}
               onTextEntered={saveLabel}
-            ></LabelInput>
+            ></LabelControl>
           )}
         </Grid>
         <Grid size={{ xs: 4, md: 4 }}>
@@ -108,12 +106,6 @@ export default function Source(props: { source: SourceModel }) {
               "longdatetime"
             )}
           </Item>
-        </Grid>
-        <Grid size={{ xs: 12, md: 12 }}>
-          <ButtonGroup variant="outlined" aria-label="Actions for source">
-            <Button>Label</Button>
-            <Button>Update</Button>
-          </ButtonGroup>
         </Grid>
       </Grid>
     </Box>

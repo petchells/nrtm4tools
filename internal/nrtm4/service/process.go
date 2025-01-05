@@ -28,9 +28,15 @@ var (
 	// ErrNRTMFileVersionInconsistency version is lower than source
 	ErrNRTMFileVersionInconsistency = errors.New("version is lower than source")
 	// ErrNRTMNextConsecutiveDeltaUnavaliable cannot find the next consecutive delta to apply to our repo
-	ErrNRTMNextConsecutiveDeltaUnavaliable = errors.New("cannot find deltas to apply to repository")
-	// ErrNRTMDeltaSequenceBroken the NRTM server has an incontiguous list of delta version
-	ErrNRTMDeltaSequenceBroken = errors.New("server has incontiguous list of delta versions")
+	ErrNRTMNextConsecutiveDeltaUnavaliable = errors.New("repository is too old to update from the server")
+	// ErrNRTMNoDeltasInNotification the NRTM server published a notification file with no deltas
+	ErrNRTMNoDeltasInNotification = errors.New("no deltas listed in notification file")
+	// ErrNRTMNotificationDeltaSequenceBroken the NRTM server has an incontiguous list of delta version
+	ErrNRTMNotificationDeltaSequenceBroken = errors.New("server has incontiguous list of delta versions")
+	// ErrNRTMNotificationVersionDoesNotMatchDelta the highest delta version is not the notification version
+	ErrNRTMNotificationVersionDoesNotMatchDelta = errors.New("highest delta version is not the notification version")
+	// ErrNRTMDuplicateDeltaVersion the highest delta version is not the notification version
+	ErrNRTMDuplicateDeltaVersion = errors.New("notification file published a duplicate delta file")
 
 	fileWriteBufferLength = 1024 * 8
 	rpslInsertBatchSize   = 1000
@@ -161,35 +167,10 @@ func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NR
 }
 
 func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source persist.NRTMSource) error {
-	deltaRefs := []persist.FileRefJSON{}
-	versions := util.NewSet[uint32]()
-	for _, deltaRef := range *notification.DeltaRefs {
-		versions.Add(deltaRef.Version)
-		if deltaRef.Version > source.Version {
-			deltaRefs = append(deltaRefs, deltaRef)
-		}
+	deltaRefs, err := findUpdates(notification, source)
+	if err != nil {
+		return err
 	}
-	if len(deltaRefs) == 0 {
-		return errors.New("restart sync mirror is too old")
-	}
-	if len(versions) > 1 {
-		sorted := versions.Members()
-		sort.Slice(sorted, func(i, j int) bool {
-			return sorted[i] < sorted[j]
-		})
-		lo := sorted[0]
-		for i := 1; i < len(sorted); i++ {
-			if sorted[i] != lo+uint32(i) {
-				logger.Error("Delta version is missing from notification file", "version", lo+uint32(i))
-				return ErrNRTMDeltaSequenceBroken
-			}
-		}
-	}
-	if !versions.Contains(source.Version + 1) {
-		logger.Error("Repository is too old to update from this server", "version", source.Version)
-		return ErrNRTMNextConsecutiveDeltaUnavaliable
-	}
-	logger.Info("Found deltas", "numdeltas", len(deltaRefs))
 	sort.Sort(fileRefsByVersion(deltaRefs))
 	fm := fileManager{p.client}
 	for _, deltaRef := range deltaRefs {
@@ -437,4 +418,46 @@ func validateDeltaHeader(file persist.NrtmFileJSON, source persist.NRTMSource, d
 		return ErrNRTMFileVersionInconsistency
 	}
 	return nil
+}
+
+func findUpdates(notification persist.NotificationJSON, source persist.NRTMSource) ([]persist.FileRefJSON, error) {
+
+	if notification.DeltaRefs == nil || len(*notification.DeltaRefs) == 0 {
+		return nil, ErrNRTMNoDeltasInNotification
+	}
+
+	deltaRefs := []persist.FileRefJSON{}
+	versions := make([]uint32, len(*notification.DeltaRefs))
+	for i, deltaRef := range *notification.DeltaRefs {
+		versions[i] = deltaRef.Version
+		if deltaRef.Version > source.Version {
+			deltaRefs = append(deltaRefs, deltaRef)
+		}
+	}
+	versionSet := util.NewSet(versions...)
+	if len(versionSet) != len(versions) {
+		logger.Error("Duplicate delta version found in notification file", "source", notification.Source, "url", source.NotificationURL)
+		return nil, ErrNRTMDuplicateDeltaVersion
+	}
+
+	sort.Slice(versions, func(i, j int) bool {
+		return versions[i] < versions[j]
+	})
+	lo := versions[0]
+	hi := versions[len(versions)-1]
+	if hi != notification.Version {
+		return nil, ErrNRTMNotificationVersionDoesNotMatchDelta
+	}
+	for i := 0; i < len(versions)-1; i++ {
+		if versions[i]+1 != versions[i+1] {
+			logger.Error("Delta version is missing from the notification file", "version", versions[i]+1, "source", notification.Source, "url", source.NotificationURL)
+			return nil, ErrNRTMNotificationDeltaSequenceBroken
+		}
+	}
+	if source.Version+1 < lo {
+		return nil, ErrNRTMNextConsecutiveDeltaUnavaliable
+	}
+	// source.Version == hi // can never happen irl, coz callling fn has already checked Version, and we checked 'hi' above
+	logger.Info("Found deltas", "source", notification.Source, "numdeltas", len(deltaRefs))
+	return deltaRefs, nil
 }

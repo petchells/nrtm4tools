@@ -1,10 +1,13 @@
 package service
 
 import (
+	"encoding/json"
+	"io"
 	"log"
 	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
@@ -83,6 +86,97 @@ func TestE2EConnect(t *testing.T) {
 	}
 }
 
+func TestFindUpdatesSuccess(t *testing.T) {
+
+	var notification persist.NotificationJSON
+	readJSON("../testresources/ripe-notification-file.json", &notification)
+	source := stubsource()
+
+	fileRefs, err := findUpdates(notification, source)
+	if err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
+	expectedLen := 9
+	if len(fileRefs) != expectedLen {
+		t.Fatalf("Unexpected slice length. Expected %d but was %d", expectedLen, len(fileRefs))
+	}
+}
+
+func TestFindUpdatesErrors(t *testing.T) {
+
+	// Server version too old
+	// Server version too new, deltas unavaliable
+	// Deltas versions in file are not contiguous
+	var notification persist.NotificationJSON
+	{
+		readJSON("../testresources/ripe-notification-file.json", &notification)
+		source := stubsource()
+		source.Version = 350194 - 2
+
+		expect := ErrNRTMNextConsecutiveDeltaUnavaliable
+
+		_, err := findUpdates(notification, source)
+		if err != expect {
+			t.Errorf("Expected error %v but was %v", expect, err)
+		}
+	}
+	{
+		readJSON("../testresources/ripe-notification-file.json", &notification)
+		source := stubsource()
+		refs := *notification.DeltaRefs
+		dr := append(refs[:10], refs[11:]...)
+		notification.DeltaRefs = &dr
+
+		expect := ErrNRTMNotificationDeltaSequenceBroken
+
+		_, err := findUpdates(notification, source)
+		if err != expect {
+			t.Errorf("Expected error %v but was %v", expect, err)
+		}
+	}
+	{
+		readJSON("../testresources/ripe-notification-file.json", &notification)
+		source := stubsource()
+		refs := *notification.DeltaRefs
+		dr := refs[:len(refs)-2]
+		notification.DeltaRefs = &dr
+
+		expect := ErrNRTMNotificationVersionDoesNotMatchDelta
+
+		_, err := findUpdates(notification, source)
+		if err != expect {
+			t.Errorf("Expected error %v but was %v", expect, err)
+		}
+	}
+	{
+		readJSON("../testresources/ripe-notification-file.json", &notification)
+		source := stubsource()
+		refs := *notification.DeltaRefs
+		dr := append(refs[:10], refs[9:]...)
+		notification.DeltaRefs = &dr
+
+		expect := ErrNRTMDuplicateDeltaVersion
+
+		_, err := findUpdates(notification, source)
+		if err != expect {
+			t.Errorf("Expected error %v but was %v", expect, err)
+		}
+	}
+	{
+		readJSON("../testresources/ripe-notification-file.json", &notification)
+		source := stubsource()
+		dr := []persist.FileRefJSON{}
+		notification.DeltaRefs = &dr
+
+		expect := ErrNRTMNoDeltasInNotification
+
+		_, err := findUpdates(notification, source)
+		if err != expect {
+			t.Errorf("Expected error %v but was %v", expect, err)
+		}
+	}
+}
+
 func pgRepo() persist.Repository {
 	dbURL := os.Getenv("PG_DATABASE_URL")
 	if len(dbURL) == 0 {
@@ -94,4 +188,40 @@ func pgRepo() persist.Repository {
 		log.Fatal("Failed to initialize repository")
 	}
 	return &repo
+}
+
+func stubsource() persist.NRTMSource {
+	t, err := time.Parse(time.RFC3339, "2025-01-04T23:01:00Z")
+	if err != nil {
+		log.Fatalln("bad timestamp")
+	}
+	src := persist.NRTMSource{
+		ID:              576576257634,
+		Source:          "TEST_SRC",
+		SessionID:       "db44e038-1f07-4d54-a307-1b32339f141a",
+		Version:         350684,
+		NotificationURL: stubNotificationURL,
+		Label:           "",
+		Created:         t,
+	}
+	return src
+}
+
+func readJSON(fileName string, ptr any) {
+	var err error
+
+	var file *os.File
+	if file, err = os.Open(fileName); err != nil {
+		log.Println(err)
+		return
+	}
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = json.Unmarshal(bytes, ptr)
+	if err != nil {
+		log.Println(err)
+	}
 }

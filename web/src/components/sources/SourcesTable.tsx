@@ -9,6 +9,7 @@ import Paper from "@mui/material/Paper";
 import { SourceModel } from "../../client/models.ts";
 import Checkbox from "@mui/material/Checkbox";
 import { useState } from "react";
+import { formatDateWithStyle } from "../../util/dates.ts";
 
 export default function SourcesTable(props: {
   rows: SourceModel[];
@@ -37,6 +38,9 @@ export default function SourcesTable(props: {
               </TableCell>
               <TableCell component="th" scope="row" padding="normal">
                 Label
+              </TableCell>
+              <TableCell component="th" scope="row" padding="normal">
+                Last updated
               </TableCell>
               <TableCell
                 align="right"
@@ -84,6 +88,13 @@ export default function SourcesTable(props: {
                   </TableCell>
                   <TableCell component="td" scope="row" padding="normal">
                     {row.Label}
+                  </TableCell>
+                  <TableCell>
+                    {formatDateWithStyle(
+                      row.Notifications[0].Created,
+                      "en-gb",
+                      "short"
+                    )}
                   </TableCell>
                   <TableCell
                     align="right"

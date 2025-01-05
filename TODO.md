@@ -6,15 +6,17 @@ An unprioritized list of things I'd like to get round to at some point.
 
   - Use TOML file for configuring notification / source / repo
   - `next_signing_key` verification
-  - `validate` command
+  - `--dry-run` option for connect/update to report on what would be done
+    -- useful when repo is too far behind server to catch up
   - `validate` command
     - Split into ones that operate remotely-only, and ones that validate
       against a database repository.
     - Print remote server file status
     - Compare remote snapshot with our repo of the same version
     - Consistency check for remote deltas against our historic state
-  - `list` command shows details about sources
-  - Support the option to overwrite snapshot files when hash fails
+  - Rename snapshot files when hash fails, as with deltas now
+  - Support publication of historic states so that mirrors that have lost
+    sync with their current server can catch up.
 
 - Web
 
