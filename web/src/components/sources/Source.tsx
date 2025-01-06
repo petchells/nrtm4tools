@@ -4,6 +4,7 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
+import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 
@@ -12,14 +13,14 @@ import { WebAPIClient } from "../../client/WebAPIClient.ts";
 import { formatDateWithStyle, parseISOString } from "../../util/dates";
 import LabelControl from "./LabelControl.tsx";
 
-export default function Source(props: { source: SourceModel }) {
+export default function Source(props: {
+  source: SourceModel;
+  sourceUpdated: (id: string, source: SourceModel) => void;
+}) {
   const client = new WebAPIClient();
   const source = props.source;
 
   const [loading, setLoading] = useState<number>(0);
-
-  // useEffect(() => {
-  // }, []);
 
   const saveLabel = (text: string) => {
     console.log("change label to", text);
@@ -29,6 +30,7 @@ export default function Source(props: { source: SourceModel }) {
       .then(
         (resp) => {
           source.Label = resp.Label;
+          props.sourceUpdated(source.ID, source);
         },
         (err) => console.log(err)
       )
@@ -90,9 +92,9 @@ export default function Source(props: { source: SourceModel }) {
         </Grid>
         <Grid size={{ xs: 8, md: 8 }}>
           <Item>
-            <a target="_blank" href={source.NotificationURL}>
+            <Link href={source.NotificationURL} target="_blank" rel="noopener">
               {source.NotificationURL}
-            </a>
+            </Link>
           </Item>
         </Grid>
         <Grid size={{ xs: 4, md: 4 }}>

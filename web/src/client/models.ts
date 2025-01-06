@@ -17,9 +17,9 @@ export type NotificationJSON = {
 };
 
 export type Notification = {
-  ID: number;
+  ID: string;
   Created: string;
-  NRTMSourceID: number;
+  NRTMSourceID: string;
   Payload: NotificationJSON;
   SessionID: string;
   Source: string;
@@ -27,7 +27,7 @@ export type Notification = {
 };
 
 export type SourceModel = {
-  ID: number;
+  ID: string;
   Source: string;
   SessionID: string;
   Version: number;

@@ -54,9 +54,7 @@ export default function SourcesTable(props: {
           </TableHead>
           <TableBody>
             {rows.map((row, index) => {
-              const isItemSelected = selectedIDs.includes(
-                row.Source + "." + row.Label
-              );
+              const isItemSelected = selectedIDs.includes(row.ID);
               const labelId = `enhanced-table-checkbox-${index}`;
               return (
                 <TableRow

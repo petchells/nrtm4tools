@@ -104,9 +104,6 @@ func TestFindUpdatesSuccess(t *testing.T) {
 
 func TestFindUpdatesErrors(t *testing.T) {
 
-	// Server version too old
-	// Server version too new, deltas unavaliable
-	// Deltas versions in file are not contiguous
 	var notification persist.NotificationJSON
 	{
 		readJSON("../testresources/ripe-notification-file.json", &notification)

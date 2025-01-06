@@ -43,7 +43,7 @@ export default function Sources() {
   }, []);
 
   const handleOnSelected = (row: SourceModel) => {
-    const key = sourceKey(row);
+    const key = row.ID;
     const idx = selectedIDs.indexOf(key);
     if (idx < 0) {
       selectedIDs.push(key);
@@ -73,13 +73,19 @@ export default function Sources() {
 
   const lookupSource = (key: string) => {
     const src = sources.filter((s) => {
-      return key === sourceKey(s);
+      return key === s.ID;
     });
     return src[0];
   };
 
-  const sourceKey = (src: SourceModel): string => {
-    return src.Source + "." + src.Label;
+  const handleSourceUpdated = (id: string, source: SourceModel) => {
+    for (const s of sources) {
+      if (s.ID === id) {
+        s.Label = source.Label;
+        setRefresh(refresh ^ 1);
+        break;
+      }
+    }
   };
 
   return (
@@ -108,7 +114,11 @@ export default function Sources() {
             selectedIDs
               .map((key) => lookupSource(key))
               .map((src) => (
-                <Source key={sourceKey(src)} source={src}></Source>
+                <Source
+                  key={src.ID}
+                  source={src}
+                  sourceUpdated={handleSourceUpdated}
+                ></Source>
               ))}
           {!err && selectedIDs.length === 0 && (
             <SourcesInput onUrlEntered={onUrlEntered} disabled={!!loading} />

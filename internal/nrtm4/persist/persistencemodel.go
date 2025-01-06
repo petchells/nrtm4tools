@@ -8,7 +8,7 @@ import (
 
 // NRTMSource holds information about a remote NRTM source
 type NRTMSource struct {
-	ID              uint64
+	ID              uint64 `json:",string"`
 	Source          string
 	SessionID       string
 	Version         uint32
@@ -34,23 +34,23 @@ func NewNRTMSource(notification NotificationJSON, label string, notificationURL 
 	}
 }
 
-// Notification is a relational representation of a notification file
+// Notification is a domain representation of a notification file
 type Notification struct {
-	ID           uint64
+	ID           uint64 `json:",string"`
 	Version      uint32
-	NRTMSourceID uint64
+	NRTMSourceID uint64 `json:",string"`
 	Payload      NotificationJSON
 	Created      time.Time
 }
 
 // NRTMFile describes a downloaded NRTM file
 type NRTMFile struct {
-	ID           uint64
+	ID           uint64 `json:",string"`
 	Version      uint32
 	Type         NTRMFileType
 	URL          string
 	FileName     string
-	NrtmSourceID uint64
+	NrtmSourceID uint64 `json:",string"`
 	Created      time.Time
 }
 
