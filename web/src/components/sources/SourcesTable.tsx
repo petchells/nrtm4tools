@@ -58,12 +58,12 @@ export default function SourcesTable(props: {
               const labelId = `enhanced-table-checkbox-${index}`;
               return (
                 <TableRow
+                  key={index}
                   hover
                   onClick={() => handleClick(row)}
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}
-                  key={refresh}
                   selected={isItemSelected}
                   sx={{ cursor: "pointer" }}
                 >

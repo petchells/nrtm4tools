@@ -13,7 +13,7 @@ the `./scripts` directory. Create a file `./scripts/env.dev.conf`, set the vars 
 environment and you can use the scripts. Currently the only available source is RIPE, so
 it's hard-coded.
 
-## Set up environment
+## Set up environment variables
 
 - NRTM4_FILE_PATH An empty directory where NRTMv4 snapshot and delta files will be stored.
 - PG_DATABASE_URL Connection string to PostgreSQL database.

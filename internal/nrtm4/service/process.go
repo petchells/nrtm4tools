@@ -5,7 +5,9 @@ import (
 	"errors"
 	"io"
 	"log"
+	"regexp"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -42,6 +44,13 @@ var (
 	rpslInsertBatchSize   = 1000
 )
 
+// AppConfig application configuration object
+type AppConfig struct {
+	NRTMFilePath     string
+	PgDatabaseURL    string
+	BoltDatabasePath string
+}
+
 // NewNRTMProcessor injects repo and client into service and return a new instance
 func NewNRTMProcessor(config AppConfig, repo persist.Repository, client Client) NRTMProcessor {
 	return NRTMProcessor{
@@ -58,10 +67,16 @@ type NRTMProcessor struct {
 	client Client
 }
 
+var labelRe = regexp.MustCompile("^[A-Za-z0-9 ._-]*[A-Za-z0-9][A-Za-z0-9 ._-]*$")
+
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {
-	fm := fileManager{p.client}
+	label = strings.TrimSpace(label)
+	if len(label) > 0 && !labelRe.MatchString(label) {
+		return errors.New("Label is not valid")
+	}
 	logger.Info("Fetching notification")
+	fm := fileManager{p.client}
 	notification, errs := fm.downloadNotificationFile(notificationURL)
 	if len(errs) > 0 {
 		return errors.New("download error(s): " + errs[0].Error())

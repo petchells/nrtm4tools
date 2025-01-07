@@ -94,6 +94,7 @@ export default function Source(props: {
           <Item>
             <Link href={source.NotificationURL} target="_blank" rel="noopener">
               {source.NotificationURL}
+              <sup>🔗</sup>
             </Link>
           </Item>
         </Grid>

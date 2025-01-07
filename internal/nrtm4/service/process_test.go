@@ -17,6 +17,35 @@ import (
 var stubNotificationURL = "https://example.com/source1/notification.json"
 var stubSnapshot2URL = "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz"
 
+type labelExpectation struct {
+	label  string
+	expect bool
+}
+
+func TestLabelRegex(t *testing.T) {
+	lbls := [...]labelExpectation{{
+		"This_one_is-100.OK", true},
+		{"1_is_ok", true},
+		{"YES$nowerky", false},
+		{"F", true},
+		{"1970-01-01", true},
+		{"This one is OK", true},
+		{"    This one is OK    ", true},
+		{"-------", false},
+		{"------1", true},
+	}
+	for _, lbl := range lbls {
+		match := labelRe.MatchString(lbl.label)
+		if match != lbl.expect {
+			if lbl.expect {
+				t.Error("Label regex should succeed", lbl.label)
+			} else {
+				t.Error("Label regex should fail", lbl.label)
+			}
+		}
+	}
+}
+
 func TestFileRefSorter(t *testing.T) {
 	refs := []persist.FileRefJSON{
 		{

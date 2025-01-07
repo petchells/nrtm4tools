@@ -1,4 +1,4 @@
-package service
+package cli
 
 import (
 	"errors"
@@ -33,32 +33,4 @@ func TestCommandExecutorConnect(t *testing.T) {
 func TestCommandExecutorUpdate(t *testing.T) {
 	ce := CommandExecutor{ProcessorStub{}}
 	ce.Update("srcName", "label")
-}
-
-type labelExpectation struct {
-	label  string
-	expect bool
-}
-
-func TestLabelRegex(t *testing.T) {
-	lbls := [...]labelExpectation{{
-		"This_one_is-100.OK", true},
-		{"1_is_ok", true},
-		{"YES$nowerky", false},
-		{"F", true},
-		{"1970-01-01", true},
-		{"This one is not OK", false},
-		{"-------", false},
-		{"------1", true},
-	}
-	for _, lbl := range lbls {
-		match := labelRegex.MatchString(lbl.label)
-		if match != lbl.expect {
-			if lbl.expect {
-				t.Error("Label regex should succeed", lbl.label)
-			} else {
-				t.Error("Label regex should fail", lbl.label)
-			}
-		}
-	}
 }

@@ -24,6 +24,9 @@ export default function Sources() {
 
   useEffect(() => {
     setPageLoading(1);
+    if (sources.length) {
+      console.log("why are we getting them again?");
+    }
     client
       .listSources()
       .then(

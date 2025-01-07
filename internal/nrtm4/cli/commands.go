@@ -1,18 +1,10 @@
-package service
+package cli
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 )
-
-// AppConfig application configuration object
-type AppConfig struct {
-	NRTMFilePath     string
-	PgDatabaseURL    string
-	BoltDatabasePath string
-}
 
 // ExecutionProcessor top-level processing for app functions
 type ExecutionProcessor interface {
@@ -32,15 +24,8 @@ func NewCommandProcessor(processor ExecutionProcessor) CommandExecutor {
 	return CommandExecutor{processor}
 }
 
-var labelRegex = regexp.MustCompile("^[A-Za-z0-9._-]*[A-Za-z0-9][A-Za-z0-9._-]*$")
-
 // Connect establishes a new connection to a NRTM source server
 func (ce CommandExecutor) Connect(notificationURL string, label string) {
-	if len(label) > 0 && !labelRegex.MatchString(label) {
-		logger.Error("Label must be alphanumeric")
-		return
-	}
-	// TODO
 	// Sanitize arguments
 	// -- ensure URL looks like a URL, make schema/host lowercase
 	err := ce.processor.Connect(notificationURL, label)

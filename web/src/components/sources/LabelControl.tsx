@@ -59,12 +59,6 @@ export default function LabelControl(props: {
         }}
       />
       <IconButton
-        onClick={setLabelToTimestamp}
-        disabled={disableInput || inputText.length > 0}
-      >
-        <PunchClockIcon />
-      </IconButton>
-      <IconButton
         onClick={clearInput}
         disabled={disableInput || inputText.length === 0}
       >
@@ -75,6 +69,12 @@ export default function LabelControl(props: {
         disabled={disableInput || !isValid(inputText)}
       >
         <RestartAltIcon />
+      </IconButton>
+      <IconButton
+        onClick={setLabelToTimestamp}
+        disabled={disableInput || inputText.length > 0}
+      >
+        <PunchClockIcon />
       </IconButton>
       <IconButton
         onClick={btnClicked}

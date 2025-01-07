@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4"
 	"github.com/petchells/nrtm4client/internal/nrtm4/cli"
 	"github.com/petchells/nrtm4client/internal/nrtm4/service"
 )
@@ -26,6 +25,6 @@ func main() {
 		PgDatabaseURL:    dbURL,
 		BoltDatabasePath: boltDBPath,
 	}
-	commander := nrtm4.InitializeCommandProcessor(config)
+	commander := cli.InitializeCommandProcessor(config)
 	cli.Exec(commander)
 }

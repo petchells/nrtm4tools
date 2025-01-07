@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-
-	"github.com/petchells/nrtm4client/internal/nrtm4/service"
 )
 
 var (
@@ -18,7 +16,7 @@ var (
 const mandatorySourceMessage = "Source name must be provided with the -source flag"
 
 // Exec reads the command line args and invokes functions on the commander
-func Exec(commander service.CommandExecutor) {
+func Exec(commander CommandExecutor) {
 
 	connectCommand := func(args []string) {
 		fs := flag.NewFlagSet("connect", flag.ExitOnError)
