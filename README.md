@@ -2,34 +2,57 @@
 
 ## Introduction
 
-nrtm4client is a tool for communicating with an [NRTMv4 server](https://github.com/mxsasha/nrtmv4).
+nrtm4client is a tool for communicating with an [NRTMv4 server](https://github.com/mxsasha/nrtmv4) (GROW).
 It retrieves IRR data from NTRM mirror servers and stores them in a database (only PostgreSQL
 currently). History is maintained and can be queried.
 
-## Development Status
+## Usage
 
-The `main` branch supports `connect` and `update` commands. See the `run*.sh` commands in
-the `./scripts` directory. Create a file `./scripts/env.dev.conf`, set the vars to your
-environment and you can use the scripts. Currently the only available source is RIPE, so
-it's hard-coded.
+Before you can run the client, follow the Quick set up below, then come back to this section.
 
 ## Set up environment variables
 
 - NRTM4_FILE_PATH An empty directory where NRTMv4 snapshot and delta files will be stored.
 - PG_DATABASE_URL Connection string to PostgreSQL database.
 
-To try it out yourself follow the build steps below, then set up a PostgreSQL data before
-making a connection to an NRTMv4 mirror server.
+## Running nrtm4client
 
-## Usage
+Create a directory, e.g. `$HOME/nrtm4/RIPE` to store downloaded files,
+then copy file [./scripts/env.dev.example.conf] to ./scripts/env.dev.conf, and change the variables
+to your system:
 
-The `connect` command downloads a snapshot file, inserts RPSL objects into the database, then
-applies successive deltas until the database is up to date.
+    PG_DATABASE_URL=postgres://nrtm4:nrtm4@localhost:5432/nrtm4?sslmode=disable
+    NRTM4_FILE_PATH=<wherever>/RIPE
 
-After that use the `update` command to download the
-delta files and re-synchronize the database with the NRTM mirror server. If you want to
-keep the history of changes to IRR records over time, you'll need to update regularly -- mirror
-servers remove old delta files so you should get them while they're available.
+Now run the `run*.sh` script in the [./scripts](./scripts) dir like so:
+
+    $ ./scripts/run.sh connect --url <url> # Be patient, snapshot files tend to be on the large side
+    $ ./scripts/run.sh list
+
+Command line arguments
+
+- `connect --url <NOTIFICATION_URL> [--label <LABEL>]`<br>
+  Reads the notification file, updates the repo with the latest snapshot, then the latest delta,
+  and creates a new source record.
+- `update  --source <SOURCE> [--label <LABEL>]`
+  Reads the notification file, then updates the repo the latest delta,
+- `list`
+  Lists all sources in the repo.
+- `rename --source <SOURCE> --label <FROM_LABEL> --to <TO_LABEL>`
+  Replaces a label
+
+A note about labels:
+A label can be given to a source in order to track multiple sessions of the same IRR source.
+This is useful when your repo can no longer be synchronized with a server, for example when the session
+ID changes, or when your repo wasn't refreshed on time and loses sync.
+In these cases you can use a label for each of the sessions to preserve the history, should you
+wish to keep it. If you only want the latest version of each IRR source then you don't need labels.
+
+GROW:
+
+> a mirror server SHOULD remove all Delta Files older than 24 hours
+
+# Quick set up
 
 ## PostgreSQL Database
 
@@ -62,34 +85,39 @@ Assuming your database is running on localhost...
     createuser -h localhost nrtm4_test
     createdb -h localhost -O nrtm4_test nrtm4_test
 
-### Initialize schema
-
-    make migrate  # creates database schema. See `tern.conf`
-
 ## Build
 
-- make
+You'll need these tools:
+
+- make, or `task`, which I'm moving towards.
 - go 1.23+
+- node 21+
 - [tern](https://github.com/JackC/tern) v2.3.0 for PostgreSQL migrations
 
-  make clean testgo # uses a db to when testing. see below for PostgreSQL setup
-  make clean buildgo # creates a binary at ./cmd/nrtmclient/nrtmclient
+### Initialize schema
+
+Edit `tern.conf` to contain the variables for your database, then...
+
+    make migrate  # creates database schema and migrates to the latest version
+
+### Build targets
+
+    make clean buildgo # creates a binary at ./cmd/nrtmclient/nrtmclient
+    make clean testgo # uses a db to when testing. See above for PostgreSQL setup
+
+You'll now be able to use the `run.sh` command. See Usage above.
+
+For development:
+
+    make emptydb  # wipes the table schema, including any data, ofc
+    make rewinddb  # schema is set to the previous version
+    make emptydb migratetest  # resets the test db
+    make list # fill your boots
 
 This builds the frontend as well, though I wouldn't bother until it can do cool stuff.
 
     make clean test
     make clean build
-
-## Running nrtm4client
-
-Create a directory, e.g. `$HOME/nrtm4/RIPE` to store downloaded files,
-then copy file [./scripts/env.dev.example.conf] to ./scripts/env.dev.conf, and change the variables
-to your system:
-
-    PG_DATABASE_URL=postgres://nrtm4:nrtm4@localhost:5432/nrtm4?sslmode=disable
-    NRTM4_FILE_PATH=$HOME/tmp/RIPE
-
-Now run one of one of the `run*.sh` scripts in the [./scripts](./scripts) dir.
 
 # Tips
 

@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import WarningIcon from "@mui/icons-material/Warning";
 
 import SourcesTable from "./SourcesTable.tsx";
@@ -12,6 +13,7 @@ import { SourceModel } from "../../client/models.ts";
 import SourcesInput from "./SourcesInput.tsx";
 import { WebAPIClient } from "../../client/WebAPIClient.ts";
 import Source from "./Source.tsx";
+import { Button, ButtonGroup } from "@mui/material";
 
 export default function Sources() {
   const [pageLoading, setPageLoading] = useState<number>(1);
@@ -22,11 +24,8 @@ export default function Sources() {
   const [refresh, setRefresh] = useState<number>(0);
   const client = new WebAPIClient();
 
-  useEffect(() => {
+  const fetchSources = () => {
     setPageLoading(1);
-    if (sources.length) {
-      console.log("why are we getting them again?");
-    }
     client
       .listSources()
       .then(
@@ -43,6 +42,10 @@ export default function Sources() {
       .then(() => {
         setPageLoading(0);
       });
+  };
+
+  useEffect(() => {
+    fetchSources();
   }, []);
 
   const handleOnSelected = (row: SourceModel) => {
@@ -96,6 +99,15 @@ export default function Sources() {
       <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
         Sources
       </Typography>
+      <Grid container spacing={2} columns={12}>
+        <Box sx={{ mb: 1 }}>
+          <ButtonGroup>
+            <Button onClick={fetchSources} startIcon={<RefreshIcon />}>
+              Refresh
+            </Button>
+          </ButtonGroup>
+        </Box>
+      </Grid>
       {!!pageLoading ? (
         <Box sx={{ display: "flex" }}>
           <CircularProgress />

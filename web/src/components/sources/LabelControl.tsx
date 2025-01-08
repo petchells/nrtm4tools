@@ -1,13 +1,13 @@
 import { useState } from "react";
 
 import ClearIcon from "@mui/icons-material/Clear";
-import SaveIcon from "@mui/icons-material/Save";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-
+import IconButton from "@mui/material/IconButton";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import PunchClockIcon from "@mui/icons-material/PunchClock";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import SaveIcon from "@mui/icons-material/Save";
 import Stack from "@mui/material/Stack";
-import { IconButton } from "@mui/material";
+
 import { formatDateWithStyle } from "../../util/dates";
 
 export default function LabelControl(props: {

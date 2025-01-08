@@ -139,7 +139,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		source := stubsource()
 		source.Version = 350194 - 2
 
-		expect := ErrNRTMNextConsecutiveDeltaUnavaliable
+		expect := ErrNextConsecutiveDeltaUnavaliable
 
 		_, err := findUpdates(notification, source)
 		if err != expect {

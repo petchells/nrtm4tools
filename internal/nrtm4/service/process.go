@@ -19,6 +19,8 @@ import (
 )
 
 var (
+	// Protocol errors
+
 	// ErrNRTMVersionMismatch nrtm version is not 4
 	ErrNRTMVersionMismatch = errors.New("nrtm version is not 4")
 	// ErrNRTMSourceMismatch session id does not match source
@@ -29,8 +31,6 @@ var (
 	ErrNRTMFileVersionMismatch = errors.New("file version does not match its reference")
 	// ErrNRTMFileVersionInconsistency version is lower than source
 	ErrNRTMFileVersionInconsistency = errors.New("version is lower than source")
-	// ErrNRTMNextConsecutiveDeltaUnavaliable cannot find the next consecutive delta to apply to our repo
-	ErrNRTMNextConsecutiveDeltaUnavaliable = errors.New("repository is too old to update from the server")
 	// ErrNRTMNoDeltasInNotification the NRTM server published a notification file with no deltas
 	ErrNRTMNoDeltasInNotification = errors.New("no deltas listed in notification file")
 	// ErrNRTMNotificationDeltaSequenceBroken the NRTM server has an incontiguous list of delta version
@@ -39,6 +39,13 @@ var (
 	ErrNRTMNotificationVersionDoesNotMatchDelta = errors.New("highest delta version is not the notification version")
 	// ErrNRTMDuplicateDeltaVersion the highest delta version is not the notification version
 	ErrNRTMDuplicateDeltaVersion = errors.New("notification file published a duplicate delta file")
+
+	// Repo errors
+
+	// ErrNextConsecutiveDeltaUnavaliable cannot find the next consecutive delta to apply to our repo
+	ErrNextConsecutiveDeltaUnavaliable = errors.New("repository is too old to update from the server")
+	// ErrSourceAlreadyExists a source with the given label already exists
+	ErrSourceAlreadyExists = errors.New("a source with the given label already exists")
 
 	fileWriteBufferLength = 1024 * 8
 	rpslInsertBatchSize   = 1000
@@ -173,7 +180,7 @@ func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NR
 	}
 	possDupe := ds.getSourceByNameAndLabel(src, toLabel)
 	if possDupe != nil {
-		return nil, errors.New("a source with the given label already exists")
+		return nil, ErrSourceAlreadyExists
 	}
 	target.Label = toLabel
 	return target, db.WithTransaction(func(tx pgx.Tx) error {
@@ -470,7 +477,7 @@ func findUpdates(notification persist.NotificationJSON, source persist.NRTMSourc
 		}
 	}
 	if source.Version+1 < lo {
-		return nil, ErrNRTMNextConsecutiveDeltaUnavaliable
+		return nil, ErrNextConsecutiveDeltaUnavaliable
 	}
 	// source.Version == hi // can never happen irl, coz callling fn has already checked Version, and we checked 'hi' above
 	logger.Info("Found deltas", "source", notification.Source, "numdeltas", len(deltaRefs))
