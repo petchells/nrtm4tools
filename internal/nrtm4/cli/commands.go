@@ -26,8 +26,6 @@ func NewCommandProcessor(processor ExecutionProcessor) CommandExecutor {
 
 // Connect establishes a new connection to a NRTM source server
 func (ce CommandExecutor) Connect(notificationURL string, label string) {
-	// Sanitize arguments
-	// -- ensure URL looks like a URL, make schema/host lowercase
 	err := ce.processor.Connect(notificationURL, label)
 	if err != nil {
 		logger.Error("Failed to Connect", "url", notificationURL, "error", err)
@@ -48,7 +46,7 @@ func (ce CommandExecutor) Update(source string, label string) {
 
 // ListSources shows all sources in db
 func (ce CommandExecutor) ListSources(src, label string) {
-	logger.Info("Not doing anything with these args for now", "src", src, "label", label)
+	logger.Debug("Not doing anything with these args for now", "src", src, "label", label)
 	sources, err := ce.processor.ListSources()
 	if err != nil {
 		logger.Warn("Error occurred when listing sources", "error", err)
@@ -59,7 +57,8 @@ func (ce CommandExecutor) ListSources(src, label string) {
 		Label        : %v
 		Version      : %v
 		Last updated : %v
-		`, i+1, src.Source, src.Label, src.Version, src.Notifications[0].Created)
+
+`, i+1, src.Source, src.Label, src.Version, src.Notifications[0].Created)
 	}
 	logger.Info("List finished successfully")
 }

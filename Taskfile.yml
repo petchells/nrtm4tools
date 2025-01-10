@@ -5,6 +5,11 @@ vars:
   SECOND_VAR: "{{.FIRST_VAR}} world"
 
 tasks:
+  migrate:
+    cmds:
+      - tern migrate --config third_party/tern/tern.conf --migrations third_party/tern
+    silent: true
+
   buildgo:
     cmds:
       - echo {{.SECOND_VAR}}

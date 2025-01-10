@@ -43,7 +43,7 @@ func (ds NrtmDataService) getSourceByURLAndLabel(url string, label string) *pers
 func (ds NrtmDataService) getSourceByNameAndLabel(name string, label string) *persist.NRTMSource {
 	sources, err := ds.getSources()
 	if err != nil {
-		log.Panicln("Failure calling NrtmDataService.getSourceByNameAndLabel", err)
+		log.Panicf("Failure calling NrtmDataService.getSourceByNameAndLabel %T %v", err, err)
 	}
 	for _, src := range sources {
 		if strings.EqualFold(src.Source, name) && strings.EqualFold(src.Label, label) {

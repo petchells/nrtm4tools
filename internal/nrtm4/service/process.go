@@ -255,15 +255,12 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 
 // Counter is a counter with a mutex
 type Counter struct {
-	mu sync.Mutex
-	n  int64
+	n int64
 }
 
 // Increment increments the counter
 func (c *Counter) Increment() {
-	c.mu.Lock()
 	c.n++
-	c.mu.Unlock()
 }
 
 // RPSLObjectList an ummutable list of objects

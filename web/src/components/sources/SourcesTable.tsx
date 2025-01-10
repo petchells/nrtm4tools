@@ -88,10 +88,14 @@ export default function SourcesTable(props: {
                     {row.Label}
                   </TableCell>
                   <TableCell>
-                    {formatDateWithStyle(
-                      row.Notifications[0].Created,
-                      "en-gb",
-                      "short"
+                    {row.Notifications.length ? (
+                      formatDateWithStyle(
+                        row.Notifications[0].Created,
+                        "en-gb",
+                        "short"
+                      )
+                    ) : (
+                      <i>working...</i>
                     )}
                   </TableCell>
                   <TableCell

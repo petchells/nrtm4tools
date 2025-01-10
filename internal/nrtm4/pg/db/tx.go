@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -35,6 +36,11 @@ func WithTransaction(fn TxFn) error {
 		return errors.New("connection pool is nil. see db.InitializeConnectionPool(connectionURL)")
 	}
 	if tx, err = pool.Begin(context.Background()); err != nil {
+		if cerr, ok := err.(*pgconn.ConnectError); ok {
+			logger.Error("No connection to PostgreSQL database.", "error", cerr)
+			log.Println("ERROR: No connection to PostgreSQL database")
+			os.Exit(1)
+		}
 		return err
 	}
 	defer func() {

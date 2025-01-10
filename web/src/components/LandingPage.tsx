@@ -1,23 +1,28 @@
 import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+
+import { alpha } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import CssBaseline from "@mui/material/CssBaseline";
+import Stack from "@mui/material/Stack";
+
+import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
+import FileDownload from "@mui/icons-material/FileDownload";
+import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
+import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
+import QuestionAnswer from "@mui/icons-material/QuestionAnswer";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import TerminalIcon from "@mui/icons-material/Terminal";
+
 import type {} from "@mui/x-date-pickers/themeAugmentation";
 import type {} from "@mui/x-charts/themeAugmentation";
 import type {} from "@mui/x-data-grid/themeAugmentation";
 import type {} from "@mui/x-tree-view/themeAugmentation";
-import { alpha } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
+
 import AppNavbar from "./widgets/AppNavbar";
 import Header from "./widgets/Header";
 import SideMenu from "./widgets/SideMenu";
 import AppTheme from "./shared-theme/AppTheme";
-import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
-import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
-import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
-import { FileDownload, QuestionAnswer } from "@mui/icons-material";
 import {
   chartsCustomizations,
   dataGridCustomizations,
@@ -35,7 +40,7 @@ const mainListItems = [
   { text: "Sources", icon: <FileDownload />, href: "sources" },
   { text: "Object queries", icon: <QuestionAnswer />, href: "queries" },
   { text: "Dashboard", icon: <AnalyticsRoundedIcon />, href: "dashboard" },
-  { text: "Tasks", icon: <AssignmentRoundedIcon /> },
+  { text: "Logs", icon: <TerminalIcon /> },
 ];
 
 const secondaryListItems = [

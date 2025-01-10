@@ -13,27 +13,30 @@ A loosely prioritized list of things I'd like to get round to at some point.
     - Also verbosity level for Log messages
     - cli should have `-q` option which outputs a one line stdout/err message and an exit code
   - `--dry-run` option for connect/update to report on what would be done
-    -- useful when repo is too far behind server to catch up
+    -- useful to test when repo is too far behind server to catch up, without doing so.
   - `validate` command
     - Split into ones that operate remotely-only, and ones that validate
       against a database repository.
-    - Print remote server file status
+    - Validate all deltas refs in notification, even ones we don't need
     - Compare remote snapshot with our repo of the same version
     - Consistency check for remote deltas against our historic state
     - `next_signing_key` (...when RIPE server publishes one)
   - Use TOML file for configuring notification / source / repo
   - Support publication of historic states so that mirrors that have lost
     sync with their current server can catch up.
-  - Rename binaries. End state:
-    - nrtm4util<br>
-      Command line tool maintaining a local repo and doing "all the things", as they say.
-    - nrtm4serve<br>
-      Web server provides back end services for doing the same things as nrtm4util in
-      addition, eventually, to providing and API for nrtm4client
-    - nrtm4client<br>
-      Will be a new CLI executable to communicate with an API provided by nrtm4serve
-    - nrtm4validator<br>
-      A new CLI executable to do repo-less commands on remote servers.
+
+## Objective
+
+Build these:
+
+- `nrtm4`<br>
+  Command line tool maintaining a local repo and doing "all the things", as they say.
+- `nrtm4serve`<br>
+  Web server provides back end services for doing the same things as `nrtm4` in addition, eventually, to implementing an API for `nrtm4sclient`
+- `nrtm4sclient`<br>
+  A CLI executable to communicate with an API provided by `nrtm4serve`
+- `nrtm4validator`<br>
+  A CLI executable to do repo-less commands on remote servers: A subset of `nrtm4` CLI commands
 
 - Queries
 

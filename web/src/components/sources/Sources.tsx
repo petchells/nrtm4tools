@@ -31,6 +31,12 @@ export default function Sources() {
       .then(
         (ss) => {
           setSources(ss);
+          for (let i = 0; i < selectedIDs.length; i++) {
+            const found = ss.filter((s) => s.ID === selectedIDs[i]).length > 0;
+            if (!found) {
+              selectedIDs.splice(i, 1);
+            }
+          }
           setErr("");
         },
         (err) => {
@@ -49,6 +55,9 @@ export default function Sources() {
   }, []);
 
   const handleOnSelected = (row: SourceModel) => {
+    if (!row.Notifications.length) {
+      return;
+    }
     const key = row.ID;
     const idx = selectedIDs.indexOf(key);
     if (idx < 0) {

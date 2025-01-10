@@ -19,10 +19,10 @@ Before you can run the client, follow the Quick set up below, then come back to 
 
 Create a directory, e.g. `$HOME/nrtm4/RIPE` to store downloaded files,
 then copy file [./scripts/env.dev.example.conf] to ./scripts/env.dev.conf, and change the variables
-to your system:
+to your system, for example:
 
     PG_DATABASE_URL=postgres://nrtm4:nrtm4@localhost:5432/nrtm4?sslmode=disable
-    NRTM4_FILE_PATH=<wherever>/RIPE
+    NRTM4_FILE_PATH=/tmp/RIPE
 
 Now run the `run*.sh` script in the [./scripts](./scripts) dir like so:
 
@@ -98,19 +98,33 @@ You'll need these tools:
 
 Edit `tern.conf` to contain the variables for your database, then...
 
-    make migrate  # creates database schema and migrates to the latest version
+    make migrate  # creates database schema and migrates it to the latest version
 
 ### Build targets
 
     make clean buildgo # creates a binary at ./cmd/nrtmclient/nrtmclient
     make clean testgo # uses a db to when testing. See above for PostgreSQL setup
 
-You'll now be able to use the `run.sh` command. See Usage above.
+The `run.sh` command should now be usable. See Usage above.
 
 For development:
 
+[This script](./scripts/pgdumpdata.sh) uses `pg_dump` to do a data-only dump of the
+database. It excludes the schema version from the dump and encodes it in the output
+file name. When restoring dumps, ensure the target schema matches the data dump
+version.
+
+Example usage:
+
+    ./scripts/pgdumpdata.sh "-h localhost -U nrtm4" nrtm4dbhost
+
+The result is a gzipped dump file which can be restored by piping the output to
+a `psql` command in the usual way.
+
+Other targets
+
     make emptydb  # wipes the table schema, including any data, ofc
-    make rewinddb  # schema is set to the previous version
+    make rewinddb  # schema is set back one version
     make emptydb migratetest  # resets the test db
     make list # fill your boots
 
