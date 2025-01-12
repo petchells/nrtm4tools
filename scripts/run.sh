@@ -13,5 +13,6 @@ then
 	exit 1
 fi
 
+cd "${SCRIPT_DIR}"/.. && \
 env $(cat "$varsfile" | xargs) go run \
 	cmd/nrtm4client/main.go "$@"

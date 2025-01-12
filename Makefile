@@ -107,16 +107,9 @@ release-app: checkvcs install
 
 release: release-app ;
 
-run:
-ifeq (,$(wildcard ./scripts/run.sh))
-	echo "scripts/run.sh not found. copy scripts/run.example.sh and edit the variables for your system"
-	exit 1
-endif
-	sh scripts/run.sh
-
 clean:
 	$(GOCLEAN) ./...
-#	rm -rf web/www
+	rm -rf web/dist
 #	rm -rf $(DOCKERFILE_APP_DIR)/app
 	rm -f $(APP_DIR)/$(BINARY_NAME_DEBUG) $(APP_DIR)/$(BINARY_NAME_APP) $(APP_DIR)/$(BINARY_NAME_APP_UNIX)
 #	-$(DOCKERCMD) image rm $(IMAGE_APP_NAME) >/dev/null 2>&1

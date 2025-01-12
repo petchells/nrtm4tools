@@ -253,16 +253,6 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 	}
 }
 
-// Counter is a counter with a mutex
-type Counter struct {
-	n int64
-}
-
-// Increment increments the counter
-func (c *Counter) Increment() {
-	c.n++
-}
-
 // RPSLObjectList an ummutable list of objects
 type RPSLObjectList struct {
 	mu      sync.Mutex
@@ -349,16 +339,16 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 	var wg sync.WaitGroup
 
 	objectList := RPSLObjectList{}
-	successfulObjects := Counter{}
-	failedObjects := Counter{}
+	successfulObjects := 0
+	failedObjects := 0
 
 	parserPool := newParserPool(4)
 	incrementCounters := func(res *rpsl.Rpsl) {
 		if obj := res; obj != nil {
 			objectList.Add(*obj)
-			successfulObjects.Increment()
+			successfulObjects++
 		} else {
-			failedObjects.Increment()
+			failedObjects++
 		}
 		rpslObjects := objectList.GetBatch(rpslInsertBatchSize)
 		if len(rpslObjects) > 0 {
@@ -393,12 +383,12 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 		} else if err != nil {
 			logger.Warn("error reading jsonseq records.", "error", err)
 			return err
-		} else if successfulObjects.n == 0 {
+		} else if successfulObjects == 0 {
 			// First record is the Snapshot header
-			successfulObjects.Increment()
+			successfulObjects++
 			sf := new(persist.SnapshotFileJSON)
 			if err = json.Unmarshal(bytes, sf); err != nil {
-				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects.n)
+				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects)
 				return err
 			}
 			if sf.Version != notification.SnapshotRef.Version {

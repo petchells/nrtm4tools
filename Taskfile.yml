@@ -1,31 +1,62 @@
 version: "3"
 
 vars:
+  BINARIES: ["nrtm4client", "nrtm4serve"]
   WEB_DIR: "./web"
-  SECOND_VAR: "{{.FIRST_VAR}} world"
+  WEB_BUILD_DIR: "{{.WEB_DIR}}/dist"
+  TERN_BASE_DIR: "./third_party/tern"
 
 tasks:
   migrate:
     cmds:
-      - tern migrate --config third_party/tern/tern.conf --migrations third_party/tern
+      - tern migrate --config {{.TERN_BASE_DIR}}/tern.conf --migrations {{.TERN_BASE_DIR}}
+    silent: true
+
+  build:
+    deps: [buildgo, testgo, buildweb, testweb]
+    silent: true
+
+  test:
+    deps: [testgo, testweb]
+    silent: true
+
+  coverage:
+    deps: [test]
+    cmds:
+      - sh ./scripts/coverage.sh
+    silent: true
+
+  clean:
+    deps: [cleanbinaries]
+    cmds:
+      - rm -rf {{.WEB_BUILD_DIR}}
+      - rm -rf ./docs/generated
+    silent: true
+
+  cleanall:
+    deps: [clean]
+    cmds:
+      - rm -rf {{.WEB_DIR}}/node_modules
+    silent: true
+
+  webdev:
+    deps: [installweb]
+    cmds:
+      - cd {{.WEB_DIR}} && npm run dev
     silent: true
 
   buildgo:
+    for:
+      var: BINARIES
+      split: ","
+      as: app
     cmds:
-      - echo {{.SECOND_VAR}}
-      - cd ./cmd/nrtm4client && go build -o nrtm4client -v
-      - cd ./cmd/nrtm4serve && go build -o nrtm4serve -v
+      - cd ./cmd/{{.app}} && go build -o {{.app}} -v
     silent: true
 
   testgo:
     cmds:
       - go test ./internal/...
-    silent: true
-
-  installweb:
-    precondition: test ! -d node_modules
-    cmds:
-      - cd {{.WEB_DIR}} && npm install --verbose
     silent: true
 
   buildweb:
@@ -40,31 +71,27 @@ tasks:
       - cd {{.WEB_DIR}} && npx vitest run
     silent: true
 
-  webdev:
-    deps: [installweb]
+  # Internal targets
+  installweb:
+    internal: true
     cmds:
-      - cd {{.WEB_DIR}} && npm run dev
+      - cd {{.WEB_DIR}} && test ! -d node_modules && npm install
+    ignore_error: true
     silent: true
 
-  build:
-    deps: [buildgo, buildweb]
-    silent: true
-
-  test:
-    deps: [testgo, testweb]
-    silent: true
-
-  install:
-    deps: [buildgo, testgo, buildweb, testweb]
-    silent: true
-
-  clean:
+  cleanbinary:
+    internal: true
     cmds:
-      - rm -rf ./web/dist ./cmd/nrtmclient/__debug_* ./cmd/nrtmserve/__debug_*
+      - cd ./cmd/{{.APP}} && rm -rf {{.APP}} __debug_bin*
     silent: true
 
-  cleanall:
-    deps: [clean]
-    cmds:
-      - rm -rf {{.WEB_DIR}}/node_modules
+  cleanbinaries:
+    internal: true
+    cmd:
+      for:
+        var: BINARIES
+        as: app
+      vars:
+        APP: "{{.app}}"
+      task: cleanbinary
     silent: true

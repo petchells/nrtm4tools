@@ -12,3 +12,4 @@ for package in ${PKG_LIST}; do
 done
 go tool cover -func=${output_dir}/coverage.cov
 go tool cover -html=${output_dir}/coverage.cov -o ${output_dir}/coverage.html
+echo "Generated HTML report at ${output_dir}/coverage.html"
