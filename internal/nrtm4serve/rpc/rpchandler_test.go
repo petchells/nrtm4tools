@@ -182,7 +182,11 @@ func TestOptionsRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rr := setupResponseRecorder(req)
+	rr := httptest.NewRecorder()
+	rpcHandler := Handler{API: testAPI{}}
+	server := http.HandlerFunc(rpcHandler.HandleOptions)
+	server.ServeHTTP(rr, req)
+
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
