@@ -46,12 +46,13 @@ tasks:
     silent: true
 
   buildgo:
-    for:
-      var: BINARIES
-      split: ","
-      as: app
-    cmds:
-      - cd ./cmd/{{.app}} && go build -o {{.app}} -v
+    cmd:
+      for:
+        var: BINARIES
+        as: app
+      vars:
+        APP: "{{.app}}"
+      task: buildbinary
     silent: true
 
   testgo:
@@ -74,10 +75,21 @@ tasks:
   # Internal targets
   installweb:
     internal: true
+    status:
+      - cd {{.WEB_DIR}} && test -d node_modules
     cmds:
-      - cd {{.WEB_DIR}} && test ! -d node_modules && npm install
-    ignore_error: true
+      - cd {{.WEB_DIR}} && npm install
     silent: true
+
+  buildbinary:
+    internal: true
+    cmds:
+      - cd ./cmd/{{.APP}} && go build -race -o {{.APP}} -v
+    sources:
+      - ./cmd/{{.APP}}/main.go
+      - ./internal/**/*.go
+    generates:
+      - ./cmd/{{.APP}}/{{.APP}}
 
   cleanbinary:
     internal: true

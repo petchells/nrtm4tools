@@ -3,6 +3,7 @@
 .*.swo
 Session.vim
 
+.task/
 .vscode/
 
 cmd/nrtm4client/nrtm4client
