@@ -18,11 +18,18 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
-            return id
+            const libParts = id
               .toString()
               .split("node_modules/")[1]
-              .split("/")[0]
-              .toString();
+              .toString()
+              .split("/");
+            if (libParts[0] === "@mui") {
+              if (libParts[1].indexOf("x-") === 0) {
+                return "@mui-" + libParts[1];
+              }
+              return "@mui";
+            }
+            return "lib";
           }
         },
       },

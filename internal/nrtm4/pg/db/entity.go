@@ -262,9 +262,9 @@ func Create(tx pgx.Tx, entityPtr EntityManaged) error {
 	)
 	tag, err := tx.Exec(context.Background(), sql, values...)
 	if err != nil {
+		logger.Error("db.Create failed", "sql", sql, "error", err, "tag", tag)
 		return err
 	}
-	logger.Debug("Insert successful", "numRows", tag.RowsAffected())
 	return nil
 }
 

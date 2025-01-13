@@ -23,7 +23,6 @@ export default function Source(props: {
   const [loading, setLoading] = useState<number>(0);
 
   const saveLabel = (text: string) => {
-    console.log("change label to", text);
     setLoading(1);
     client
       .saveLabel(source.Source, source.Label, text)
@@ -34,7 +33,7 @@ export default function Source(props: {
         },
         (err) => console.log(err)
       )
-      .then(() => setLoading(0));
+      .finally(() => setLoading(0));
   };
 
   const Label = styled(Paper)(({ theme }) => ({
