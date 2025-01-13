@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"reflect"
 	"strings"
 )
@@ -66,18 +65,10 @@ type Handler struct {
 	API API
 }
 
-// RPCServiceWrapper Convenience function
-func (handler Handler) RPCServiceWrapper(w http.ResponseWriter, r *http.Request) {
-	if len(os.Getenv("APP_MODE")) > 0 {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-	}
-	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-	handler.ProcessRPC(w, r)
+// HandleOptions just says ok
+func (handler Handler) HandleOptions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
+	w.WriteHeader(http.StatusOK)
 }
 
 // ProcessRPC Calls a method on your RPCAPI implementation and writes the response

@@ -9,6 +9,7 @@ Session.vim
 cmd/nrtm4client/nrtm4client
 cmd/nrtm4serve/nrtm4serve
 cmd/*/__debug_bin*
-scripts/env.dev.conf
+scripts/env.*.conf
+!scripts/env.example.conf
 work/
 

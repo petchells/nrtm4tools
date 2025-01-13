@@ -18,7 +18,7 @@ Before you can run the client, follow the Quick set up below, then come back to 
 ## Running nrtm4client
 
 Create a directory, e.g. `$HOME/nrtm4/RIPE` to store downloaded files,
-then copy file [./scripts/env.dev.example.conf] to ./scripts/env.dev.conf, and change the variables
+then copy file [./scripts/env.example.conf] to ./scripts/env.dev.conf, and change the variables
 to your system, for example:
 
     PG_DATABASE_URL=postgres://nrtm4:nrtm4@localhost:5432/nrtm4?sslmode=disable

@@ -381,6 +381,7 @@ func TestSingleComplexParam(t *testing.T) {
 //			t.Fatalf("Expected '%v' but got '%v'", expected, res)
 //		}
 //	}
+
 func TestSingleBadCommand(t *testing.T) {
 	var jsonStr = `{
 		"jsonrpc": "2.0",
@@ -523,7 +524,7 @@ var doRequest = func(t *testing.T, jsonStr string) JSONRPCResponse {
 func setupResponseRecorder(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
 	rpcHandler := Handler{API: testAPI{}}
-	server := http.HandlerFunc(rpcHandler.RPCServiceWrapper)
+	server := http.HandlerFunc(rpcHandler.ProcessRPC)
 	server.ServeHTTP(rr, req)
 	return rr
 }

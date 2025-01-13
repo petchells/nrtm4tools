@@ -26,7 +26,8 @@ func Launch(config service.AppConfig, port int, webRoot string) {
 		}
 	}()
 	s := rpc.NewServer()
-	s.POSTHandler("/rpc", rpcHandler.RPCServiceWrapper)
+	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("POST")
+	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("OPTIONS")
 
 	if len(webRoot) > 0 {
 		s.Router().PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webRoot))))
