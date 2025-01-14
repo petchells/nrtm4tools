@@ -95,7 +95,7 @@ export default function SourcesTable(props: {
                         "short"
                       )
                     ) : (
-                      <i>working...</i>
+                      <i>updating...</i>
                     )}
                   </TableCell>
                   <TableCell

@@ -39,12 +39,6 @@ tasks:
       - rm -rf {{.WEB_DIR}}/node_modules
     silent: true
 
-  webdev:
-    deps: [installweb]
-    cmds:
-      - cd {{.WEB_DIR}} && npm run dev
-    silent: true
-
   buildgo:
     cmd:
       for:
@@ -56,6 +50,7 @@ tasks:
     silent: true
 
   testgo:
+    deps: [migratetest]
     cmds:
       - go test ./internal/...
     silent: true
@@ -70,6 +65,22 @@ tasks:
     deps: [installweb]
     cmds:
       - cd {{.WEB_DIR}} && npx vitest run
+    silent: true
+
+  # Development utils
+  rewinddb:
+    cmds:
+      - tern migrate --destination -1 --config {{.TERN_BASE_DIR}}/tern.conf --migrations {{.TERN_BASE_DIR}}
+    silent: true
+
+  migratetest:
+    cmds:
+      - tern migrate --config {{.TERN_BASE_DIR}}/tern.test.conf --migrations {{.TERN_BASE_DIR}}
+
+  webdev:
+    deps: [installweb]
+    cmds:
+      - cd {{.WEB_DIR}} && npm run dev
     silent: true
 
   # Internal targets

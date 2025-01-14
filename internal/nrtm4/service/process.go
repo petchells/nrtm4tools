@@ -241,7 +241,11 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 				if err != nil {
 					return err
 				}
-				repo.AddModifyObject(source, rpsl, header.NrtmFileJSON)
+				err = repo.AddModifyObject(source, rpsl, header.NrtmFileJSON)
+				if err != nil {
+					logger.Error("Delta AddModifyObject failed", "rpsl", rpsl, "error", err)
+					return err
+				}
 			} else if delta.Action == persist.DeltaDeleteAction {
 				repo.DeleteObject(source, *delta.ObjectClass, *delta.PrimaryKey, header.NrtmFileJSON)
 			} else {
@@ -338,7 +342,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 	var snapshotHeader *persist.SnapshotFileJSON
 	var wg sync.WaitGroup
 
-	objectList := RPSLObjectList{}
+	objectList := NewRPSLObjectList()
 	successfulObjects := 0
 	failedObjects := 0
 

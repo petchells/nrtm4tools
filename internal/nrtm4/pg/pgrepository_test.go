@@ -7,7 +7,7 @@ import (
 )
 
 func TestSelectObjectSQL(t *testing.T) {
-	sql := selectObjectQuery()
+	sql := selectCurrentObjectQuery()
 
 	expected := `
 		SELECT rpsl.id rpsl_id, rpsl.object_type rpsl_object_type, rpsl.primary_key rpsl_primary_key, rpsl.nrtm_source_id rpsl_nrtm_source_id, rpsl.from_version rpsl_from_version, rpsl.to_version rpsl_to_version, rpsl.rpsl rpsl_rpsl

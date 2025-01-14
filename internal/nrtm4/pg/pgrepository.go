@@ -56,7 +56,7 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 		AND version >= $2
 		AND version <= $3
 		ORDER BY version DESC
-		LIMIT 1000
+		LIMIT 100
 		`,
 		notifDesc.ColumnNamesCommaSeparated(),
 		notifDesc.TableName(),
@@ -168,9 +168,7 @@ func (repo PostgresRepository) AddModifyObject(
 	rpsl rpsl.Rpsl,
 	file persist.NrtmFileJSON,
 ) error {
-	rpslObject := new(pgpersist.RPSLObject)
-	newRow := pgpersist.RPSLObject{
-		ID:           db.NextID(),
+	newRow := &pgpersist.RPSLObject{
 		ObjectType:   rpsl.ObjectType,
 		PrimaryKey:   rpsl.PrimaryKey,
 		NRTMSourceID: source.ID,
@@ -178,11 +176,26 @@ func (repo PostgresRepository) AddModifyObject(
 		RPSL:         rpsl.Payload,
 	}
 	return db.WithTransaction(func(tx pgx.Tx) error {
-		err := deleteObject(tx, source, rpslObject, rpsl.ObjectType, rpsl.PrimaryKey, file)
-		if err == nil || err == pgx.ErrNoRows {
-			return db.Create(tx, &newRow)
+		sql := selectCurrentObjectQuery()
+		rpslObject := new(pgpersist.RPSLObject)
+		err := tx.QueryRow(context.Background(), sql, source.ID, rpsl.PrimaryKey, rpsl.ObjectType).Scan(db.SelectValues(rpslObject)...)
+		if err != nil && err != pgx.ErrNoRows {
+			return err
 		}
-		return err
+		if err != pgx.ErrNoRows {
+			if rpslObject.FromVersion == newRow.FromVersion {
+				// rpsl was updated more than once in the same version -- overwrite previous one
+				newRow.ID = rpslObject.ID
+				return db.Update(tx, newRow)
+			}
+			rpslObject.ToVersion = file.Version
+			err = db.Update(tx, rpslObject)
+			if err != nil {
+				return err
+			}
+		}
+		newRow.ID = db.NextID()
+		return db.Create(tx, newRow)
 	})
 }
 
@@ -193,30 +206,19 @@ func (repo PostgresRepository) DeleteObject(
 	primaryKey string,
 	file persist.NrtmFileJSON,
 ) error {
-	rpslObject := new(pgpersist.RPSLObject)
 	return db.WithTransaction(func(tx pgx.Tx) error {
-		return deleteObject(tx, source, rpslObject, objectType, primaryKey, file)
+		sql := selectCurrentObjectQuery()
+		rpslObject := new(pgpersist.RPSLObject)
+		err := tx.QueryRow(context.Background(), sql, source.ID, primaryKey, objectType).Scan(db.SelectValues(rpslObject)...)
+		if err != nil {
+			return err
+		}
+		rpslObject.ToVersion = file.Version
+		return db.Update(tx, rpslObject)
 	})
 }
 
-func deleteObject(
-	tx pgx.Tx,
-	source persist.NRTMSource,
-	rpslObject *pgpersist.RPSLObject,
-	objectType string,
-	primaryKey string,
-	file persist.NrtmFileJSON,
-) error {
-	sql := selectObjectQuery()
-	err := tx.QueryRow(context.Background(), sql, source.Source, primaryKey, objectType).Scan(db.SelectValues(rpslObject)...)
-	if err != nil {
-		return err
-	}
-	rpslObject.ToVersion = file.Version
-	return db.Update(tx, rpslObject)
-}
-
-func selectObjectQuery() string {
+func selectCurrentObjectQuery() string {
 	srcDesc := db.GetDescriptor(&pgpersist.NRTMSource{})
 	rpslObjectDesc := db.GetDescriptor(&pgpersist.RPSLObject{})
 	return fmt.Sprintf(`
@@ -224,8 +226,8 @@ func selectObjectQuery() string {
 		FROM %v
 		JOIN %v ON %v.id = %v.nrtm_source_id
 		WHERE
-			%v.source ILIKE($1)
-			AND UPPER(%v.primary_key) = UPPER($2)
+			%v.id = $1
+			AND %v.primary_key = UPPER($2)
 			AND %v.object_type = UPPER($3)
 			AND %v.to_version = 0`,
 		strings.Join(rpslObjectDesc.ColumnNamesWithAlias(), ", "),
