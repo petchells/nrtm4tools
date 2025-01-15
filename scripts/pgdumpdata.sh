@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+# pgdumpdata.sh - does a data-only dump of the tables in the targetted schema,
+# excluding the table `schema_version`. Produces a gzipped dump file in the
+# current working directory.
+#
 # E.g.
 # connect_opts="-h localhost -U nrtm4"
 # machine_name=bastion
@@ -23,13 +28,8 @@ if [ $# != 2 ];then
     exit 1
 fi
 
-echo $connect_opts
-echo $machine_name
-
-exit
-
 schema_version=$(psql $connect_opts -P tuples_only -c 'select version from schema_version limit 1;' | grep -o '[0-9]\+')
 TZ=Z
 datestamp=$(date --rfc-3339='seconds'|grep -o '.\{19\}'|tr ' :' T-)
-output_file_name="$machine_name"-data-filextract_v"$schema_version"_"$datestamp".dmp.sql.gz
+output_file_name="$machine_name"-nrtm4data_v"$schema_version"_"$datestamp".dmp.sql.gz
 pg_dump -t 'nrtm_*' -T 'schema_version' --data-only $connect_opts |gzip > $output_file_name

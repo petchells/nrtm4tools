@@ -41,10 +41,12 @@ Command line arguments
 - `rename --source <SOURCE> --label <FROM_LABEL> --to <TO_LABEL>`
   Replaces a label
 
-A note about labels:
+_A note about labels_
+
 A label can be given to a source in order to track multiple sessions of the same IRR source.
 This is useful when your repo can no longer be synchronized with a server, for example when the session
 ID changes, or when your repo wasn't refreshed on time and loses sync.
+
 In these cases you can use a label for each of the sessions to preserve the history, should you
 wish to keep it. If you only want the latest version of each IRR source then you don't need labels.
 
@@ -89,10 +91,13 @@ Assuming your database is running on localhost...
 
 You'll need these tools:
 
-- make, or `task`, which I'm moving towards.
+- [task](https://github.com/go-task/task)<br>
+  Installation instructions are at the bottom of the linked page, or just use
+  `go install github.com/go-task/task/v3/cmd/task@latest` and ensure
+  `$GOPATH/bin` is on your `$PATH`.
 - go 1.23+
-- node 21+
-- [tern](https://github.com/JackC/tern) v2.3.0 for PostgreSQL migrations
+- node 21+ If you want to build the front end.
+- [tern](https://github.com/JackC/tern) v2.3.0+ for PostgreSQL migrations
 
 ### Initialize schema
 
@@ -102,36 +107,49 @@ Edit `tern.conf` to contain the variables for your database, then...
 
 ### Build targets
 
-    make clean buildgo # creates a binary at ./cmd/nrtmclient/nrtmclient
-    make clean testgo # uses a db to when testing. See above for PostgreSQL setup
+Creates a binary at `./cmd/nrtmclient/nrtmclient`. The `testgo` target uses a db
+to do integration testing. See above for PostgreSQL setup.
+
+    task cleanbinaries buildgo testgo
 
 The `run.sh` command should now be usable. See Usage above.
 
 For development:
 
 [This script](./scripts/pgdumpdata.sh) uses `pg_dump` to do a data-only dump of the
-database. It excludes the schema version from the dump and encodes it in the output
-file name. When restoring dumps, ensure the target schema matches the data dump
-version.
+database.
 
 Example usage:
 
-    ./scripts/pgdumpdata.sh "-h localhost -U nrtm4" nrtm4dbhost
+    ./scripts/pgdumpdata.sh "-h localhost -U nrtm4" localhost
 
 The result is a gzipped dump file which can be restored by piping the output to
 a `psql` command in the usual way.
 
-Other targets
+NOTE: When restoring dumps, ensure the target schema version matches the data dump
+version. You can see the schema version in the file name, for example:
+`localhost-nrtm4data_v3_2025-01-15T22-26-51.dmp.sql.gz` is at `v3`, between the underscores.
+To see the current database schema version, this might work:
 
-    make emptydb  # wipes the table schema, including any data, ofc
-    make rewinddb  # schema is set back one version
-    make emptydb migratetest  # resets the test db
-    make list # fill your boots
+    psql -h localhost -U nrtm4 -c 'select version from schema_version limit 1;'
 
-This builds the frontend as well, though I wouldn't bother until it can do cool stuff.
+_Other targets_
 
-    make clean test
-    make clean build
+    task emptydb  # wipes the table schema, including any data, ofc
+    task rewinddb  # schema is set back one version
+    task emptydb migratetest  # resets the test db
+    task --list-all # fill your boots
+
+These targets also build a web client.
+
+    task clean build test
+    task buildweb testweb
+
+To use a web browser instead of a CLI, start `nrtm4serve`, then use the command below to
+start a web server on localhost.
+Open a browser at the link which appears in the terminal and select 'Sources' from the menu.
+
+    task webdev
 
 # Tips
 
