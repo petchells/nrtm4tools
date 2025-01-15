@@ -237,7 +237,7 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 				return err
 			}
 			if delta.Action == persist.DeltaAddModifyAction {
-				rpsl, err := rpsl.ParseString(*delta.Object)
+				rpsl, err := rpsl.ParseNRTMObjectString(*delta.Object)
 				if err != nil {
 					return err
 				}
@@ -290,7 +290,7 @@ func (p *rpslObjectParser) bytesToRPSL(bytes []byte) *rpsl.Rpsl {
 		logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
 		return nil
 	}
-	rpsl, err := rpsl.ParseString(so.Object)
+	rpsl, err := rpsl.ParseNRTMObjectString(so.Object)
 	if err != nil {
 		logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
 	}

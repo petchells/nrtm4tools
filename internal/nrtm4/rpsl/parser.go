@@ -19,8 +19,8 @@ type Rpsl struct {
 	Payload    string
 }
 
-// ParseString parses a string and returns it as an RPSL object
-func ParseString(str string) (Rpsl, error) {
+// ParseNRTMObjectString parses a string and returns it as an RPSL object
+func ParseNRTMObjectString(str string) (Rpsl, error) {
 	return parseString(str)
 }
 
