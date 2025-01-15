@@ -3,7 +3,6 @@ package pg
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
@@ -219,26 +218,17 @@ func (repo PostgresRepository) DeleteObject(
 }
 
 func selectCurrentObjectQuery() string {
-	srcDesc := db.GetDescriptor(&pgpersist.NRTMSource{})
 	rpslObjectDesc := db.GetDescriptor(&pgpersist.RPSLObject{})
 	return fmt.Sprintf(`
 		SELECT %v
 		FROM %v
-		JOIN %v ON %v.id = %v.nrtm_source_id
 		WHERE
-			%v.id = $1
-			AND %v.primary_key = UPPER($2)
-			AND %v.object_type = UPPER($3)
-			AND %v.to_version = 0`,
-		strings.Join(rpslObjectDesc.ColumnNamesWithAlias(), ", "),
-		rpslObjectDesc.TableNameWithAlias(),
-		srcDesc.TableNameWithAlias(),
-		srcDesc.TableAlias(),
-		rpslObjectDesc.TableAlias(),
-		srcDesc.TableAlias(),
-		rpslObjectDesc.TableAlias(),
-		rpslObjectDesc.TableAlias(),
-		rpslObjectDesc.TableAlias(),
+			nrtm_source_id = $1
+			AND primary_key = UPPER($2)
+			AND object_type = UPPER($3)
+			AND to_version = 0`,
+		rpslObjectDesc.ColumnNamesCommaSeparated(),
+		rpslObjectDesc.TableName(),
 	)
 }
 

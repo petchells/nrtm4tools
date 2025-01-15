@@ -257,45 +257,6 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 	}
 }
 
-// RPSLObjectList an ummutable list of objects
-type RPSLObjectList struct {
-	mu      sync.Mutex
-	objects []rpsl.Rpsl
-}
-
-// NewRPSLObjectList returns an initialized RPSLObjectList
-func NewRPSLObjectList() RPSLObjectList {
-	return RPSLObjectList{objects: make([]rpsl.Rpsl, 0, rpslInsertBatchSize*2)}
-}
-
-// Add adds an object the list
-func (l *RPSLObjectList) Add(obj rpsl.Rpsl) {
-	l.mu.Lock()
-	l.objects = append(l.objects, obj)
-	l.mu.Unlock()
-}
-
-// GetBatch will return a slice of objects only if 'size' are available. They are removed from the list
-func (l *RPSLObjectList) GetBatch(size int) []rpsl.Rpsl {
-	res := []rpsl.Rpsl{}
-	l.mu.Lock()
-	if len(l.objects) >= size {
-		res = l.objects[:size]
-		l.objects = l.objects[size:]
-	}
-	l.mu.Unlock()
-	return res
-}
-
-// GetAll returns all RPSL objects and empties the internal list.
-func (l *RPSLObjectList) GetAll() []rpsl.Rpsl {
-	l.mu.Lock()
-	res := l.objects
-	l.objects = []rpsl.Rpsl{}
-	l.mu.Unlock()
-	return res
-}
-
 type rpslObjectParser struct{}
 
 type rpslParserPool struct {
@@ -342,7 +303,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 	var snapshotHeader *persist.SnapshotFileJSON
 	var wg sync.WaitGroup
 
-	objectList := NewRPSLObjectList()
+	objectList := util.NewLockingList[rpsl.Rpsl](rpslInsertBatchSize * 2)
 	successfulObjects := 0
 	failedObjects := 0
 

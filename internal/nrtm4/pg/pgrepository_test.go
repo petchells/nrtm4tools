@@ -10,14 +10,13 @@ func TestSelectObjectSQL(t *testing.T) {
 	sql := selectCurrentObjectQuery()
 
 	expected := `
-		SELECT rpsl.id rpsl_id, rpsl.object_type rpsl_object_type, rpsl.primary_key rpsl_primary_key, rpsl.nrtm_source_id rpsl_nrtm_source_id, rpsl.from_version rpsl_from_version, rpsl.to_version rpsl_to_version, rpsl.rpsl rpsl_rpsl
-		FROM nrtm_rpslobject rpsl
-		JOIN nrtm_source src ON src.id = rpsl.nrtm_source_id
+		SELECT id, object_type, primary_key, nrtm_source_id, from_version, to_version, rpsl
+		FROM nrtm_rpslobject
 		WHERE
-			src.source ILIKE($1)
-			AND UPPER(rpsl.primary_key) = UPPER($2)
-			AND rpsl.object_type = UPPER($3)
-			AND rpsl.to_version = 0`
+			nrtm_source_id = $1
+			AND primary_key = UPPER($2)
+			AND object_type = UPPER($3)
+			AND to_version = 0`
 	if reduceWhiteSpace(sql) != reduceWhiteSpace(expected) {
 		t.Errorf("Got unexpected SQL\n%v\nbut wanted\n%v\n", sql, expected)
 	}

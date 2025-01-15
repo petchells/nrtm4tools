@@ -83,6 +83,16 @@ tasks:
       - cd {{.WEB_DIR}} && npm run dev
     silent: true
 
+  cleanbinaries:
+    cmd:
+      for:
+        var: BINARIES
+        as: app
+      vars:
+        APP: "{{.app}}"
+      task: cleanbinary
+    silent: true
+
   # Internal targets
   installweb:
     internal: true
@@ -106,15 +116,4 @@ tasks:
     internal: true
     cmds:
       - cd ./cmd/{{.APP}} && rm -rf {{.APP}} __debug_bin*
-    silent: true
-
-  cleanbinaries:
-    internal: true
-    cmd:
-      for:
-        var: BINARIES
-        as: app
-      vars:
-        APP: "{{.app}}"
-      task: cleanbinary
     silent: true
