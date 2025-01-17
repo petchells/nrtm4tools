@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+EXE="cmd/nrtm4client/nrtm4client" 
+
+if [ ! -x "$EXE" ];then
+	echo "Missing executable $EXE. Run 'task buildgo' and try again."
+	exit 4
+fi
 
 if [ -z "$SCRIPT_DIR" ];then
 	echo "Cannot determine directory"
@@ -24,5 +30,5 @@ then
 fi
 
 cd "${SCRIPT_DIR}"/.. && \
-env $(cat "$varsfile" | xargs) go run \
-	cmd/nrtm4client/main.go "$@"
+env $(cat "$varsfile" | xargs) \
+	cmd/nrtm4client/nrtm4client "$@"

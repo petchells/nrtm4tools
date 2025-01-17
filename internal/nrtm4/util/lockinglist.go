@@ -22,7 +22,7 @@ func (l *LockingList[T]) Add(obj T) {
 	l.mu.Unlock()
 }
 
-// GetBatch will return a slice of objects only if 'size' are available. They are removed from the list
+// GetBatch will return a slice of objects only if 'size' are available. They are removed from the list.
 func (l *LockingList[T]) GetBatch(size int) []T {
 	res := []T{}
 	l.mu.Lock()

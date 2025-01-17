@@ -153,7 +153,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		dr := append(refs[:10], refs[11:]...)
 		notification.DeltaRefs = &dr
 
-		expect := ErrNRTMNotificationDeltaSequenceBroken
+		expect := ErrNRTM4NotificationDeltaSequenceBroken
 
 		_, err := findUpdates(notification, source)
 		if err != expect {
@@ -167,7 +167,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		dr := refs[:len(refs)-2]
 		notification.DeltaRefs = &dr
 
-		expect := ErrNRTMNotificationVersionDoesNotMatchDelta
+		expect := ErrNRTM4NotificationVersionDoesNotMatchDelta
 
 		_, err := findUpdates(notification, source)
 		if err != expect {
@@ -181,7 +181,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		dr := append(refs[:10], refs[9:]...)
 		notification.DeltaRefs = &dr
 
-		expect := ErrNRTMDuplicateDeltaVersion
+		expect := ErrNRTM4DuplicateDeltaVersion
 
 		_, err := findUpdates(notification, source)
 		if err != expect {
@@ -194,7 +194,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		dr := []persist.FileRefJSON{}
 		notification.DeltaRefs = &dr
 
-		expect := ErrNRTMNoDeltasInNotification
+		expect := ErrNRTM4NoDeltasInNotification
 
 		_, err := findUpdates(notification, source)
 		if err != expect {

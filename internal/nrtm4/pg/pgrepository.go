@@ -41,6 +41,41 @@ func (repo PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
 	return sources, nil
 }
 
+// RemoveSource removes a source from the repo
+func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
+	err := db.WithTransaction(func(tx pgx.Tx) error {
+		sqls := []string{`
+			DELETE FROM
+				nrtm_rpslobject
+			WHERE nrtm_source_id = $1
+			`, `
+			DELETE FROM
+				nrtm_notification
+			WHERE nrtm_source_id = $1
+			`, `
+			DELETE FROM
+				nrtm_file
+			WHERE nrtm_source_id = $1
+			`, `
+			DELETE FROM
+				nrtm_source
+			WHERE id = $1
+			`}
+		for _, sql := range sqls {
+			_, err := tx.Exec(context.Background(), sql, source.ID)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		logger.Error("Error in RemoveSource", "error", err)
+		return err
+	}
+	return nil
+}
+
 // GetNotificationHistory gets the last 100 notification versions
 func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource, fromVersion, toVersion uint32) ([]persist.Notification, error) {
 	if toVersion < fromVersion {

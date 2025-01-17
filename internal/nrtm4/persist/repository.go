@@ -6,8 +6,9 @@ import (
 
 // Repository defines the functions for NRTMClient's persistent storage
 type Repository interface {
-	Initialize(dbURL string) error
+	Initialize(string) error
 	SaveSource(NRTMSource, NotificationJSON) (NRTMSource, error)
+	RemoveSource(NRTMSource) error
 	GetSources() ([]NRTMSource, error)
 	GetNotificationHistory(NRTMSource, uint32, uint32) ([]Notification, error)
 	SaveFile(*NRTMFile) error

@@ -75,26 +75,42 @@ func Exec(commander CommandExecutor) {
 		commander.ReplaceLabel(*src, *lbl, *tolbl)
 	}
 
+	removeCommand := func(args []string) {
+		fs := flag.NewFlagSet("remove", flag.ExitOnError)
+		src := fs.String("source", "", "The name of the source")
+		lbl := fs.String("label", "", "The label for the source. Can be empty.")
+		if err := fs.Parse(args); err != nil {
+			fmt.Printf("error: %s", err)
+			return
+		}
+		if len(*src) == 0 {
+			log.Fatalf(mandatorySourceMessage)
+		}
+		commander.RemoveSource(*src, *lbl)
+	}
+
 	runCmd := func(args []string) {
 		if len(args) >= 2 {
 			subArgs := args[2:]
 			switch args[1] {
 			case "connect":
 				connectCommand(subArgs)
-				return
 			case "update":
 				updateCommand(subArgs)
-				return
 			case "list":
 				listCommand(subArgs)
-				return
 			case "rename":
 				replaceLabelCommand(subArgs)
+			case "remove":
+				removeCommand(subArgs)
 			default:
+				log.Print(usage(args[0]))
+				flag.Usage()
 			}
+		} else {
+			log.Print(usage(args[0]))
+			flag.Usage()
 		}
-		log.Print(usage())
-		flag.Usage()
 	}
 
 	if *cpuprofile != "" {
@@ -119,8 +135,8 @@ func Exec(commander CommandExecutor) {
 
 }
 
-func usage() string {
-	return `
+func usage(cmd string) string {
+	return fmt.Sprintf(`
 	%v <command> OPTIONS
 
 	command: [connect|update]
@@ -145,6 +161,8 @@ func usage() string {
 
 	env ${envvars} nrtm4client connect -url https://nrtm4.example.zz/notification.json
 
+	env ${envvars} nrtm4client list
+
 	env ${envvars} nrtm4client update -source EXAMPLE
-	`
+	`, cmd)
 }

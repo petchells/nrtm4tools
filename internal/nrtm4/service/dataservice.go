@@ -54,6 +54,10 @@ func (ds NrtmDataService) getSourceByNameAndLabel(name string, label string) *pe
 	return nil
 }
 
+func (ds NrtmDataService) deleteSource(source persist.NRTMSource) error {
+	return ds.Repository.RemoveSource(source)
+}
+
 func (ds NrtmDataService) getSources() ([]persist.NRTMSource, error) {
 	return ds.Repository.GetSources()
 }

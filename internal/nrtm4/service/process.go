@@ -1,49 +1,26 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/petchells/nrtm4client/internal/nrtm4/jsonseq"
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
-	"github.com/petchells/nrtm4client/internal/nrtm4/rpsl"
 	"github.com/petchells/nrtm4client/internal/nrtm4/util"
 )
 
 var (
-	// Protocol errors
-
-	// ErrNRTMVersionMismatch nrtm version is not 4
-	ErrNRTMVersionMismatch = errors.New("nrtm version is not 4")
-	// ErrNRTMSourceMismatch session id does not match source
-	ErrNRTMSourceMismatch = errors.New("session id does not match source")
-	// ErrNRTMSourceNameMismatch source name does not match source
-	ErrNRTMSourceNameMismatch = errors.New("source name does not match source")
-	// ErrNRTMFileVersionMismatch file version does not match its reference
-	ErrNRTMFileVersionMismatch = errors.New("file version does not match its reference")
-	// ErrNRTMFileVersionInconsistency version is lower than source
-	ErrNRTMFileVersionInconsistency = errors.New("version is lower than source")
-	// ErrNRTMNoDeltasInNotification the NRTM server published a notification file with no deltas
-	ErrNRTMNoDeltasInNotification = errors.New("no deltas listed in notification file")
-	// ErrNRTMNotificationDeltaSequenceBroken the NRTM server has an incontiguous list of delta version
-	ErrNRTMNotificationDeltaSequenceBroken = errors.New("server has incontiguous list of delta versions")
-	// ErrNRTMNotificationVersionDoesNotMatchDelta the highest delta version is not the notification version
-	ErrNRTMNotificationVersionDoesNotMatchDelta = errors.New("highest delta version is not the notification version")
-	// ErrNRTMDuplicateDeltaVersion the highest delta version is not the notification version
-	ErrNRTMDuplicateDeltaVersion = errors.New("notification file published a duplicate delta file")
-
 	// Repo errors
 
 	// ErrNextConsecutiveDeltaUnavaliable cannot find the next consecutive delta to apply to our repo
 	ErrNextConsecutiveDeltaUnavaliable = errors.New("repository is too old to update from the server")
+	// ErrSourceNotFound a source with the given label is not in the repo
+	ErrSourceNotFound = errors.New("cannot find source with given name and label")
+
 	// ErrSourceAlreadyExists a source with the given label already exists
 	ErrSourceAlreadyExists = errors.New("a source with the given label already exists")
 
@@ -82,15 +59,15 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	if len(label) > 0 && !labelRe.MatchString(label) {
 		return errors.New("Label is not valid")
 	}
+	ds := NrtmDataService{Repository: p.repo}
+	if ds.getSourceByURLAndLabel(notificationURL, label) != nil {
+		return errors.New("source already exists")
+	}
 	logger.Info("Fetching notification")
 	fm := fileManager{p.client}
 	notification, errs := fm.downloadNotificationFile(notificationURL)
 	if len(errs) > 0 {
 		return errors.New("download error(s): " + errs[0].Error())
-	}
-	ds := NrtmDataService{Repository: p.repo}
-	if ds.getSourceByURLAndLabel(notificationURL, label) != nil {
-		return errors.New("source already exists")
 	}
 	err := fm.ensureDirectoryExists(p.config.NRTMFilePath)
 	if err != nil {
@@ -111,7 +88,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 		logger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
 		return err
 	}
-	logger.Info("Inserting snapshot objects")
+	logger.Info("Inserting snapshot objects", "source", notification.Source)
 	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification)); err != io.EOF {
 		logger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
 		return err
@@ -125,7 +102,7 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 	source := ds.getSourceByNameAndLabel(sourceName, label)
 	if source == nil {
 		logger.Warn("No source with given name and label", "name", sourceName, "label", label)
-		return errors.New("no source found")
+		return ErrSourceNotFound
 	}
 	fm := fileManager{p.client}
 	notification, errs := fm.downloadNotificationFile(source.NotificationURL)
@@ -174,13 +151,13 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 // ReplaceLabel replaces a label name
 func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NRTMSource, error) {
 	ds := NrtmDataService{Repository: p.repo}
-	target := ds.getSourceByNameAndLabel(src, fromLabel)
-	if target == nil {
-		return nil, errors.New("cannot find source with given name and label")
-	}
 	possDupe := ds.getSourceByNameAndLabel(src, toLabel)
 	if possDupe != nil {
 		return nil, ErrSourceAlreadyExists
+	}
+	target := ds.getSourceByNameAndLabel(src, fromLabel)
+	if target == nil {
+		return nil, ErrSourceNotFound
 	}
 	target.Label = toLabel
 	return target, db.WithTransaction(func(tx pgx.Tx) error {
@@ -188,216 +165,20 @@ func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NR
 	})
 }
 
-func (p NRTMProcessor) syncDeltas(notification persist.NotificationJSON, source persist.NRTMSource) error {
-	deltaRefs, err := findUpdates(notification, source)
-	if err != nil {
-		return err
+// RemoveSource removes a source from the repo
+func (p NRTMProcessor) RemoveSource(src, label string) error {
+	ds := NrtmDataService{Repository: p.repo}
+	target := ds.getSourceByNameAndLabel(src, label)
+	if target == nil {
+		return ErrSourceNotFound
 	}
-	sort.Sort(fileRefsByVersion(deltaRefs))
-	fm := fileManager{p.client}
-	for _, deltaRef := range deltaRefs {
-		logger.Info("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
-		file, err := fm.fetchFileAndCheckHash(deltaRef, p.config.NRTMFilePath)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, notification, deltaRef)); err != io.EOF {
-			logger.Warn("Failed to apply delta", "source", source, "error", err)
-			return err
-		}
-	}
-	logger.Info("Finished syncing deltas")
-	return nil
-}
-
-func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON, deltaRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
-	var header *persist.DeltaFileJSON
-	return func(bytes []byte, err error) error {
-		if err == &persist.ErrNoEntity {
-			logger.Warn("error empty JSON", "error", err)
-			return err
-		}
-		if err == nil || err == io.EOF {
-			if header == nil {
-				deltaHeader := new(persist.DeltaFileJSON)
-				if err = json.Unmarshal(bytes, deltaHeader); err != nil {
-					return err
-				}
-				if err = validateDeltaHeader(deltaHeader.NrtmFileJSON, source, deltaRef); err != nil {
-					return err
-				}
-				header = deltaHeader
-				source.Version = deltaRef.Version
-				_, err = repo.SaveSource(source, notification)
-				return err
-			}
-			delta := new(persist.DeltaJSON)
-			if err = json.Unmarshal(bytes, delta); err != nil {
-				return err
-			}
-			if delta.Action == persist.DeltaAddModifyAction {
-				rpsl, err := rpsl.ParseNRTMObjectString(*delta.Object)
-				if err != nil {
-					return err
-				}
-				err = repo.AddModifyObject(source, rpsl, header.NrtmFileJSON)
-				if err != nil {
-					logger.Error("Delta AddModifyObject failed", "rpsl", rpsl, "error", err)
-					return err
-				}
-			} else if delta.Action == persist.DeltaDeleteAction {
-				repo.DeleteObject(source, *delta.ObjectClass, *delta.PrimaryKey, header.NrtmFileJSON)
-			} else {
-				return errors.New("no delta action available: " + delta.Action)
-			}
-			return nil
-		}
-		return err
-	}
-}
-
-type rpslObjectParser struct{}
-
-type rpslParserPool struct {
-	Parsers chan rpslObjectParser
-}
-
-func newParserPool(limit int) *rpslParserPool {
-	pool := rpslParserPool{}
-	pool.Parsers = make(chan rpslObjectParser, limit)
-	for range limit {
-		pool.Parsers <- rpslObjectParser{}
-	}
-	return &pool
-}
-
-func (pool *rpslParserPool) Acquire() rpslObjectParser {
-	return <-pool.Parsers
-}
-
-func (pool *rpslParserPool) Release(p rpslObjectParser) {
-	pool.Parsers <- p
-}
-
-func (pool *rpslParserPool) Close() {
-	close(pool.Parsers)
-}
-
-func (p *rpslObjectParser) bytesToRPSL(bytes []byte) *rpsl.Rpsl {
-	so := new(persist.SnapshotObjectJSON)
-	if err := json.Unmarshal(bytes, so); err != nil {
-		logger.Warn("Failed to unmarshal RPSL string from", "so.Object", so.Object, "error", err)
-		return nil
-	}
-	rpsl, err := rpsl.ParseNRTMObjectString(so.Object)
-	if err != nil {
-		logger.Warn("Failed to parse rpsl.Rpsl from", "so.Object", so.Object, "error", err)
-	}
-	return &rpsl
-
-}
-
-func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON) jsonseq.RecordReaderFunc {
-
-	var snapshotHeader *persist.SnapshotFileJSON
-	var wg sync.WaitGroup
-
-	objectList := util.NewLockingList[rpsl.Rpsl](rpslInsertBatchSize * 2)
-	successfulObjects := 0
-	failedObjects := 0
-
-	parserPool := newParserPool(4)
-	incrementCounters := func(res *rpsl.Rpsl) {
-		if obj := res; obj != nil {
-			objectList.Add(*obj)
-			successfulObjects++
-		} else {
-			failedObjects++
-		}
-		rpslObjects := objectList.GetBatch(rpslInsertBatchSize)
-		if len(rpslObjects) > 0 {
-			err := repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-			if err != nil {
-				log.Fatalln("Error saving snapshot object", err)
-			}
-		}
-	}
-
-	return func(bytes []byte, err error) error {
-		if err == &persist.ErrNoEntity {
-			logger.Warn("empty JSON record", "error", err)
-			return nil
-		}
-		if err == io.EOF {
-			// Expected error reading to end of snapshot objects
-			parser := parserPool.Acquire()
-			incrementCounters(parser.bytesToRPSL(bytes))
-			parserPool.Release(parser)
-			wg.Wait()
-			parserPool.Close()
-
-			rpslObjects := objectList.GetAll()
-			err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
-			if err != nil {
-				return err
-			}
-			source.Version = snapshotHeader.Version
-			_, err = repo.SaveSource(source, notification)
-			return err
-		} else if err != nil {
-			logger.Warn("error reading jsonseq records.", "error", err)
-			return err
-		} else if successfulObjects == 0 {
-			// First record is the Snapshot header
-			successfulObjects++
-			sf := new(persist.SnapshotFileJSON)
-			if err = json.Unmarshal(bytes, sf); err != nil {
-				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err, "numFailures", failedObjects)
-				return err
-			}
-			if sf.Version != notification.SnapshotRef.Version {
-				return ErrNRTMFileVersionMismatch
-			}
-			snapshotHeader = sf
-			return nil
-		} else {
-			// Subsequent records are objects
-			parser := parserPool.Acquire()
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				defer parserPool.Release(parser)
-				incrementCounters(parser.bytesToRPSL(bytes))
-			}()
-			return nil
-		}
-	}
-}
-
-func validateDeltaHeader(file persist.NrtmFileJSON, source persist.NRTMSource, deltaRef persist.FileRefJSON) error {
-	if file.NrtmVersion != 4 {
-		return ErrNRTMVersionMismatch
-	}
-	if file.SessionID != source.SessionID {
-		return ErrNRTMSourceMismatch
-	}
-	if file.Source != source.Source {
-		return ErrNRTMSourceNameMismatch
-	}
-	if file.Version != deltaRef.Version {
-		return ErrNRTMFileVersionMismatch
-	}
-	if file.Version < source.Version {
-		return ErrNRTMFileVersionInconsistency
-	}
-	return nil
+	return ds.deleteSource(*target)
 }
 
 func findUpdates(notification persist.NotificationJSON, source persist.NRTMSource) ([]persist.FileRefJSON, error) {
 
 	if notification.DeltaRefs == nil || len(*notification.DeltaRefs) == 0 {
-		return nil, ErrNRTMNoDeltasInNotification
+		return nil, ErrNRTM4NoDeltasInNotification
 	}
 
 	deltaRefs := []persist.FileRefJSON{}
@@ -411,7 +192,7 @@ func findUpdates(notification persist.NotificationJSON, source persist.NRTMSourc
 	versionSet := util.NewSet(versions...)
 	if len(versionSet) != len(versions) {
 		logger.Error("Duplicate delta version found in notification file", "source", notification.Source, "url", source.NotificationURL)
-		return nil, ErrNRTMDuplicateDeltaVersion
+		return nil, ErrNRTM4DuplicateDeltaVersion
 	}
 
 	sort.Slice(versions, func(i, j int) bool {
@@ -420,12 +201,12 @@ func findUpdates(notification persist.NotificationJSON, source persist.NRTMSourc
 	lo := versions[0]
 	hi := versions[len(versions)-1]
 	if hi != notification.Version {
-		return nil, ErrNRTMNotificationVersionDoesNotMatchDelta
+		return nil, ErrNRTM4NotificationVersionDoesNotMatchDelta
 	}
 	for i := 0; i < len(versions)-1; i++ {
 		if versions[i]+1 != versions[i+1] {
 			logger.Error("Delta version is missing from the notification file", "version", versions[i]+1, "source", notification.Source, "url", source.NotificationURL)
-			return nil, ErrNRTMNotificationDeltaSequenceBroken
+			return nil, ErrNRTM4NotificationDeltaSequenceBroken
 		}
 	}
 	if source.Version+1 < lo {

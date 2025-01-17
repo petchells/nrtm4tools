@@ -25,6 +25,10 @@ func (ps ProcessorStub) ReplaceLabel(src, fromLabel, toLabel string) (*persist.N
 	return nil, nil
 }
 
+func (ps ProcessorStub) RemoveSource(src, label string) error {
+	return nil
+}
+
 func TestCommandExecutorConnect(t *testing.T) {
 	ce := CommandExecutor{ProcessorStub{}}
 	ce.Connect("url", "label")

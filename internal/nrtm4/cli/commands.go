@@ -12,14 +12,15 @@ type ExecutionProcessor interface {
 	Update(string, string) error
 	ListSources() ([]persist.NRTMSourceDetails, error)
 	ReplaceLabel(string, string, string) (*persist.NRTMSource, error)
+	RemoveSource(string, string) error
 }
 
-// CommandExecutor top-level processing for input commands
+// CommandExecutor invokes processor and outputs responses to command line input
 type CommandExecutor struct {
 	processor ExecutionProcessor
 }
 
-// NewCommandProcessor creates a CommandProcessor
+// NewCommandProcessor creates a CommandExecutor and injects the processor
 func NewCommandProcessor(processor ExecutionProcessor) CommandExecutor {
 	return CommandExecutor{processor}
 }
@@ -46,7 +47,8 @@ func (ce CommandExecutor) Update(source string, label string) {
 
 // ListSources shows all sources in db
 func (ce CommandExecutor) ListSources(src, label string) {
-	logger.Debug("Not doing anything with these args for now", "src", src, "label", label)
+	// Not doing anything with these args for now", "src", src, "label", label
+	// TODO: when a source/label is given, show more details
 	sources, err := ce.processor.ListSources()
 	if err != nil {
 		logger.Warn("Error occurred when listing sources", "error", err)
@@ -69,6 +71,16 @@ func (ce CommandExecutor) ReplaceLabel(src, fromLabel, toLabel string) {
 	var err error
 	if updated, err = ce.processor.ReplaceLabel(src, fromLabel, toLabel); err != nil {
 		logger.Error("ReplaceLabel failed with error", "error", err)
+		return
 	}
 	logger.Info("Replaced label", "updated", updated)
+}
+
+// RemoveSource removes a source matching src, label
+func (ce CommandExecutor) RemoveSource(src, label string) {
+	if err := ce.processor.RemoveSource(src, label); err != nil {
+		logger.Error("RemoveSource failed with error", "error", err)
+		return
+	}
+	logger.Info("Removed source")
 }
