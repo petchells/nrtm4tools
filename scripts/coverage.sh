@@ -1,6 +1,6 @@
 #!/bin/sh
 
-output_dir="docs/generated/coverage/go"
+output_dir="docs/_generated/coverage/go"
 mkdir -p ${output_dir}
 rm -f ${output_dir}/*.cov
 PKG_LIST=$(go list ./internal/... | grep -v /vendor/ | grep -v /docs/ )

@@ -7,39 +7,51 @@ vars:
   TERN_BASE_DIR: "./third_party/tern"
 
 tasks:
+  default:
+    cmds:
+      - task --list-all
+    silent: true
+
   migrate:
+    desc: Brings the database schema up to the latest version
     cmds:
       - tern migrate --config {{.TERN_BASE_DIR}}/tern.conf --migrations {{.TERN_BASE_DIR}}
     silent: true
 
   build:
+    desc: Builds, then tests all binaries and the web client
     deps: [buildgo, testgo, buildweb, testweb]
     silent: true
 
   test:
+    desc: Tests the web client
     deps: [testgo, testweb]
     silent: true
 
   coverage:
+    desc: Prints a coverage report of the Go code in ./docs/_generated
     deps: [test]
     cmds:
       - sh ./scripts/coverage.sh
     silent: true
 
   clean:
+    desc: Removes all generated files except cached web modules
     deps: [cleanbinaries]
     cmds:
       - rm -rf {{.WEB_BUILD_DIR}}
-      - rm -rf ./docs/generated
+      - rm -rf ./docs/_generated
     silent: true
 
   cleanall:
+    desc: Removes all generated files
     deps: [clean]
     cmds:
       - rm -rf {{.WEB_DIR}}/node_modules
     silent: true
 
   buildgo:
+    desc: Builds the Go binaries
     cmd:
       for:
         var: BINARIES
@@ -50,18 +62,21 @@ tasks:
     silent: true
 
   testgo:
+    desc: Runs all Go tests
     deps: [migratetest]
     cmds:
       - go test ./internal/...
     silent: true
 
   buildweb:
+    desc: Does a production build of the web client
     deps: [installweb]
     cmds:
       - cd {{.WEB_DIR}} && npm run build
     silent: true
 
   testweb:
+    desc: Runs web client tests
     deps: [installweb]
     cmds:
       - cd {{.WEB_DIR}} && npx vitest run
@@ -69,21 +84,25 @@ tasks:
 
   # Development utils
   rewinddb:
+    desc: Rolls the database schema back one version
     cmds:
       - tern migrate --destination -1 --config {{.TERN_BASE_DIR}}/tern.conf --migrations {{.TERN_BASE_DIR}}
     silent: true
 
   migratetest:
+    desc: Brings the test database schema up to the latest version
     cmds:
       - tern migrate --config {{.TERN_BASE_DIR}}/tern.test.conf --migrations {{.TERN_BASE_DIR}}
 
   webdev:
+    desc: Runs the web client on localhost in dev mode
     deps: [installweb]
     cmds:
       - cd {{.WEB_DIR}} && npm run dev
     silent: true
 
   cleanbinaries:
+    desc: Removes all generated Go binaries
     cmd:
       for:
         var: BINARIES
