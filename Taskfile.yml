@@ -4,7 +4,7 @@ vars:
   BINARIES: ["nrtm4client", "nrtm4serve"]
   WEB_DIR: "./web"
   WEB_BUILD_DIR: "{{.WEB_DIR}}/dist"
-  TERN_BASE_DIR: "./third_party/tern"
+  TERN_DIR: "./third_party/tern"
 
 tasks:
   default:
@@ -15,7 +15,7 @@ tasks:
   migrate:
     desc: Brings the database schema up to the latest version
     cmds:
-      - tern migrate --config {{.TERN_BASE_DIR}}/tern.conf --migrations {{.TERN_BASE_DIR}}
+      - tern migrate --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
     silent: true
 
   build:
@@ -86,13 +86,14 @@ tasks:
   rewinddb:
     desc: Rolls the database schema back one version
     cmds:
-      - tern migrate --destination -1 --config {{.TERN_BASE_DIR}}/tern.conf --migrations {{.TERN_BASE_DIR}}
+      - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
     silent: true
 
   migratetest:
     desc: Brings the test database schema up to the latest version
+    deps: [testmigrations]
     cmds:
-      - tern migrate --config {{.TERN_BASE_DIR}}/tern.test.conf --migrations {{.TERN_BASE_DIR}}
+      - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
 
   webdev:
     desc: Runs the web client on localhost in dev mode
@@ -136,3 +137,9 @@ tasks:
     cmds:
       - cd ./cmd/{{.APP}} && rm -rf {{.APP}} __debug_bin*
     silent: true
+
+  testmigrations:
+    internal: true
+    cmds:
+      - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
+      - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
