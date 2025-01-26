@@ -17,7 +17,7 @@ import { Button, ButtonGroup } from "@mui/material";
 
 export default function Sources() {
   const [pageLoading, setPageLoading] = useState<number>(1);
-  const [loading, setLoading] = useState<number>(0);
+  const [dataLoading, setDataLoading] = useState<number>(0);
   const [err, setErr] = useState<string>("");
   const [sources, setSources] = useState<SourceModel[]>([]);
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
@@ -81,9 +81,13 @@ export default function Sources() {
     );
   };
 
-  const onUrlEntered = (url: string) => {
-    console.log("url", url);
-    setLoading(1);
+  const onUrlEntered = (url: string, label: string) => {
+    setDataLoading(1);
+    client.removeSource(url, label)
+      .then((msg) => {
+        console.log("success", msg);
+      }, (rej) => setErr(rej))
+      .finally(() => setDataLoading(0));
   };
 
   const lookupSource = (key: string) => {
@@ -145,7 +149,10 @@ export default function Sources() {
                 ></Source>
               ))}
           {!err && selectedIDs.length === 0 && (
-            <SourcesInput onUrlEntered={onUrlEntered} disabled={!!loading} />
+            <>
+              <h3>Connect a new source</h3>
+              <SourcesInput onUrlEntered={onUrlEntered} disabled={!!dataLoading} />
+            </>
           )}
         </Grid>
       )}

@@ -1,22 +1,23 @@
 import { useState } from "react";
 
-import IconButton from "@mui/material/IconButton";
+import { grey } from "@mui/material/colors";
 import InputAdornment from "@mui/material/InputAdornment";
 import NetworkPingIcon from "@mui/icons-material/NetworkPing";
 import OutlinedInput from "@mui/material/OutlinedInput";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { grey } from "@mui/material/colors";
+import Stack from "@mui/material/Stack";
+import Button from "@mui/material/Button";
 
 export default function SourcesInput(props: {
   disabled: boolean;
-  onUrlEntered: (url: string) => void;
+  onUrlEntered: (url: string, label: string) => void;
 }) {
   const disableInput = props.disabled;
   const [inputText, setInputText] = useState("");
+  const [labelText, setLabelText] = useState("");
 
   const btnClicked = () => {
     if (isValidHttpUrl(inputText)) {
-      props.onUrlEntered(inputText);
+      props.onUrlEntered(inputText, labelText);
     }
   };
 
@@ -31,38 +32,45 @@ export default function SourcesInput(props: {
   };
 
   return (
-    <OutlinedInput
-      disabled={disableInput}
-      size="small"
-      id="nurl"
-      placeholder="Notification URL…"
-      sx={{ flexGrow: 1 }}
-      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-        setInputText(event.target.value);
-      }}
-      startAdornment={
-        <InputAdornment position="start" sx={{ color: "text.primary" }}>
-          <NetworkPingIcon
-            sx={disableInput ? { color: grey[400] } : { color: grey[800] }}
-            fontSize="small"
-          />
-        </InputAdornment>
-      }
-      endAdornment={
-        <InputAdornment position="end" sx={{ color: "text.primary" }}>
-          <IconButton
-            aria-label="connect"
-            onClick={btnClicked}
-            edge="end"
-            disabled={disableInput || !isValidHttpUrl(inputText)}
-          >
-            <PlayArrowIcon />
-          </IconButton>
-        </InputAdornment>
-      }
-      inputProps={{
-        "aria-label": "URL input",
-      }}
-    />
+    <Stack gap={2} direction={{ xs: "column", sm: "row", lg: "column" }} width="100%">
+      <OutlinedInput
+        id="nurlinput"
+        placeholder="Notification URL…"
+        disabled={disableInput}
+        sx={{ flexGrow: 8 }}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          setInputText(event.target.value);
+        }}
+        startAdornment={
+          <InputAdornment position="start" sx={{ color: "text.primary" }}>
+            <NetworkPingIcon
+              sx={disableInput ? { color: grey[400] } : { color: grey[800] }}
+              fontSize="small"
+            />
+          </InputAdornment>
+        }
+        inputProps={{
+          "aria-label": "URL input",
+        }}
+      />
+      <OutlinedInput
+        id="labelinput"
+        placeholder="Label"
+        disabled={disableInput}
+        sx={{ flexGrow: 1 }}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          setLabelText(event.target.value);
+        }}
+      />
+      <Button
+        id="connectbtn"
+        variant="outlined"
+        aria-label="connect"
+        onClick={btnClicked}
+        disabled={disableInput || !isValidHttpUrl(inputText)}
+      >
+        Connect
+      </Button>
+    </Stack>
   );
 }

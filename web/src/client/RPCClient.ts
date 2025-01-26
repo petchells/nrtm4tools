@@ -36,6 +36,9 @@ export default class RPCClient {
         Accept: "application/json",
       },
     });
+    if (!resp.ok) {
+      throw Error(resp.statusText);
+    }
     const jsonRpcResp: JsonRpcResponse<T> = await resp.json();
     if (jsonRpcResp.jsonrpc !== "2.0") {
       throw Error("Not a JSON-RPC response");
@@ -48,4 +51,5 @@ export default class RPCClient {
     }
     return jsonRpcResp.result as T;
   }
+
 }

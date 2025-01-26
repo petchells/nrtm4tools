@@ -11,6 +11,7 @@ export class WebAPIClient {
   public listSources(): Promise<SourceModel[]> {
     return this.client.execute<SourceModel[]>("ListSources");
   }
+
   public saveLabel(
     source: string,
     fromLabel: string,
@@ -22,4 +23,15 @@ export class WebAPIClient {
       toLabel,
     ]);
   }
+
+  public removeSource(
+    source: string,
+    label: string,
+  ) {
+    return this.client.execute<string>("RemoveSource", [
+      source,
+      label,
+    ])
+  }
+
 }

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import ErrorPage from "./error-page";
 import LandingPage from "./components/LandingPage";
 import Sources from "./components/sources/Sources";
@@ -11,6 +11,10 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
 
     children: [
+      {
+        index: true,
+        element: <Navigate to="sources" replace />,
+      },
       {
         path: "sources",
         element: <Sources />,
