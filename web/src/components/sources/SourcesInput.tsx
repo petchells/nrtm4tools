@@ -32,7 +32,7 @@ export default function SourcesInput(props: {
   };
 
   return (
-    <Stack gap={2} direction={{ xs: "column", sm: "row", lg: "column" }} width="100%">
+    <Stack gap={1} direction={{ xs: "column", sm: "row", lg: "column" }} width="100%">
       <OutlinedInput
         id="nurlinput"
         placeholder="Notification URL…"

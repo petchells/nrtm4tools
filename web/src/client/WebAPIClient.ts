@@ -1,7 +1,7 @@
 import { SourceModel } from "./models";
 import RPCClient from "./RPCClient";
 
-export class WebAPIClient {
+export default class WebAPIClient {
   private client: RPCClient;
 
   public constructor() {
@@ -22,6 +22,26 @@ export class WebAPIClient {
       fromLabel,
       toLabel,
     ]);
+  }
+
+  public connectSource(
+    url: string,
+    label: string,
+  ) {
+    return this.client.execute<string>("Connect", [
+      url,
+      label,
+    ])
+  }
+
+  public updateSource(
+    source: string,
+    label: string,
+  ) {
+    return this.client.execute<string>("Update", [
+      source,
+      label,
+    ])
   }
 
   public removeSource(

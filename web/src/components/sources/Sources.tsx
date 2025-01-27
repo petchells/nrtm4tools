@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
+
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
+
 import RefreshIcon from "@mui/icons-material/Refresh";
 import WarningIcon from "@mui/icons-material/Warning";
 
+import { SourceModel } from "../../client/models.ts";
+import WebAPIClient from "../../client/WebAPIClient.ts";
 import SourcesTable from "./SourcesTable.tsx";
 import SourcesError from "./SourcesError.tsx";
-import { SourceModel } from "../../client/models.ts";
 import SourcesInput from "./SourcesInput.tsx";
-import { WebAPIClient } from "../../client/WebAPIClient.ts";
 import Source from "./Source.tsx";
-import { Button, ButtonGroup } from "@mui/material";
 
 export default function Sources() {
   const [pageLoading, setPageLoading] = useState<number>(1);
-  const [dataLoading, setDataLoading] = useState<number>(0);
+  const [dataLoading, setDataLoading] = useState(false);
   const [err, setErr] = useState<string>("");
   const [sources, setSources] = useState<SourceModel[]>([]);
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
@@ -65,6 +67,8 @@ export default function Sources() {
     } else {
       selectedIDs.splice(idx, 1);
     }
+    const srcIDs = sources.map((ss) => ss.ID);
+    selectedIDs.sort((a, b) => srcIDs.indexOf(a) - srcIDs.indexOf(b));
     setSelectedIDs(selectedIDs);
     setRefresh(refresh ^ 1);
   };
@@ -82,12 +86,12 @@ export default function Sources() {
   };
 
   const onUrlEntered = (url: string, label: string) => {
-    setDataLoading(1);
-    client.removeSource(url, label)
+    setDataLoading(true);
+    client.connectSource(url, label)
       .then((msg) => {
         console.log("success", msg);
       }, (rej) => setErr(rej))
-      .finally(() => setDataLoading(0));
+      .finally(() => setDataLoading(false));
   };
 
   const lookupSource = (key: string) => {
@@ -107,22 +111,49 @@ export default function Sources() {
     }
   };
 
+  const removeSource = (source: SourceModel) => {
+    setDataLoading(true);
+    client.removeSource(source.Source, source.Label)
+      .then(() => {
+        const idx = selectedIDs.indexOf(source.ID);
+        if (idx > -1) {
+          selectedIDs.splice(idx, 1);
+          setSelectedIDs(selectedIDs);
+        }
+        const oidx = sources.indexOf(source);
+        if (oidx > -1) {
+          sources.splice(idx, 1);
+          setSources(sources);
+        }
+        setRefresh(refresh ^ 1);
+      }, (err) => setErr(err))
+      .finally(() => setDataLoading(false));
+  }
+
+  const handleRemoveSource = (id: string) => {
+    for (const s of sources) {
+      if (s.ID === id) {
+        removeSource(s);
+        return;
+      }
+    }
+    setErr("Source was not removed");
+  };
+
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
-      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
+      <Typography variant="h3" component="h1" sx={{ mb: 2 }}>
         Sources
       </Typography>
       <Grid container spacing={2} columns={12}>
         <Box sx={{ mb: 1 }}>
-          <ButtonGroup>
-            <Button onClick={fetchSources} startIcon={<RefreshIcon />}>
-              Refresh
-            </Button>
-          </ButtonGroup>
+          <Button variant="outlined" onClick={fetchSources} startIcon={<RefreshIcon />}>
+            Refresh
+          </Button>
         </Box>
       </Grid>
       {!!pageLoading ? (
-        <Box sx={{ display: "flex" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -146,11 +177,14 @@ export default function Sources() {
                   key={src.ID}
                   source={src}
                   sourceUpdated={handleSourceUpdated}
+                  sourceRemoveConfirmed={handleRemoveSource}
                 ></Source>
               ))}
           {!err && selectedIDs.length === 0 && (
             <>
-              <h3>Connect a new source</h3>
+              <Typography variant="h6" component="h1" sx={{ mt: 2 }}>
+                Connect a new source
+              </Typography>
               <SourcesInput onUrlEntered={onUrlEntered} disabled={!!dataLoading} />
             </>
           )}

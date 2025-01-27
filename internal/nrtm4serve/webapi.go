@@ -16,7 +16,7 @@ type WebAPI struct {
 
 // GetAuth implements interface -- allows requests to all methods
 func (api WebAPI) GetAuth(w http.ResponseWriter, r *http.Request, req rpc.JSONRPCRequest) (rpc.WebSession, bool) {
-	return rpc.WebSession{}, false
+	return rpc.WebSession{}, true
 }
 
 // ListSources returns a list of sources
@@ -27,6 +27,18 @@ func (api WebAPI) ListSources() ([]persist.NRTMSourceDetails, error) {
 // ReplaceLabel replaces a label on a source
 func (api WebAPI) ReplaceLabel(source, fromLabel, toLabel string) (*persist.NRTMSource, error) {
 	return api.Processor.ReplaceLabel(source, fromLabel, toLabel)
+}
+
+// Connect connects a new source to the repo
+func (api WebAPI) Connect(url, label string) (string, error) {
+	err := api.Processor.Connect(url, label)
+	return "OK", err
+}
+
+// Update updates a source to the latest version
+func (api WebAPI) Update(src, label string) (string, error) {
+	err := api.Processor.Update(src, label)
+	return "OK", err
 }
 
 // RemoveSource removes a source from the repo
