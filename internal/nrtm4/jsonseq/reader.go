@@ -43,6 +43,9 @@ func ReadStringRecords(jsonSeq string, fn RecordReaderFunc) error {
 // ReadRecords reads a jsonseq file and calls fn for each record
 func ReadRecords(reader *bufio.Reader, fn RecordReaderFunc) error {
 	jsonBytes, err := reader.ReadBytes(RS)
+	if err == io.EOF {
+		return err
+	}
 	if err != nil {
 		return ErrNotJSONSeq
 	}

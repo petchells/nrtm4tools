@@ -14,8 +14,16 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
 	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
 )
+
+// SetTestEnvAndInitializePG Sets environment vars from env.test.conf and initializes pg repo
+func SetTestEnvAndInitializePG(t *testing.T) persist.Repository {
+	SetEnvVarsFromEnvTestFile(t)
+	return pgRepo()
+}
 
 // SetEnvVarsFromEnvTestFile creates env vars from env.test.conf
 func SetEnvVarsFromEnvTestFile(t *testing.T) {
@@ -42,10 +50,12 @@ func OpenFile(t *testing.T, fname string) *os.File {
 	return openFile(t, filepath.Join(pathToPackage(), fname))
 }
 
-// ReadJSON reads a JSON file relative to this dir and unmarshalls it to a pointer
-func ReadJSON(t *testing.T, jsonFile string, ptr any) {
+// ReadTestJSONToPtr reads a JSON file relative to this dir and unmarshalls it to a pointer
+func ReadTestJSONToPtr(t *testing.T, jsonFile string, ptr any) {
 	jsonPath := filepath.Join(pathToPackage(), jsonFile)
-	readJSON(t, jsonPath, ptr)
+	if err := readJSON(t, jsonPath, ptr); err != nil {
+		log.Fatalln("Failed to read JSON", jsonFile, err)
+	}
 }
 
 // TruncateDatabase wipes all rows from all tables except '%schema_version' (Tern's version tracking table)
@@ -111,4 +121,17 @@ func pathToPackage() string {
 		log.Println("Test cannot determine the path to package: testsupport")
 	}
 	return filepath.Dir(filename)
+}
+
+func pgRepo() persist.Repository {
+	dbURL := os.Getenv("PG_DATABASE_URL")
+	if len(dbURL) == 0 {
+		log.Fatal("ERROR no url for database", dbURL)
+		return nil
+	}
+	repo := pg.PostgresRepository{}
+	if err := repo.Initialize(dbURL); err != nil {
+		log.Fatal("Failed to initialize repository")
+	}
+	return &repo
 }

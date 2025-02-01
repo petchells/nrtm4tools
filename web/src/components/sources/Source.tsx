@@ -44,7 +44,7 @@ export default function Source(props: {
       .updateSource(source.Source, source.Label)
       .then(() => {
         props.sourceUpdated(source.ID, source);
-      })
+      }, (msg) => console.log(msg))
       .finally(() => setLoading(false));
   };
 

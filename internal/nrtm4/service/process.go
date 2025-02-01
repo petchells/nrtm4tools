@@ -4,13 +4,11 @@ import (
 	"errors"
 	"io"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
-	"github.com/petchells/nrtm4client/internal/nrtm4/util"
 )
 
 var (
@@ -93,7 +91,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 		logger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
 		return err
 	}
-	return p.syncDeltas(notification, source)
+	return syncDeltas(p, notification, source)
 }
 
 // Update brings the local mirror up to date
@@ -122,7 +120,7 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 		logger.Info("Already at latest version")
 		return nil
 	}
-	return p.syncDeltas(notification, *source)
+	return syncDeltas(p, notification, *source)
 }
 
 // ListSources shows all sources
@@ -173,46 +171,4 @@ func (p NRTMProcessor) RemoveSource(src, label string) error {
 		return ErrSourceNotFound
 	}
 	return ds.deleteSource(*target)
-}
-
-func findUpdates(notification persist.NotificationJSON, source persist.NRTMSource) ([]persist.FileRefJSON, error) {
-
-	if notification.DeltaRefs == nil || len(*notification.DeltaRefs) == 0 {
-		return nil, ErrNRTM4NoDeltasInNotification
-	}
-
-	deltaRefs := []persist.FileRefJSON{}
-	versions := make([]uint32, len(*notification.DeltaRefs))
-	for i, deltaRef := range *notification.DeltaRefs {
-		versions[i] = deltaRef.Version
-		if deltaRef.Version > source.Version {
-			deltaRefs = append(deltaRefs, deltaRef)
-		}
-	}
-	versionSet := util.NewSet(versions...)
-	if len(versionSet) != len(versions) {
-		logger.Error("Duplicate delta version found in notification file", "source", notification.Source, "url", source.NotificationURL)
-		return nil, ErrNRTM4DuplicateDeltaVersion
-	}
-
-	sort.Slice(versions, func(i, j int) bool {
-		return versions[i] < versions[j]
-	})
-	lo := versions[0]
-	hi := versions[len(versions)-1]
-	if hi != notification.Version {
-		return nil, ErrNRTM4NotificationVersionDoesNotMatchDelta
-	}
-	for i := 0; i < len(versions)-1; i++ {
-		if versions[i]+1 != versions[i+1] {
-			logger.Error("Delta version is missing from the notification file", "version", versions[i]+1, "source", notification.Source, "url", source.NotificationURL)
-			return nil, ErrNRTM4NotificationDeltaSequenceBroken
-		}
-	}
-	if source.Version+1 < lo {
-		return nil, ErrNextConsecutiveDeltaUnavaliable
-	}
-	// source.Version == hi // can never happen irl, coz callling fn has already checked Version, and we checked 'hi' above
-	logger.Info("Found deltas", "source", notification.Source, "numdeltas", len(deltaRefs))
-	return deltaRefs, nil
 }

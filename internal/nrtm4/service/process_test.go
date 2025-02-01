@@ -79,8 +79,7 @@ func TestFileRefSorter(t *testing.T) {
 }
 
 func TestE2EConnect(t *testing.T) {
-	testresources.SetEnvVarsFromFile(t, "../testresources/env.test.conf")
-	pgTestRepo := pgRepo()
+	pgTestRepo := testresources.SetTestEnvAndInitializePG(t)
 	testresources.TruncateDatabase(t)
 	stubClient := NewStubClient(t)
 	tmpDir, err := os.MkdirTemp("", "nrtmtest*")
@@ -118,7 +117,7 @@ func TestE2EConnect(t *testing.T) {
 func TestFindUpdatesSuccess(t *testing.T) {
 
 	var notification persist.NotificationJSON
-	testresources.ReadJSON(t, "ripe-notification-file.json", &notification)
+	testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
 	source := stubsource()
 
 	fileRefs, err := findUpdates(notification, source)
@@ -135,7 +134,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 
 	var notification persist.NotificationJSON
 	{
-		testresources.ReadJSON(t, "ripe-notification-file.json", &notification)
+		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
 		source := stubsource()
 		source.Version = 350194 - 2
 
@@ -147,7 +146,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		}
 	}
 	{
-		testresources.ReadJSON(t, "ripe-notification-file.json", &notification)
+		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
 		source := stubsource()
 		refs := *notification.DeltaRefs
 		dr := append(refs[:10], refs[11:]...)
@@ -161,7 +160,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		}
 	}
 	{
-		testresources.ReadJSON(t, "ripe-notification-file.json", &notification)
+		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
 		source := stubsource()
 		refs := *notification.DeltaRefs
 		dr := refs[:len(refs)-2]
@@ -175,7 +174,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		}
 	}
 	{
-		testresources.ReadJSON(t, "ripe-notification-file.json", &notification)
+		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
 		source := stubsource()
 		refs := *notification.DeltaRefs
 		dr := append(refs[:10], refs[9:]...)
@@ -189,7 +188,7 @@ func TestFindUpdatesErrors(t *testing.T) {
 		}
 	}
 	{
-		testresources.ReadJSON(t, "ripe-notification-file.json", &notification)
+		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
 		source := stubsource()
 		dr := []persist.FileRefJSON{}
 		notification.DeltaRefs = &dr

@@ -210,18 +210,23 @@ func (repo PostgresRepository) AddModifyObject(
 		RPSL:         rpsl.Payload,
 	}
 	return db.WithTransaction(func(tx pgx.Tx) error {
+
+		var err error
+
+		curDelta := getPossibleCurrentDeltaFrom(tx, *newRow)
+		if curDelta != nil {
+			// Already processed an operation, just overwrite it
+			newRow.ID = curDelta.ID
+			return db.Update(tx, newRow)
+		}
+
 		sql := selectCurrentObjectQuery()
 		rpslObject := new(pgpersist.RPSLObject)
-		err := tx.QueryRow(context.Background(), sql, source.ID, rpsl.PrimaryKey, rpsl.ObjectType).Scan(db.SelectValues(rpslObject)...)
+		err = tx.QueryRow(context.Background(), sql, source.ID, rpsl.PrimaryKey, rpsl.ObjectType).Scan(db.SelectValues(rpslObject)...)
 		if err != nil && err != pgx.ErrNoRows {
 			return err
 		}
 		if err != pgx.ErrNoRows {
-			if rpslObject.FromVersion == newRow.FromVersion {
-				// rpsl was updated more than once in the same version -- overwrite previous one
-				newRow.ID = rpslObject.ID
-				return db.Update(tx, newRow)
-			}
 			rpslObject.ToVersion = file.Version
 			err = db.Update(tx, rpslObject)
 			if err != nil {
@@ -265,6 +270,30 @@ func selectCurrentObjectQuery() string {
 		rpslObjectDesc.ColumnNamesCommaSeparated(),
 		rpslObjectDesc.TableName(),
 	)
+}
+
+func getPossibleCurrentDeltaFrom(tx pgx.Tx, curRPSL pgpersist.RPSLObject) *pgpersist.RPSLObject {
+	rpslObjectDesc := db.GetDescriptor(&pgpersist.RPSLObject{})
+	sql := fmt.Sprintf(`
+		SELECT %v
+		FROM %v
+		WHERE
+			nrtm_source_id = $1
+			AND primary_key = UPPER($2)
+			AND object_type = UPPER($3)
+			AND from_version = $4`,
+		rpslObjectDesc.ColumnNamesCommaSeparated(),
+		rpslObjectDesc.TableName(),
+	)
+	rpslObject := new(pgpersist.RPSLObject)
+	err := tx.QueryRow(context.Background(), sql, curRPSL.NRTMSourceID, curRPSL.PrimaryKey, curRPSL.ObjectType, curRPSL.FromVersion).Scan(db.SelectValues(rpslObject)...)
+	if err != nil {
+		if err != pgx.ErrNoRows {
+			logger.Error("Could not get current delta", "curRPSL", curRPSL)
+		}
+		return nil
+	}
+	return rpslObject
 }
 
 func asNotification(n pgpersist.Notification) persist.Notification {

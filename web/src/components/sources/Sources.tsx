@@ -122,7 +122,7 @@ export default function Sources() {
         }
         const oidx = sources.indexOf(source);
         if (oidx > -1) {
-          sources.splice(idx, 1);
+          sources.splice(oidx, 1);
           setSources(sources);
         }
         setRefresh(refresh ^ 1);
