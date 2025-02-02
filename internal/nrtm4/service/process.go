@@ -49,7 +49,10 @@ type NRTMProcessor struct {
 	client Client
 }
 
-var labelRe = regexp.MustCompile("^[A-Za-z0-9 ._-]*[A-Za-z0-9][A-Za-z0-9 ._-]*$")
+const charsAllowedInLabel = "A-Za-z0-9 :._-"
+
+// Must have a letter or digit in there somewhere
+var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" + charsAllowedInLabel + "]*$")
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {

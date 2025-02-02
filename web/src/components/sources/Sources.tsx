@@ -90,7 +90,15 @@ export default function Sources() {
     client.connectSource(url, label)
       .then((msg) => {
         console.log("success", msg);
-      }, (rej) => setErr(rej))
+      }, (rej) => {
+        if (typeof rej == "string") {
+          setErr(rej);
+        } else if (typeof rej == "object" && rej.message) {
+          setErr(rej.message);
+        } else {
+          setErr("" + rej);
+        }
+      })
       .finally(() => setDataLoading(false));
   };
 

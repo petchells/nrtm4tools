@@ -140,3 +140,68 @@ func TestWriteFileToPath(t *testing.T) {
 	}
 
 }
+
+func TestValidateURLString(t *testing.T) {
+	type testURL struct {
+		str      string
+		expected bool
+	}
+	testURLs := []testURL{
+		{"https://nrtm4.example.com/nrtm4/notification.json", true},
+		{"ftp://nrtm4.example.com/nrtm4/notification.json", false},
+		{"RIPE/nrtm-snapshot.374234.RIPE.db44e038-1f07-4d54-a307-1b32339f141a.7755dc0a05b5024dd092a7a68d1b7b0.json.gz", false},
+	}
+	for _, turl := range testURLs {
+		if validateURLString(turl.str) != turl.expected {
+			t.Error("Validation failed. Expected", turl.expected, "for:", turl.str, validateURLString(turl.str))
+		}
+	}
+}
+
+func TestFetchFileAndCheckHash(t *testing.T) {
+	body := `{
+	"secretMessage", "Some text in a file"
+	}
+	`
+	ref := persist.FileRefJSON{
+		URL:     "https://nrtmv4.example.com/testtext.txt",
+		Hash:    "123456",
+		Version: 3,
+	}
+	client := stubDeltaClient{
+		responseBody: body,
+	}
+	dir, err := os.MkdirTemp("", "nrtm4test")
+	if err != nil {
+		t.Fatal("Failed to create temp dir", err)
+	}
+	defer os.RemoveAll(dir)
+	{
+		fm := fileManager{
+			client: client,
+		}
+		_, err := fm.fetchFileAndCheckHash(ref, dir)
+		if err != ErrHashMismatch {
+			t.Fatal("Expected ErrHashMismatch but was:", err)
+		}
+	}
+	{
+		fm := fileManager{
+			client: client,
+		}
+		ref.Hash = "4d14d44910c1abae9b55b6cc0f722369834b3c1942f3ee4bc0e051b1de10794d"
+		f, err := fm.fetchFileAndCheckHash(ref, dir)
+		if err != nil {
+			t.Fatal("Unexpected error:", err)
+		}
+		defer f.Close()
+		bytes, err := os.ReadFile(f.Name())
+		if err != nil {
+			t.Fatal("Could not read file:", f.Name(), err)
+		}
+		if string(bytes) != body {
+			t.Error("Got unexpected body", string(bytes))
+		}
+	}
+
+}

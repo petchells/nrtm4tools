@@ -7,11 +7,17 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/jsonseq"
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+)
+
+var (
+	// ErrHashMismatch when a file downloaded from 'url' does not match its 'hash'
+	ErrHashMismatch = errors.New("hash does not match downloaded file")
 )
 
 // GZIPSnapshotExtension extension GZIP files
@@ -35,6 +41,10 @@ func (fm fileManager) ensureDirectoryExists(path string) error {
 }
 
 func (fm fileManager) fetchFileAndCheckHash(fileRef persist.FileRefJSON, path string) (*os.File, error) {
+	if !validateURLString(fileRef.URL) {
+		logger.Info("URL in fileRef cannot be parsed", "fileRef.URL", fileRef.URL)
+		return nil, errors.New("Invalid URL in reference")
+	}
 	var file *os.File
 	_, err := os.Stat(filepath.Join(path, filepath.Base(fileRef.URL)))
 	if os.IsNotExist(err) {
@@ -57,7 +67,7 @@ func (fm fileManager) fetchFileAndCheckHash(fileRef persist.FileRefJSON, path st
 			return nil, err
 		}
 		logger.Warn("Hash does not match the downloaded file. Try again", "file", file.Name(), "hash", fileRef.Hash, "calculated", sum)
-		return nil, errors.New("hash does not match downloaded file")
+		return nil, ErrHashMismatch
 	}
 	return file, nil
 }
@@ -183,4 +193,9 @@ func calcHash256(file *os.File) (string, error) {
 	}
 	sum := hex.EncodeToString(hasher.Sum(nil))
 	return sum, err
+}
+
+func validateURLString(str string) bool {
+	url, err := url.Parse(str)
+	return err == nil && (url.Scheme == "http" || url.Scheme == "https")
 }
