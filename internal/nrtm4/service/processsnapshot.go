@@ -118,10 +118,6 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 	}
 
 	return func(bytes []byte, err error) error {
-		if err == &persist.ErrNoEntity {
-			logger.Warn("empty JSON record", "error", err)
-			return nil
-		}
 		if err == io.EOF {
 			// Expected error reading to end of snapshot objects
 			parser := parserPool.Acquire()

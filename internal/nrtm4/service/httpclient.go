@@ -2,11 +2,23 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 )
+
+// HTTPResponseError is used to model an error response from a http client
+type HTTPResponseError struct {
+	Message string
+	Status  int
+	URL     string
+}
+
+func (cerr HTTPResponseError) Error() string {
+	return fmt.Sprintln("HTTPClientError", cerr.URL, cerr.Status, cerr.Message)
+}
 
 // Client fetches things from the NRTM server, or anywhwere, actually
 type Client interface {
@@ -30,7 +42,11 @@ func (cl HTTPClient) getResponseBody(url string) (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return resp.Body, err
+	if resp.StatusCode == http.StatusOK {
+		return resp.Body, err
+	}
+	logger.Warn("HTTPClient getResponseBody received bad response", "status", resp.StatusCode, "message", resp.Status)
+	return nil, clientErrFromResponse(resp)
 }
 
 func (cl HTTPClient) getObject(url string, obj any) error {
@@ -39,8 +55,13 @@ func (cl HTTPClient) getObject(url string, obj any) error {
 	if resp, err = http.Get(url); err != nil {
 		return err
 	}
-	if err = json.NewDecoder(resp.Body).Decode(&obj); err != nil {
-		return err
+	if resp.StatusCode == http.StatusOK {
+		return json.NewDecoder(resp.Body).Decode(&obj)
 	}
-	return nil
+	logger.Warn("HTTPClient getResponseBody received bad response", "status", resp.StatusCode, "message", resp.Status)
+	return clientErrFromResponse(resp)
+}
+
+func clientErrFromResponse(resp *http.Response) HTTPResponseError {
+	return HTTPResponseError{Status: resp.StatusCode, Message: resp.Status, URL: resp.Request.URL.String()}
 }

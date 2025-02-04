@@ -130,72 +130,57 @@ func TestFindUpdatesSuccess(t *testing.T) {
 	}
 }
 
-func TestFindUpdatesErrors(t *testing.T) {
+func TestValidateNotificationErrors(t *testing.T) {
 
 	var notification persist.NotificationJSON
 	{
 		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
-		source := stubsource()
-		source.Version = 350194 - 2
-
-		expect := ErrNextConsecutiveDeltaUnavaliable
-
-		_, err := findUpdates(notification, source)
-		if err != expect {
-			t.Errorf("Expected error %v but was %v", expect, err)
-		}
-	}
-	{
-		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
-		source := stubsource()
-		refs := *notification.DeltaRefs
+		refs := notification.DeltaRefs
 		dr := append(refs[:10], refs[11:]...)
-		notification.DeltaRefs = &dr
+		notification.DeltaRefs = dr
 
 		expect := ErrNRTM4NotificationDeltaSequenceBroken
 
-		_, err := findUpdates(notification, source)
+		err := validateNotificationFile(notification)
+
 		if err != expect {
 			t.Errorf("Expected error %v but was %v", expect, err)
 		}
 	}
 	{
 		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
-		source := stubsource()
-		refs := *notification.DeltaRefs
+		refs := notification.DeltaRefs
 		dr := refs[:len(refs)-2]
-		notification.DeltaRefs = &dr
+		notification.DeltaRefs = dr
 
 		expect := ErrNRTM4NotificationVersionDoesNotMatchDelta
 
-		_, err := findUpdates(notification, source)
+		err := validateNotificationFile(notification)
 		if err != expect {
 			t.Errorf("Expected error %v but was %v", expect, err)
 		}
 	}
 	{
 		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
-		source := stubsource()
-		refs := *notification.DeltaRefs
+		refs := notification.DeltaRefs
 		dr := append(refs[:10], refs[9:]...)
-		notification.DeltaRefs = &dr
+		notification.DeltaRefs = dr
 
 		expect := ErrNRTM4DuplicateDeltaVersion
 
-		_, err := findUpdates(notification, source)
+		err := validateNotificationFile(notification)
 		if err != expect {
 			t.Errorf("Expected error %v but was %v", expect, err)
 		}
 	}
 	{
 		testresources.ReadTestJSONToPtr(t, "ripe-notification-file.json", &notification)
-		source := stubsource()
 		dr := []persist.FileRefJSON{}
-		notification.DeltaRefs = &dr
+		notification.DeltaRefs = dr
 
 		expect := ErrNRTM4NoDeltasInNotification
 
-		_, err := findUpdates(notification, source)
+		err := validateNotificationFile(notification)
 		if err != expect {
 			t.Errorf("Expected error %v but was %v", expect, err)
 		}

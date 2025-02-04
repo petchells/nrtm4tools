@@ -10,9 +10,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/jsonseq"
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4client/internal/nrtm4/util"
 )
 
 var (
@@ -122,11 +124,11 @@ func (fm fileManager) downloadNotificationFile(url string) (persist.Notification
 		logger.Error("fetching notificationFile", "error", err)
 		return notification, err
 	}
-	err = fm.validateNotificationFile(notification)
+	err = validateNotificationFile(notification)
 	return notification, err
 }
 
-func (fm fileManager) validateNotificationFile(file persist.NotificationJSON) error {
+func validateNotificationFile(file persist.NotificationJSON) error {
 	if file.NrtmVersion != 4 {
 		return newNRTMServiceError("notificationFile nrtm version is not v4: '%v'", file.NrtmVersion)
 	}
@@ -142,8 +144,29 @@ func (fm fileManager) validateNotificationFile(file persist.NotificationJSON) er
 	if len(file.SnapshotRef.URL) < 10 {
 		return newNRTMServiceError("notificationFile snapshot url is not valid: '%v'", file.SnapshotRef.URL)
 	}
-	if file.DeltaRefs == nil || len(*file.DeltaRefs) == 0 {
+	if file.DeltaRefs == nil || len(file.DeltaRefs) == 0 {
 		return ErrNRTM4NoDeltasInNotification
+	}
+	versions := make([]uint32, len(file.DeltaRefs))
+	for i, dr := range file.DeltaRefs {
+		versions[i] = dr.Version
+	}
+	versionSet := util.NewSet(versions...)
+	if len(versionSet) != len(versions) {
+		logger.Error("Duplicate delta version found in notification file", "source", file.Source)
+		return ErrNRTM4DuplicateDeltaVersion
+	}
+	sort.Slice(versions, func(i, j int) bool {
+		return versions[i] < versions[j]
+	})
+	lo := versions[0]
+	hi := versions[len(versions)-1]
+	if hi != file.Version {
+		return ErrNRTM4NotificationVersionDoesNotMatchDelta
+	}
+	if lo+uint32(len(versions)-1) != hi {
+		logger.Error("Delta version is missing from the notification file", "source", file.Source)
+		return ErrNRTM4NotificationDeltaSequenceBroken
 	}
 	return nil
 }

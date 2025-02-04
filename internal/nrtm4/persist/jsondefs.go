@@ -34,10 +34,10 @@ type DeltaJSON struct {
 // NotificationJSON json model of an NRTM4 notification
 type NotificationJSON struct {
 	NrtmFileJSON
-	Timestamp      string         `json:"timestamp"`
-	NextSigningKey *string        `json:"next_signing_key"`
-	SnapshotRef    FileRefJSON    `json:"snapshot"`
-	DeltaRefs      *[]FileRefJSON `json:"deltas"`
+	Timestamp      string        `json:"timestamp"`
+	NextSigningKey *string       `json:"next_signing_key"`
+	SnapshotRef    FileRefJSON   `json:"snapshot"`
+	DeltaRefs      []FileRefJSON `json:"deltas"`
 }
 
 // DeltaFileJSON json model of an NRTM4 delta file

@@ -41,9 +41,10 @@ func (c dlClientStub) getUpdateNotification(string) (persist.NotificationJSON, e
 		SnapshotRef: persist.FileRefJSON{
 			URL: "https://xxx.xxx.xx/notification.json",
 		},
-		DeltaRefs: &[]persist.FileRefJSON{
+		DeltaRefs: []persist.FileRefJSON{
 			{
-				URL: "https://xxx.xxx.xx/delta-23.json",
+				URL:     "https://xxx.xxx.xx/delta-22.json",
+				Version: 22,
 			},
 		},
 	}

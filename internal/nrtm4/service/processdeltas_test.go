@@ -52,7 +52,7 @@ func TestApplyDeltas(t *testing.T) {
 			NrtmVersion: uint(4),
 			Version:     uint32(3),
 		},
-		DeltaRefs: &deltas,
+		DeltaRefs: deltas,
 	}
 	source := persist.NRTMSource{
 		Version:         uint32(2),

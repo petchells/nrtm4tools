@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"sort"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/jsonseq"
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
 	"github.com/petchells/nrtm4client/internal/nrtm4/rpsl"
-	"github.com/petchells/nrtm4client/internal/nrtm4/util"
 )
 
 func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source persist.NRTMSource) error {
@@ -37,42 +37,27 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 
 func findUpdates(notification persist.NotificationJSON, source persist.NRTMSource) ([]persist.FileRefJSON, error) {
 
-	if notification.DeltaRefs == nil || len(*notification.DeltaRefs) == 0 {
+	if notification.DeltaRefs == nil || len(notification.DeltaRefs) == 0 {
 		return nil, ErrNRTM4NoDeltasInNotification
 	}
 
 	deltaRefs := []persist.FileRefJSON{}
-	versions := make([]uint32, len(*notification.DeltaRefs))
-	for i, deltaRef := range *notification.DeltaRefs {
+	versions := make([]uint32, len(notification.DeltaRefs))
+	for i, deltaRef := range notification.DeltaRefs {
 		versions[i] = deltaRef.Version
 		if deltaRef.Version > source.Version {
 			deltaRefs = append(deltaRefs, deltaRef)
 		}
 	}
-	versionSet := util.NewSet(versions...)
-	if len(versionSet) != len(versions) {
-		logger.Error("Duplicate delta version found in notification file", "source", notification.Source, "url", source.NotificationURL)
-		return nil, ErrNRTM4DuplicateDeltaVersion
+	if len(deltaRefs) == 0 {
+		log.Panic("Check the notification version before calling this function")
 	}
-
-	sort.Slice(versions, func(i, j int) bool {
-		return versions[i] < versions[j]
+	sort.Slice(deltaRefs, func(r1, r2 int) bool {
+		return deltaRefs[r1].Version < deltaRefs[r2].Version
 	})
-	lo := versions[0]
-	hi := versions[len(versions)-1]
-	if hi != notification.Version {
-		return nil, ErrNRTM4NotificationVersionDoesNotMatchDelta
-	}
-	for i := 0; i < len(versions)-1; i++ {
-		if versions[i]+1 != versions[i+1] {
-			logger.Error("Delta version is missing from the notification file", "version", versions[i]+1, "source", notification.Source, "url", source.NotificationURL)
-			return nil, ErrNRTM4NotificationDeltaSequenceBroken
-		}
-	}
-	if source.Version+1 < lo {
+	if source.Version+1 < deltaRefs[0].Version {
 		return nil, ErrNextConsecutiveDeltaUnavaliable
 	}
-	// source.Version == hi // can never happen irl, coz callling fn has already checked Version, and we checked 'hi' above
 	logger.Info("Found deltas", "source", notification.Source, "numdeltas", len(deltaRefs))
 	return deltaRefs, nil
 }
@@ -80,10 +65,6 @@ func findUpdates(notification persist.NotificationJSON, source persist.NRTMSourc
 func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON, deltaRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
 	var header *persist.DeltaFileJSON
 	return func(bytes []byte, err error) error {
-		if err == &persist.ErrNoEntity {
-			logger.Warn("error empty JSON", "error", err)
-			return err
-		}
 		if err == nil || err == io.EOF {
 			if header == nil {
 				deltaHeader := new(persist.DeltaFileJSON)
