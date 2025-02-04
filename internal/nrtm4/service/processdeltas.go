@@ -21,7 +21,7 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 	fm := fileManager{p.client}
 	for _, deltaRef := range deltaRefs {
 		logger.Info("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
-		file, err := fm.fetchFileAndCheckHash(deltaRef, p.config.NRTMFilePath)
+		file, err := fm.fetchFileAndCheckHash(source.NotificationURL, deltaRef, p.config.NRTMFilePath)
 		if err != nil {
 			return err
 		}

@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -112,9 +113,13 @@ func InsertOrUpdateValues(e EntityManaged) []any {
 	return sflds
 }
 
+var mu sync.Mutex
+
 // GetDescriptor gives you a helper for building sql
 func GetDescriptor(e EntityManaged) Descriptor {
 	ty := reflect.TypeOf(e).Elem()
+	mu.Lock()
+	defer mu.Unlock()
 	if d, ok := descriptors[ty.Name()]; ok {
 		return d
 	}

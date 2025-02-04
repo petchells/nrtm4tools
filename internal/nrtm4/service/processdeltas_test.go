@@ -42,7 +42,7 @@ func TestApplyDeltas(t *testing.T) {
 	}
 	deltas := []persist.FileRefJSON{
 		{
-			URL:     "http://www.example.com/n3.json",
+			URL:     "n3.json",
 			Version: 3,
 			Hash:    "6e938ff1642485a651bf7cf14cd31c44eca17515909d8ddd9ed01efc840a61b1",
 		},
@@ -55,9 +55,10 @@ func TestApplyDeltas(t *testing.T) {
 		DeltaRefs: &deltas,
 	}
 	source := persist.NRTMSource{
-		Version:   uint32(2),
-		SessionID: "db44e038-1f07-4d54-a307-1b32339f141a",
-		Source:    "RIPE",
+		Version:         uint32(2),
+		SessionID:       "db44e038-1f07-4d54-a307-1b32339f141a",
+		Source:          "RIPE",
+		NotificationURL: "http://test.test.test/unf.json",
 	}
 	if source, err = repo.SaveSource(source, notification); err != nil {
 		t.Fatal("Could not save source")

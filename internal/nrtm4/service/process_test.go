@@ -13,7 +13,7 @@ import (
 )
 
 var stubNotificationURL = "https://example.com/source1/notification.json"
-var stubSnapshot2URL = "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz"
+var stubSnapshot2URL = "https://example.com/source1/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz"
 
 type labelExpectation struct {
 	label  string
@@ -198,6 +198,41 @@ func TestFindUpdatesErrors(t *testing.T) {
 		_, err := findUpdates(notification, source)
 		if err != expect {
 			t.Errorf("Expected error %v but was %v", expect, err)
+		}
+	}
+}
+
+func TestFullURLFunction(t *testing.T) {
+	base := "https://nrtm.example.eu/path/to/nrtm4/notification-file.json"
+	{
+		rel := "source/r2d1-65535.EXAMPLE.json"
+		expected := "https://nrtm.example.eu/path/to/nrtm4/source/r2d1-65535.EXAMPLE.json"
+
+		result := fullURL(base, rel)
+
+		if result != expected {
+			t.Error("fullURL returned wrong url expected:", expected, "but was:", result)
+		}
+	}
+	{
+		rel := "/source/r2d1-65535.EXAMPLE.json"
+		expected := "https://nrtm.example.eu/path/to/nrtm4/source/r2d1-65535.EXAMPLE.json"
+
+		result := fullURL(base, rel)
+
+		if result != expected {
+			t.Error("fullURL returned wrong url expected:", expected, "but was:", result)
+		}
+	}
+	{
+		base = "nrtm.example.eu"
+		rel := "/source/r2d1-65535.EXAMPLE.json"
+		expected := ""
+
+		result := fullURL(base, rel)
+
+		if result != expected {
+			t.Error("fullURL returned wrong url expected:", expected, "but was:", result)
 		}
 	}
 }

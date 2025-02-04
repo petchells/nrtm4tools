@@ -86,5 +86,5 @@ func ToFileType(s string) (NTRMFileType, error) {
 			return NTRMFileType(i), nil
 		}
 	}
-	return -1, errors.New("out of range")
+	return -1, errors.New("invalid type")
 }

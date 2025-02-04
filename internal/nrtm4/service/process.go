@@ -56,9 +56,12 @@ var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" +
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {
+	if !validateURLString(notificationURL) {
+		return errors.New("parameter does not parse into a URL")
+	}
 	label = strings.TrimSpace(label)
 	if len(label) > 0 && !labelRe.MatchString(label) {
-		return errors.New("Label is not valid")
+		return errors.New("label contains invalid characters. only allowed characters are: " + charsAllowedInLabel)
 	}
 	ds := NrtmDataService{Repository: p.repo}
 	if ds.getSourceByURLAndLabel(notificationURL, label) != nil {
@@ -66,17 +69,17 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	}
 	logger.Info("Fetching notification")
 	fm := fileManager{p.client}
-	notification, errs := fm.downloadNotificationFile(notificationURL)
-	if len(errs) > 0 {
-		return errors.New("download error(s): " + errs[0].Error())
+	notification, err := fm.downloadNotificationFile(notificationURL)
+	if err != nil {
+		return err
 	}
-	err := fm.ensureDirectoryExists(p.config.NRTMFilePath)
+	err = fm.ensureDirectoryExists(p.config.NRTMFilePath)
 	if err != nil {
 		return err
 	}
 	// Download snapshot
 	logger.Info("Fetching snapshot file...")
-	snapshotFile, err := fm.fetchFileAndCheckHash(notification.SnapshotRef, p.config.NRTMFilePath)
+	snapshotFile, err := fm.fetchFileAndCheckHash(notificationURL, notification.SnapshotRef, p.config.NRTMFilePath)
 	if err != nil {
 		return err
 	}
@@ -106,12 +109,9 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 		return ErrSourceNotFound
 	}
 	fm := fileManager{p.client}
-	notification, errs := fm.downloadNotificationFile(source.NotificationURL)
-	if len(errs) > 0 {
-		for _, e := range errs {
-			logger.Error("Problem downloading notification file", "error", e)
-		}
-		return errors.New("problem downloading notification file")
+	notification, err := fm.downloadNotificationFile(source.NotificationURL)
+	if err != nil {
+		return err
 	}
 	if notification.SessionID != source.SessionID {
 		return errors.New("server has a new mirror session")
@@ -174,4 +174,17 @@ func (p NRTMProcessor) RemoveSource(src, label string) error {
 		return ErrSourceNotFound
 	}
 	return ds.deleteSource(*target)
+}
+
+func fullURL(base, relpath string) string {
+	idx := strings.LastIndex(base, "/")
+	if idx < 0 {
+		logger.Error("fullURL called with a path that does not contain '/'", "base", base)
+		return ""
+	}
+	sepIdx := 1
+	if strings.HasPrefix(relpath, "/") {
+		sepIdx = 0
+	}
+	return base[:idx+sepIdx] + relpath
 }

@@ -15,9 +15,9 @@ var testResourcePath = "../testresources/"
 
 func TestSuccess(t *testing.T) {
 	fm := fileManager{dlClientStub{}}
-	_, errs := fm.downloadNotificationFile("")
-	if len(errs) > 0 {
-		t.Error("should not be any errors but found:", errs[0])
+	_, err := fm.downloadNotificationFile("")
+	if err != nil {
+		t.Error("should not be any errors but found:", err)
 	} else {
 		t.Log("OK")
 	}
@@ -41,7 +41,11 @@ func (c dlClientStub) getUpdateNotification(string) (persist.NotificationJSON, e
 		SnapshotRef: persist.FileRefJSON{
 			URL: "https://xxx.xxx.xx/notification.json",
 		},
-		DeltaRefs: &[]persist.FileRefJSON{},
+		DeltaRefs: &[]persist.FileRefJSON{
+			{
+				URL: "https://xxx.xxx.xx/delta-23.json",
+			},
+		},
 	}
 	return notification, nil
 }
@@ -159,12 +163,13 @@ func TestValidateURLString(t *testing.T) {
 }
 
 func TestFetchFileAndCheckHash(t *testing.T) {
+	unfURL := "https://wherever.eu/unf.json"
 	body := `{
 	"secretMessage", "Some text in a file"
 	}
 	`
 	ref := persist.FileRefJSON{
-		URL:     "https://nrtmv4.example.com/testtext.txt",
+		URL:     "testtext.txt",
 		Hash:    "123456",
 		Version: 3,
 	}
@@ -180,7 +185,7 @@ func TestFetchFileAndCheckHash(t *testing.T) {
 		fm := fileManager{
 			client: client,
 		}
-		_, err := fm.fetchFileAndCheckHash(ref, dir)
+		_, err := fm.fetchFileAndCheckHash(unfURL, ref, dir)
 		if err != ErrHashMismatch {
 			t.Fatal("Expected ErrHashMismatch but was:", err)
 		}
@@ -190,7 +195,7 @@ func TestFetchFileAndCheckHash(t *testing.T) {
 			client: client,
 		}
 		ref.Hash = "4d14d44910c1abae9b55b6cc0f722369834b3c1942f3ee4bc0e051b1de10794d"
-		f, err := fm.fetchFileAndCheckHash(ref, dir)
+		f, err := fm.fetchFileAndCheckHash(unfURL, ref, dir)
 		if err != nil {
 			t.Fatal("Unexpected error:", err)
 		}

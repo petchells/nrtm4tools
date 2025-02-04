@@ -84,7 +84,7 @@ func (c stubClient) getResponseBody(url string) (io.Reader, error) {
 		zw.Write([]byte(snapshotExample))
 		zw.Close()
 		return bytes.NewReader(buf.Bytes()), nil
-	} else if url == "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json" {
+	} else if url == "https://example.com/source1/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json" {
 		reader = strings.NewReader(deltaExample)
 	} else {
 		c.t.Error("Call to unexpected URL", url)
@@ -104,13 +104,13 @@ var notificationExample = `
 	"version": 3,
 	"snapshot": {
 	  "version": 2,
-	  "url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz",
+	  "url": "ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz",
 	  "hash": "07396d52396a96b80eb4a5febbff2053ad945dbdbfdd020492d6fec7cf8cb526"
 	},
 	"deltas": [
 	  {
 		"version": 3,
-		"url": "https://example.com/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json",
+		"url": "ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json",
 		"hash": "bb65420644b598cdd7eb3b101f26ac033667d5edfe5c4f4fa005ff136e9eb8f8"
 	  }
 	]

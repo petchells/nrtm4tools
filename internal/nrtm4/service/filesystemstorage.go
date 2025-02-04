@@ -40,22 +40,23 @@ func (fm fileManager) ensureDirectoryExists(path string) error {
 	return nil
 }
 
-func (fm fileManager) fetchFileAndCheckHash(fileRef persist.FileRefJSON, path string) (*os.File, error) {
-	if !validateURLString(fileRef.URL) {
-		logger.Info("URL in fileRef cannot be parsed", "fileRef.URL", fileRef.URL)
+func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileRefJSON, path string) (*os.File, error) {
+	fURL := fullURL(unfURL, fileRef.URL)
+	if !validateURLString(fURL) {
+		logger.Info("URL in fileRef cannot be parsed", "fURL", fURL)
 		return nil, errors.New("Invalid URL in reference")
 	}
 	var file *os.File
-	_, err := os.Stat(filepath.Join(path, filepath.Base(fileRef.URL)))
+	_, err := os.Stat(filepath.Join(path, filepath.Base(fURL)))
 	if os.IsNotExist(err) {
-		logger.Info("Downloading file", "url", fileRef.URL)
-		if file, err = fm.writeResourceToPath(fileRef.URL, path); err != nil {
-			logger.Error("Failed to write file", "url", fileRef.URL, "path", path)
+		logger.Info("Downloading file", "url", fURL)
+		if file, err = fm.writeResourceToPath(fURL, path); err != nil {
+			logger.Error("Failed to write file", "url", fURL, "path", path)
 			return nil, err
 		}
 	}
-	if file, err = os.Open(filepath.Join(path, filepath.Base(fileRef.URL))); err != nil {
-		logger.Error("Failed to open file", "url", fileRef.URL, "path", path)
+	if file, err = os.Open(filepath.Join(path, filepath.Base(fURL))); err != nil {
+		logger.Error("Failed to open file", "url", fURL, "path", path)
 		return nil, err
 	}
 	sum, err := calcHash256(file)
@@ -114,35 +115,37 @@ func (fm fileManager) writeResourceToPath(url string, path string) (*os.File, er
 	return readerToFile(reader, path, fileName)
 }
 
-func (fm fileManager) downloadNotificationFile(url string) (persist.NotificationJSON, []error) {
+func (fm fileManager) downloadNotificationFile(url string) (persist.NotificationJSON, error) {
 	var notification persist.NotificationJSON
 	var err error
 	if notification, err = fm.client.getUpdateNotification(url); err != nil {
 		logger.Error("fetching notificationFile", "error", err)
-		return notification, []error{err}
+		return notification, err
 	}
-	errs := fm.validateNotificationFile(notification)
-	return notification, errs
+	err = fm.validateNotificationFile(notification)
+	return notification, err
 }
 
-func (fm fileManager) validateNotificationFile(file persist.NotificationJSON) []error {
-	var errs []error
+func (fm fileManager) validateNotificationFile(file persist.NotificationJSON) error {
 	if file.NrtmVersion != 4 {
-		errs = append(errs, newNRTMServiceError("notificationFile nrtm version is not v4: '%v'", file.NrtmVersion))
+		return newNRTMServiceError("notificationFile nrtm version is not v4: '%v'", file.NrtmVersion)
 	}
 	if len(file.SessionID) < 36 {
-		errs = append(errs, newNRTMServiceError("notificationFile session ID is not valid: '%v'", file.SessionID))
+		return newNRTMServiceError("notificationFile session ID is not valid: '%v'", file.SessionID)
 	}
 	if len(file.Source) < 3 {
-		errs = append(errs, newNRTMServiceError("notificationFile source is not valid: '%v'", file.Source))
+		return newNRTMServiceError("notificationFile source is not valid: '%v'", file.Source)
 	}
 	if file.Version < 1 {
-		errs = append(errs, newNRTMServiceError("notificationFile version must be positive: '%v'", file.NrtmVersion))
+		return newNRTMServiceError("notificationFile version must be positive: '%v'", file.NrtmVersion)
 	}
-	if len(file.SnapshotRef.URL) < 20 {
-		errs = append(errs, newNRTMServiceError("notificationFile snapshot url is not valid: '%v'", file.SnapshotRef.URL))
+	if len(file.SnapshotRef.URL) < 10 {
+		return newNRTMServiceError("notificationFile snapshot url is not valid: '%v'", file.SnapshotRef.URL)
 	}
-	return errs
+	if file.DeltaRefs == nil || len(*file.DeltaRefs) == 0 {
+		return ErrNRTM4NoDeltasInNotification
+	}
+	return nil
 }
 
 func readerToFile(reader io.Reader, path string, fileName string) (*os.File, error) {
