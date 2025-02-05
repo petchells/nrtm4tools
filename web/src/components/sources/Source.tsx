@@ -174,11 +174,14 @@ export default function Source(props: {
         </Grid>
         <Grid size={{ xs: 8, md: 8 }}>
           <Item>
-            {formatDateWithStyle(
-              parseISOString(source.Notifications[0].Created),
-              "en-gb",
-              "longdatetime"
-            )}
+            {source.Notifications.length > 0 ?
+              formatDateWithStyle(
+                parseISOString(source.Notifications[0].Created),
+                "en-gb",
+                "longdatetime"
+              ) : (
+                <i>Not synced</i>
+              )}
           </Item>
         </Grid>
       </Grid>

@@ -57,9 +57,6 @@ export default function Sources() {
   }, []);
 
   const handleOnSelected = (row: SourceModel) => {
-    if (!row.Notifications.length) {
-      return;
-    }
     const key = row.ID;
     const idx = selectedIDs.indexOf(key);
     if (idx < 0) {
@@ -80,7 +77,7 @@ export default function Sources() {
         severity="success"
         sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}
       >
-        No sources are available. You can add one with the 'connect' command.
+        No sources are available. Add one with the 'connect' command.
       </Alert>
     );
   };
@@ -88,17 +85,19 @@ export default function Sources() {
   const onUrlEntered = (url: string, label: string) => {
     setDataLoading(true);
     client.connectSource(url, label)
-      .then((msg) => {
-        console.log("success", msg);
-      }, (rej) => {
-        if (typeof rej == "string") {
-          setErr(rej);
-        } else if (typeof rej == "object" && rej.message) {
-          setErr(rej.message);
-        } else {
-          setErr("" + rej);
-        }
-      })
+      .then(
+        (msg) => {
+          console.log("success", msg);
+        },
+        (rej) => {
+          if (typeof rej == "string") {
+            setErr(rej);
+          } else if (typeof rej == "object" && rej.message) {
+            setErr(rej.message);
+          } else {
+            setErr("" + rej);
+          }
+        })
       .finally(() => setDataLoading(false));
   };
 
