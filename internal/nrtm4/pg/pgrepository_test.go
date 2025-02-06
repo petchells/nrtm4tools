@@ -6,6 +6,18 @@ import (
 	"unicode"
 )
 
+func TestGetSources(t *testing.T) {
+	// repo := testresources.SetTestEnvAndInitializePG(t)
+	// sources, err := repo.ListSources()
+
+	// if err != nil {
+	// 	t.Error("Should not be an error when getting souces")
+	// }
+	// if len(sources) != 0 {
+	// 	t.Error("Should not be any sources. Unless other tests are running.")
+	// }
+}
+
 func TestSelectObjectSQL(t *testing.T) {
 	sql := selectCurrentObjectQuery()
 
@@ -20,7 +32,6 @@ func TestSelectObjectSQL(t *testing.T) {
 	if reduceWhiteSpace(sql) != reduceWhiteSpace(expected) {
 		t.Errorf("Got unexpected SQL\n%v\nbut wanted\n%v\n", sql, expected)
 	}
-
 }
 
 func TestReduceWhiteSpace(t *testing.T) {

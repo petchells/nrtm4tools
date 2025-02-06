@@ -21,8 +21,8 @@ func (repo PostgresRepository) Initialize(dbURL string) error {
 	return db.InitializeConnectionPool(dbURL)
 }
 
-// GetSources returns a list of all sources
-func (repo PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
+// ListSources returns a list of all sources
+func (repo PostgresRepository) ListSources() ([]persist.NRTMSource, error) {
 	var sources []persist.NRTMSource
 	var err error
 	var pgsources []pgpersist.NRTMSource
@@ -32,7 +32,7 @@ func (repo PostgresRepository) GetSources() ([]persist.NRTMSource, error) {
 		return err
 	})
 	if err != nil {
-		logger.Error("Error in GetSources", "error", err)
+		logger.Error("Error in ListSources", "error", err)
 		return sources, err
 	}
 	for _, s := range pgsources {
@@ -206,7 +206,7 @@ func (repo PostgresRepository) AddModifyObject(
 		ObjectType:   rpsl.ObjectType,
 		PrimaryKey:   rpsl.PrimaryKey,
 		NRTMSourceID: source.ID,
-		FromVersion:  file.Version,
+		FromVersion:  uint32(file.Version),
 		RPSL:         rpsl.Payload,
 	}
 	return db.WithTransaction(func(tx pgx.Tx) error {
@@ -227,7 +227,7 @@ func (repo PostgresRepository) AddModifyObject(
 			return err
 		}
 		if err != pgx.ErrNoRows {
-			rpslObject.ToVersion = file.Version
+			rpslObject.ToVersion = uint32(file.Version)
 			err = db.Update(tx, rpslObject)
 			if err != nil {
 				return err
@@ -252,7 +252,7 @@ func (repo PostgresRepository) DeleteObject(
 		if err != nil {
 			return err
 		}
-		rpslObject.ToVersion = file.Version
+		rpslObject.ToVersion = uint32(file.Version)
 		return db.Update(tx, rpslObject)
 	})
 }

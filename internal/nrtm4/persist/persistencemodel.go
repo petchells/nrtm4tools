@@ -28,7 +28,7 @@ func NewNRTMSource(notification NotificationJSON, label string, notificationURL 
 	return NRTMSource{
 		Source:          notification.Source,
 		SessionID:       notification.SessionID,
-		Version:         notification.SnapshotRef.Version,
+		Version:         uint32(notification.SnapshotRef.Version),
 		Label:           label,
 		NotificationURL: notificationURL,
 	}

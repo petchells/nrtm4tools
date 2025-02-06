@@ -36,11 +36,12 @@ func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSO
 		LIMIT 1
 	`, descr.ColumnNamesCommaSeparated(), descr.TableName())
 
+	pver := uint32(payload.Version)
 	newNotification := func(tx pgx.Tx) error {
 		logger.Debug("Saving new notification")
 		return db.Create(tx, &Notification{
 			ID:           db.NextID(),
-			Version:      payload.Version,
+			Version:      pver,
 			NRTMSourceID: sourceID,
 			Payload:      payload,
 			Created:      util.AppClock.Now(),
@@ -53,15 +54,15 @@ func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSO
 	} else if err != nil {
 		return err
 	}
-	if payload.Version == lastN.Version {
+	if pver == lastN.Version {
 		if payload.SnapshotRef.Version == lastN.Payload.SnapshotRef.Version {
 			// Nothing to do
 			return nil
 		}
 		return newNotification(tx)
-	} else if payload.Version > lastN.Version {
+	} else if pver > lastN.Version {
 		return newNotification(tx)
 	}
-	logger.Error("Expected higher notification version", "lastN.Version", lastN.Version, "payload.Version", payload.Version)
+	logger.Error("Expected higher notification version", "lastN.Version", lastN.Version, "payload.Version", pver)
 	return errors.New("expected higher notification version than the one found")
 }

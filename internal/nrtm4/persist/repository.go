@@ -9,7 +9,7 @@ type Repository interface {
 	Initialize(string) error
 	SaveSource(NRTMSource, NotificationJSON) (NRTMSource, error)
 	RemoveSource(NRTMSource) error
-	GetSources() ([]NRTMSource, error)
+	ListSources() ([]NRTMSource, error)
 	GetNotificationHistory(NRTMSource, uint32, uint32) ([]Notification, error)
 	SaveFile(*NRTMFile) error
 	SaveSnapshotObjects(NRTMSource, []rpsl.Rpsl, NrtmFileJSON) error

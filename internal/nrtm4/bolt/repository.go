@@ -38,8 +38,8 @@ func (r *BBolt) SaveSource(source persist.NRTMSource, notificationURL string) (p
 	return persist.NRTMSource{}, nil
 }
 
-// GetSources TODO: implement
-func (r *BBolt) GetSources() ([]persist.NRTMSource, error) {
+// ListSources TODO: implement
+func (r *BBolt) ListSources() ([]persist.NRTMSource, error) {
 	return []persist.NRTMSource{}, nil
 }
 

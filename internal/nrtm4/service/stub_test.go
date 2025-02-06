@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -23,7 +24,7 @@ func (r *stubRepo) Initialize(dbURL string) error {
 	return nil
 }
 
-func (r stubRepo) GetSources() []persist.NRTMSource {
+func (r stubRepo) ListSources() []persist.NRTMSource {
 	return []persist.NRTMSource{}
 }
 
@@ -61,13 +62,42 @@ type stubClient struct {
 	t *testing.T
 }
 
+type mockRepo struct {
+	persist.Repository
+	sources []persist.NRTMSource
+}
+
+func (mr mockRepo) SaveSource(source persist.NRTMSource, notifile persist.NotificationJSON) (persist.NRTMSource, error) {
+	id := uint64((len(mr.sources) + 1000))
+	src := source
+	src.ID = id
+	// deets := persist.NRTMSourceDetails{
+	// 	NRTMSource: src,
+	// 	Notifications: []persist.Notification{
+	// 		{
+	// 			ID:           id,
+	// 			Version:      uint32(notifile.Version),
+	// 			NRTMSourceID: src.ID,
+	// 			Payload:      notifile,
+	// 			Created:      util.AppClock.Now(),
+	// 		},
+	// 	},
+	// }
+	mr.sources = append(mr.sources, src)
+	return src, nil
+}
+
+func (mr mockRepo) ListSources() ([]persist.NRTMSource, error) {
+	return mr.sources, nil
+}
+
 func NewStubClient(t *testing.T) Client {
 	return stubClient{t}
 }
 
 func (c stubClient) getUpdateNotification(url string) (persist.NotificationJSON, error) {
 	var file persist.NotificationJSON
-	if url == stubNotificationURL {
+	if url == baseURL+stubNotificationURL {
 		json.Unmarshal([]byte(notificationExample), &file)
 		return file, nil
 	}
@@ -75,25 +105,25 @@ func (c stubClient) getUpdateNotification(url string) (persist.NotificationJSON,
 	return file, errors.New("unexpected notification url")
 }
 
-func (c stubClient) getResponseBody(url string) (io.Reader, error) {
+func (c stubClient) getResponseBody(requrl string) (io.Reader, error) {
 	var reader io.Reader
-	if url == stubSnapshot2URL {
+	if requrl == baseURL+stubSnapshot2URL {
 		reader = strings.NewReader(snapshotExample)
 		var buf bytes.Buffer
 		zw := gzip.NewWriter(&buf)
 		zw.Write([]byte(snapshotExample))
 		zw.Close()
 		return bytes.NewReader(buf.Bytes()), nil
-	} else if url == "https://example.com/source1/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json" {
+	} else if requrl == baseURL+delta3URL {
 		reader = strings.NewReader(deltaExample)
 	} else {
-		c.t.Error("Call to unexpected URL", url)
+		c.t.Error("Call to unexpected URL", requrl)
 		return reader, errors.New("unexpected file url")
 	}
 	return reader, nil
 }
 
-var notificationExample = `
+var notificationExample = fmt.Sprintf(`
 {
 	"nrtm_version": 4,
 	"timestamp": "2022-01-00T15:00:00Z",
@@ -104,18 +134,18 @@ var notificationExample = `
 	"version": 3,
 	"snapshot": {
 	  "version": 2,
-	  "url": "ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz",
-	  "hash": "07396d52396a96b80eb4a5febbff2053ad945dbdbfdd020492d6fec7cf8cb526"
+	  "url": "%v",
+	  "hash": "7e1a5a4763ddb399feae52e45036ce7218877e7ca2c6dd20fec82efeb03074c0"
 	},
 	"deltas": [
 	  {
 		"version": 3,
-		"url": "ca128382-78d9-41d1-8927-1ecef15275be/nrtm-delta.3.d9c194acbb2cb0d4088c9d8a25d5871cdd802c79.json",
-		"hash": "bb65420644b598cdd7eb3b101f26ac033667d5edfe5c4f4fa005ff136e9eb8f8"
+		"url": "%v",
+		"hash": "d829e802200605c79a0c42331a7a1333b524b05110c321b1bda6a390fbeaf6e2"
 	  }
 	]
   }
-`
+`, stubSnapshot2URL, delta3URL)
 
 var snapshotExample = `
 {
@@ -126,7 +156,8 @@ var snapshotExample = `
 	"version": 2
 }
 {"object": "route: 192.0.2.0/24\norigin: AS65530\nsource: EXAMPLE"}
-{"object": "route: 2001:db8::/32\norigin: AS65530\nsource: EXAMPLE"}
+{"object": "route6: 2001:db8::/32\norigin: AS65530\nsource: EXAMPLE"}
+{"object": "person: Bob the Builder\nnic-hdl: PRSN1-EXAMPLE\nsource: EXAMPLE"}
 `
 
 var deltaExample = `
@@ -149,6 +180,6 @@ var deltaExample = `
 }
 {
 	"action": "add_modify",
-	"object": "route: 2001:db8::/32\norigin: AS65530\nsource: EXAMPLE"
+	"object": "route6:        2001:db8::/32\norigin:        AS65530\nsource: EXAMPLE"
 }
 `

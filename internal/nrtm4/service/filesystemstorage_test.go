@@ -39,7 +39,7 @@ func (c dlClientStub) getUpdateNotification(string) (persist.NotificationJSON, e
 		Timestamp:      util.AppClock.Now().Format(time.RFC3339),
 		NextSigningKey: new(string),
 		SnapshotRef: persist.FileRefJSON{
-			URL: "https://xxx.xxx.xx/notification.json",
+			URL: "https://xxx.xxx.xx/snapshot-21.json",
 		},
 		DeltaRefs: []persist.FileRefJSON{
 			{
@@ -117,7 +117,7 @@ func TestWriteFromReaderToFile(t *testing.T) {
 		os.Remove(file.Name())
 	}()
 
-	fromStr := "Far and few, far and few are the lands where the Jumblies live."
+	fromStr := "Far and few, far and few are the lands where the Jumblies live.\n"
 	reader := strings.NewReader(fromStr)
 
 	err = transferReaderToFile(reader, file)
@@ -127,7 +127,7 @@ func TestWriteFromReaderToFile(t *testing.T) {
 }
 
 func TestWriteFileToPath(t *testing.T) {
-	tmpdir, err := os.MkdirTemp("", "nrtmtest")
+	tmpdir, err := os.MkdirTemp("", "nrtmtest*")
 	if err != nil {
 		t.Fatal("Could not create temp directory", err)
 	}
@@ -139,28 +139,11 @@ func TestWriteFileToPath(t *testing.T) {
 		client: NewStubClient(t),
 	}
 
-	file, err := fm.writeResourceToPath(stubSnapshot2URL, tmpdir)
+	file, err := fm.writeResourceToPath(baseURL+stubSnapshot2URL, tmpdir)
 	if file == nil || err != nil {
 		t.Fatal("File was not written:", err)
 	}
 
-}
-
-func TestValidateURLString(t *testing.T) {
-	type testURL struct {
-		str      string
-		expected bool
-	}
-	testURLs := []testURL{
-		{"https://nrtm4.example.com/nrtm4/notification.json", true},
-		{"ftp://nrtm4.example.com/nrtm4/notification.json", false},
-		{"RIPE/nrtm-snapshot.374234.RIPE.db44e038-1f07-4d54-a307-1b32339f141a.7755dc0a05b5024dd092a7a68d1b7b0.json.gz", false},
-	}
-	for _, turl := range testURLs {
-		if validateURLString(turl.str) != turl.expected {
-			t.Error("Validation failed. Expected", turl.expected, "for:", turl.str, validateURLString(turl.str))
-		}
-	}
 }
 
 func TestFetchFileAndCheckHash(t *testing.T) {
@@ -177,7 +160,7 @@ func TestFetchFileAndCheckHash(t *testing.T) {
 	client := stubDeltaClient{
 		responseBody: body,
 	}
-	dir, err := os.MkdirTemp("", "nrtm4test")
+	dir, err := os.MkdirTemp("", "nrtm4test*")
 	if err != nil {
 		t.Fatal("Failed to create temp dir", err)
 	}

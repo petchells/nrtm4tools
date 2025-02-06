@@ -3,6 +3,7 @@ package service
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -11,10 +12,11 @@ import (
 )
 
 func TestApplyDeltas(t *testing.T) {
-	var err error
 
+	label := "TestApplyDeltas"
+
+	var err error
 	repo := testresources.SetTestEnvAndInitializePG(t)
-	testresources.TruncateDatabase(t)
 	f := testresources.OpenFile(t, "nrtm-delta.multiple-ops-same-pk.jsonseq")
 	if f == nil {
 		t.Fatal("Could not open delta file")
@@ -22,7 +24,7 @@ func TestApplyDeltas(t *testing.T) {
 	defer f.Close()
 	bytes, _ := io.ReadAll(f)
 
-	tmpDir, err := os.MkdirTemp("", "nrtm4")
+	tmpDir, err := os.MkdirTemp("", "nrtm4*")
 	if err != nil {
 		t.Fatal("Could not create temp dir")
 	}
@@ -49,19 +51,30 @@ func TestApplyDeltas(t *testing.T) {
 	}
 	notification := persist.NotificationJSON{
 		NrtmFileJSON: persist.NrtmFileJSON{
-			NrtmVersion: uint(4),
-			Version:     uint32(3),
+			NrtmVersion: 4,
+			Version:     3,
 		},
 		DeltaRefs: deltas,
 	}
 	source := persist.NRTMSource{
-		Version:         uint32(2),
+		Version:         2,
 		SessionID:       "db44e038-1f07-4d54-a307-1b32339f141a",
 		Source:          "RIPE",
 		NotificationURL: "http://test.test.test/unf.json",
+		Label:           label,
+	}
+	fdir := filepath.Join(tmpDir, source.Source, source.SessionID)
+	if err = os.MkdirAll(fdir, 0775); err != nil {
+		t.Fatal("Failed to create directory for files")
+	}
+	srcs, _ := repo.ListSources()
+	for _, src := range srcs {
+		if src.Source == source.Source && src.Label == source.Label {
+			repo.RemoveSource(src)
+		}
 	}
 	if source, err = repo.SaveSource(source, notification); err != nil {
-		t.Fatal("Could not save source")
+		t.Fatal("Failed to save source")
 	}
 
 	err = syncDeltas(p, notification, source)

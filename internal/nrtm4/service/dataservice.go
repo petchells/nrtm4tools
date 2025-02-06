@@ -27,7 +27,7 @@ type NrtmDataService struct {
 }
 
 func (ds NrtmDataService) getSourceByURLAndLabel(url string, label string) *persist.NRTMSource {
-	sources, err := ds.getSources()
+	sources, err := ds.listSources()
 	if err != nil {
 		log.Panicln("Failure calling NrtmDataService.getSourceByURLAndLabel", err)
 	}
@@ -41,7 +41,7 @@ func (ds NrtmDataService) getSourceByURLAndLabel(url string, label string) *pers
 }
 
 func (ds NrtmDataService) getSourceByNameAndLabel(name string, label string) *persist.NRTMSource {
-	sources, err := ds.getSources()
+	sources, err := ds.listSources()
 	if err != nil {
 		log.Panicf("Failure calling NrtmDataService.getSourceByNameAndLabel %T %v", err, err)
 	}
@@ -58,8 +58,8 @@ func (ds NrtmDataService) deleteSource(source persist.NRTMSource) error {
 	return ds.Repository.RemoveSource(source)
 }
 
-func (ds NrtmDataService) getSources() ([]persist.NRTMSource, error) {
-	return ds.Repository.GetSources()
+func (ds NrtmDataService) listSources() ([]persist.NRTMSource, error) {
+	return ds.Repository.ListSources()
 }
 
 func (ds NrtmDataService) getNotifications(src persist.NRTMSource, from, to uint32) ([]persist.Notification, error) {

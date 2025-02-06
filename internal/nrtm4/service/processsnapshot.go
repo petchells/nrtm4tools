@@ -133,7 +133,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			if err != nil {
 				return err
 			}
-			source.Version = snapshotHeader.Version
+			source.Version = uint32(snapshotHeader.Version)
 			_, err = repo.SaveSource(source, notification)
 			return err
 		} else if err != nil {

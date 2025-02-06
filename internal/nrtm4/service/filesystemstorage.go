@@ -6,8 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -42,24 +42,36 @@ func (fm fileManager) ensureDirectoryExists(path string) error {
 	return nil
 }
 
-func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileRefJSON, path string) (*os.File, error) {
+const numVersionsPerDirectory = 10000
+
+// fetchFileAndCheckHash returns an open file pointer to the file in fileRef.URL
+func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileRefJSON, basePath string) (*os.File, error) {
 	fURL := fullURL(unfURL, fileRef.URL)
 	if !validateURLString(fURL) {
 		logger.Info("URL in fileRef cannot be parsed", "fURL", fURL)
 		return nil, errors.New("Invalid URL in reference")
 	}
-	var file *os.File
-	_, err := os.Stat(filepath.Join(path, filepath.Base(fURL)))
+	vdir := (fileRef.Version / numVersionsPerDirectory) + numVersionsPerDirectory
+	subdir := filepath.Join(basePath, fmt.Sprintf("%d", vdir))
+	_, err := os.Stat(subdir)
 	if os.IsNotExist(err) {
+		err = os.Mkdir(subdir, 0775)
+		if err != nil {
+			logger.Error("Failed to create subdirectory", "subdir", subdir, "error", err)
+		}
+	}
+	path := filepath.Join(subdir, filepath.Base(fURL))
+	var file *os.File
+	if file, err = os.Open(path); err != nil {
 		logger.Info("Downloading file", "url", fURL)
 		if file, err = fm.writeResourceToPath(fURL, path); err != nil {
 			logger.Error("Failed to write file", "url", fURL, "path", path)
 			return nil, err
 		}
-	}
-	if file, err = os.Open(filepath.Join(path, filepath.Base(fURL))); err != nil {
-		logger.Error("Failed to open file", "url", fURL, "path", path)
-		return nil, err
+		if file, err = os.Open(path); err != nil {
+			logger.Error("Failed to open file", "url", fURL, "path", path)
+			return nil, err
+		}
 	}
 	sum, err := calcHash256(file)
 	if err != nil {
@@ -69,7 +81,7 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 		if err = os.Rename(file.Name(), file.Name()+"-BADHASH"); err != nil {
 			return nil, err
 		}
-		logger.Warn("Hash does not match the downloaded file. Try again", "file", file.Name(), "hash", fileRef.Hash, "calculated", sum)
+		logger.Warn("Hash does not match the downloaded file", "file", file.Name(), "hash", fileRef.Hash, "calculated", sum)
 		return nil, ErrHashMismatch
 	}
 	return file, nil
@@ -103,18 +115,17 @@ func (fm fileManager) readJSONSeqRecords(
 	return err
 }
 
-func (fm fileManager) writeResourceToPath(url string, path string) (*os.File, error) {
-	fileName := filepath.Base(url)
-	if f, err := os.Open(filepath.Join(path, fileName)); err == nil {
+func (fm fileManager) writeResourceToPath(url string, fileName string) (*os.File, error) {
+	if f, err := os.Open(fileName); err == nil {
 		return f, err
 	}
 	var reader io.Reader
 	var err error
 	if reader, err = fm.client.getResponseBody(url); err != nil {
-		logger.Error("Failed to fetch file", url, err)
+		logger.Error("Failed to fetch file", "url", url, "error", err)
 		return nil, err
 	}
-	return readerToFile(reader, path, fileName)
+	return readerToFile(reader, fileName)
 }
 
 func (fm fileManager) downloadNotificationFile(url string) (persist.NotificationJSON, error) {
@@ -147,7 +158,7 @@ func validateNotificationFile(file persist.NotificationJSON) error {
 	if file.DeltaRefs == nil || len(file.DeltaRefs) == 0 {
 		return ErrNRTM4NoDeltasInNotification
 	}
-	versions := make([]uint32, len(file.DeltaRefs))
+	versions := make([]int64, len(file.DeltaRefs))
 	for i, dr := range file.DeltaRefs {
 		versions[i] = dr.Version
 	}
@@ -164,17 +175,17 @@ func validateNotificationFile(file persist.NotificationJSON) error {
 	if hi != file.Version {
 		return ErrNRTM4NotificationVersionDoesNotMatchDelta
 	}
-	if lo+uint32(len(versions)-1) != hi {
+	if lo+int64(len(versions)-1) != hi {
 		logger.Error("Delta version is missing from the notification file", "source", file.Source)
 		return ErrNRTM4NotificationDeltaSequenceBroken
 	}
 	return nil
 }
 
-func readerToFile(reader io.Reader, path string, fileName string) (*os.File, error) {
+func readerToFile(reader io.Reader, fileName string) (*os.File, error) {
 	var outFile *os.File
 	var err error
-	if outFile, err = os.Create(filepath.Join(path, fileName)); err != nil {
+	if outFile, err = os.Create(fileName); err != nil {
 		logger.Error("Failed to open file on disk", "error", err)
 		return nil, err
 	}
@@ -219,9 +230,4 @@ func calcHash256(file *os.File) (string, error) {
 	}
 	sum := hex.EncodeToString(hasher.Sum(nil))
 	return sum, err
-}
-
-func validateURLString(str string) bool {
-	url, err := url.Parse(str)
-	return err == nil && (url.Scheme == "http" || url.Scheme == "https")
 }

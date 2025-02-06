@@ -5,8 +5,8 @@ import "testing"
 func TestURLUtil(t *testing.T) {
 	var fileName string
 	{
-		fileName, _ = fileNameFromURLString(stubNotificationURL)
-		if fileName != "notification.json" {
+		fileName, _ = fileNameFromURLString(baseURL + stubNotificationURL)
+		if fileName != stubNotificationURL {
 			t.Error("file name is wrong")
 		}
 	}

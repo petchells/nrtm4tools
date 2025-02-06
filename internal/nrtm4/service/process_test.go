@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
 	"github.com/petchells/nrtm4client/internal/nrtm4/testresources"
 )
 
-var stubNotificationURL = "https://example.com/source1/notification.json"
-var stubSnapshot2URL = "https://example.com/source1/ca128382-78d9-41d1-8927-1ecef15275be/nrtm-snapshot.2.047595d0fae972fbed0c51b4a41c7a349e0c47bb.json.gz"
+const (
+	baseURL             = "https://example.com/source1/"
+	stubNotificationURL = "notification.json"
+	stubSnapshot2URL    = "nrtm-snapshot.2.047.json.gz"
+	delta3URL           = "nrtm-delta.3.d9c.json"
+)
 
 type labelExpectation struct {
 	label  string
@@ -70,47 +73,11 @@ func TestFileRefSorter(t *testing.T) {
 		},
 	}
 	sort.Sort(fileRefsByVersion(refs))
-	expect := [...]uint32{3, 4, 5, 6}
+	expect := [...]int64{3, 4, 5, 6}
 	for idx, v := range expect {
 		if refs[idx].Version != v {
 			t.Error("Expected", v, "but got", refs[idx].Version)
 		}
-	}
-}
-
-func TestE2EConnect(t *testing.T) {
-	pgTestRepo := testresources.SetTestEnvAndInitializePG(t)
-	testresources.TruncateDatabase(t)
-	stubClient := NewStubClient(t)
-	tmpDir, err := os.MkdirTemp("", "nrtmtest*")
-	if err != nil {
-		t.Fatal("Could not create temp test directory")
-	}
-	defer os.RemoveAll(tmpDir)
-
-	conf := AppConfig{
-		NRTMFilePath: tmpDir,
-	}
-	processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
-	if err = processor.Connect(stubNotificationURL, ""); err != nil {
-		t.Fatal("Failed to Connect", err)
-	}
-	sources, err := processor.ListSources()
-	if len(sources) != 1 {
-		t.Error("Should only be a single source")
-	}
-	src := sources[0]
-	if src.Source != "EXAMPLE" {
-		t.Error("Source should be EXAMPLE")
-	}
-	if src.Version != 3 {
-		t.Error("Version should be 3")
-	}
-	if src.NotificationURL != stubNotificationURL {
-		t.Error("NotificationURL should be", stubNotificationURL)
-	}
-	if src.SessionID != "ca128382-78d9-41d1-8927-1ecef15275be" {
-		t.Error("SessionID should be", "ca128382-78d9-41d1-8927-1ecef15275be")
 	}
 }
 
@@ -222,17 +189,72 @@ func TestFullURLFunction(t *testing.T) {
 	}
 }
 
-func pgRepo() persist.Repository {
-	dbURL := os.Getenv("PG_DATABASE_URL")
-	if len(dbURL) == 0 {
-		log.Fatal("ERROR no url for database", dbURL)
-		return nil
+func TestValidateURLString(t *testing.T) {
+	type testURL struct {
+		str      string
+		expected bool
 	}
-	repo := pg.PostgresRepository{}
-	if err := repo.Initialize(dbURL); err != nil {
-		log.Fatal("Failed to initialize repository")
+	testURLs := []testURL{
+		{"https://nrtm4.example.com/nrtm4/notification.json", true},
+		{"https:///nrtm4.example.com/nrtm4/notification.json", true},
+		{"ftp://nrtm4.example.com/nrtm4/notification.json", false},
+		{"RIPE/nrtm-snapshot.374234.RIPE.db44e038-1f07-4d54-a307-1b32339f141a.7755dc0a05b5024dd092a7a68d1b7b0.json.gz", false},
 	}
-	return &repo
+	for _, turl := range testURLs {
+		if validateURLString(turl.str) != turl.expected {
+			t.Error("Validation failed. Expected", turl.expected, "for:", turl.str, validateURLString(turl.str))
+		}
+	}
+}
+
+func TestConnectErrors(t *testing.T) {
+	// Set up
+	pgTestRepo := mockRepo{}
+	stubClient := NewStubClient(t)
+	tmpDir, err := os.MkdirTemp("", "nrtmtest*")
+	if err != nil {
+		t.Fatal("Could not create temp test directory")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	conf := AppConfig{
+		NRTMFilePath: tmpDir,
+	}
+	processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
+
+	// Run test
+	label := "what a load of testing"
+	{
+		if err = processor.Connect("not a url", label); err != ErrBadNotificationURL {
+			t.Error("Bad URL should fail", err)
+		}
+	}
+	{
+		if err = processor.Connect(baseURL+stubNotificationURL, "-=-"); err != ErrInvalidLabel {
+			t.Error("Bad label should fail", err)
+		}
+	}
+	{
+		str := "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+		str += str
+		if err = processor.Connect(baseURL+stubNotificationURL, str); err != ErrInvalidLabel {
+			t.Error("Bad label should fail", err)
+		}
+	}
+	{
+		sources := []persist.NRTMSource{
+			{
+				ID:              987,
+				NotificationURL: baseURL + stubNotificationURL,
+				Label:           label,
+			},
+		}
+		pgTestRepo.sources = sources
+		processor.repo = pgTestRepo
+		if err = processor.Connect(baseURL+stubNotificationURL, label); err != ErrSourceAlreadyExists {
+			t.Error("Source already exist, should be rejected", err)
+		}
+	}
 }
 
 func stubsource() persist.NRTMSource {
@@ -245,7 +267,7 @@ func stubsource() persist.NRTMSource {
 		Source:          "TEST_SRC",
 		SessionID:       "db44e038-1f07-4d54-a307-1b32339f141a",
 		Version:         350684,
-		NotificationURL: stubNotificationURL,
+		NotificationURL: baseURL + stubNotificationURL,
 		Label:           "",
 		Created:         t,
 	}

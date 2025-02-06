@@ -3,6 +3,9 @@ package service
 import (
 	"errors"
 	"io"
+	"net/url"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -14,13 +17,20 @@ import (
 var (
 	// Repo errors
 
-	// ErrNextConsecutiveDeltaUnavaliable cannot find the next consecutive delta to apply to our repo
-	ErrNextConsecutiveDeltaUnavaliable = errors.New("repository is too old to update from the server")
-	// ErrSourceNotFound a source with the given label is not in the repo
-	ErrSourceNotFound = errors.New("cannot find source with given name and label")
+	// ErrBadNotificationURL notification URL cannot be parsed
+	ErrBadNotificationURL = errors.New("notification URL cannot be parsed")
 
 	// ErrSourceAlreadyExists a source with the given label already exists
 	ErrSourceAlreadyExists = errors.New("a source with the given label already exists")
+
+	// ErrInvalidLabel label is too lot or contains character which are not allowed
+	ErrInvalidLabel = errors.New("label is too long or contains characters which are not allowed")
+
+	// ErrSourceNotFound a source with the given label is not in the repo
+	ErrSourceNotFound = errors.New("cannot find source with given name and label")
+
+	// ErrNextConsecutiveDeltaUnavaliable cannot find the next consecutive delta to apply to our repo
+	ErrNextConsecutiveDeltaUnavaliable = errors.New("repository is too old to update from the server")
 
 	fileWriteBufferLength = 1024 * 8
 	rpslInsertBatchSize   = 1000
@@ -56,20 +66,24 @@ var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" +
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {
-	if !validateURLString(notificationURL) {
-		return errors.New("parameter does not parse into a URL")
+	unfURL := strings.TrimSpace(notificationURL)
+	if !validateURLString(unfURL) {
+		return ErrBadNotificationURL
 	}
 	label = strings.TrimSpace(label)
 	if len(label) > 0 && !labelRe.MatchString(label) {
-		return errors.New("label contains invalid characters. only allowed characters are: " + charsAllowedInLabel)
+		return ErrInvalidLabel
+	}
+	if len(label) > 255 {
+		return ErrInvalidLabel
 	}
 	ds := NrtmDataService{Repository: p.repo}
-	if ds.getSourceByURLAndLabel(notificationURL, label) != nil {
-		return errors.New("source already exists")
+	if ds.getSourceByURLAndLabel(unfURL, label) != nil {
+		return ErrSourceAlreadyExists
 	}
 	logger.Info("Fetching notification")
 	fm := fileManager{p.client}
-	notification, err := fm.downloadNotificationFile(notificationURL)
+	notification, err := fm.downloadNotificationFile(unfURL)
 	if err != nil {
 		return err
 	}
@@ -77,21 +91,28 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	if err != nil {
 		return err
 	}
+	logger.Info("Saving new source", "source", notification.Source)
+	source := persist.NewNRTMSource(notification, label, unfURL)
+	if source, err = ds.saveNewSource(source, notification); err != nil {
+		logger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
+		return err
+	}
+	dirname := filepath.Join(p.config.NRTMFilePath, source.Source, source.SessionID)
+	_, err = os.Stat(dirname)
+	if os.IsNotExist(err) {
+		if err = os.MkdirAll(dirname, 0755); err != nil {
+			return err
+		}
+	}
 	// Download snapshot
 	logger.Info("Fetching snapshot file...")
-	snapshotFile, err := fm.fetchFileAndCheckHash(notificationURL, notification.SnapshotRef, p.config.NRTMFilePath)
+	snapshotFile, err := fm.fetchFileAndCheckHash(unfURL, notification.SnapshotRef, dirname)
 	if err != nil {
 		return err
 	}
 	logger.Info("Snapshot file downloaded")
 	defer snapshotFile.Close()
 
-	logger.Info("Saving new source", "source", notification.Source)
-	source := persist.NewNRTMSource(notification, label, notificationURL)
-	if source, err = ds.saveNewSource(source, notification); err != nil {
-		logger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
-		return err
-	}
 	logger.Info("Inserting snapshot objects", "source", notification.Source)
 	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification)); err != io.EOF {
 		logger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
@@ -116,20 +137,20 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 	if notification.SessionID != source.SessionID {
 		return errors.New("server has a new mirror session")
 	}
-	if notification.Version < source.Version {
+	if notification.Version < int64(source.Version) {
 		return errors.New("server has old version")
 	}
-	if notification.Version == source.Version {
+	if notification.Version == int64(source.Version) {
 		logger.Info("Already at latest version")
 		return nil
 	}
 	return syncDeltas(p, notification, *source)
 }
 
-// ListSources shows all sources
+// ListSources gets details, including notifications, of all sources
 func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	ds := NrtmDataService{Repository: p.repo}
-	sources, err := ds.getSources()
+	sources, err := ds.listSources()
 	deets := []persist.NRTMSourceDetails{}
 	if err != nil {
 		return deets, err
@@ -187,4 +208,9 @@ func fullURL(base, relpath string) string {
 		sepIdx = 0
 	}
 	return base[:idx+sepIdx] + relpath
+}
+
+func validateURLString(str string) bool {
+	url, err := url.Parse(str)
+	return err == nil && (url.Scheme == "http" || url.Scheme == "https")
 }

@@ -9,18 +9,18 @@ const (
 
 // FileRefJSON json model of a file reference in a Notification file
 type FileRefJSON struct {
-	Version uint32 `json:"version"`
+	Version int64  `json:"version"`
 	URL     string `json:"url"`
 	Hash    string `json:"hash"`
 }
 
 // NrtmFileJSON json model of fields common to all NRTM4 files
 type NrtmFileJSON struct {
-	NrtmVersion uint   `json:"nrtm_version"`
+	NrtmVersion int64  `json:"nrtm_version"`
 	Type        string `json:"type"`
 	Source      string `json:"source"`
 	SessionID   string `json:"session_id"`
-	Version     uint32 `json:"version"`
+	Version     int64  `json:"version"`
 }
 
 // DeltaJSON json model of a change record in a DeltaFile
