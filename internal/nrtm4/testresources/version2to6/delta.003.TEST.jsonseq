@@ -1,0 +1,2 @@
+{"nrtm_version":4,"type":"delta","source":"TEST","session_id":"17db6715-18ae-410f-973e-47981b52f023","version":3}
+{"action":"delete","object_class":"inet6num","primary_key":"2a00:2381:f8a6::/48"}

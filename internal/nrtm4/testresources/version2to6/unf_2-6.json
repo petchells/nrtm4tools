@@ -8,28 +8,28 @@
 	"snapshot": {
 		"version": 2,
 		"url": "snapshot.2.TEST.jsonseq.gz",
-		"hash": "86667003dbd07ac575d8ad49a654da3fcdfc345acf3270435b85177d94d5ad88"
+		"hash": "098c0a3881044c7c75f10d990ef215e64c176b64a50e3b29420b9bf48c1ce0f1"
 	},
 	"deltas": [
 		{
 			"version": 3,
 			"url": "delta.003.TEST.jsonseq",
-			"hash": "111111111"
+			"hash": "fc8b35621d5fc544f5bc8376c794c69e4c9763de1fba652afa8dea7d130b0021 to be tested by validator option"
 		},
 		{
 			"version": 4,
 			"url": "delta.004.TEST.jsonseq",
-			"hash": "111111111"
+			"hash": "2222222222"
 		},
 		{
 			"version": 5,
 			"url": "delta.005.TEST.jsonseq",
-			"hash": "111111111"
+			"hash": "555555555555"
 		},
 		{
 			"version": 6,
 			"url": "delta.006.TEST.jsonseq",
-			"hash": "111111111"
+			"hash": "666666666"
 		}
 	]
 }
