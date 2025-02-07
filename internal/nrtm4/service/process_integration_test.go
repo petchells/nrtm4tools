@@ -1,13 +1,11 @@
 package service
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
 	"github.com/petchells/nrtm4client/internal/nrtm4/testresources"
 )
 
@@ -60,19 +58,6 @@ func TestConnectWithPgRepo(t *testing.T) {
 	err = processor.Update("example", label)
 
 	if err != nil {
-		t.Error("Error update was called")
+		t.Error("Error update returned an error", err)
 	}
-}
-
-func pgRepo() persist.Repository {
-	dbURL := os.Getenv("PG_DATABASE_URL")
-	if len(dbURL) == 0 {
-		log.Fatal("ERROR no url for database", dbURL)
-		return nil
-	}
-	repo := pg.PostgresRepository{}
-	if err := repo.Initialize(dbURL); err != nil {
-		log.Fatal("Failed to initialize repository")
-	}
-	return &repo
 }

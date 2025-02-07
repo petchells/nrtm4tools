@@ -59,6 +59,9 @@ func ReadTestJSONToPtr(t *testing.T, jsonFile string, ptr any) {
 }
 
 // TruncateDatabase wipes all rows from all tables except '%schema_version' (Tern's version tracking table)
+//
+// It's not usually a good idea to use this, for two reasons: it will interfere with any concurrent database
+// tests, and it doesn't emulate a real system.
 func TruncateDatabase(t *testing.T) {
 	err := db.WithTransaction(func(tx pgx.Tx) error {
 		selectSQL := `

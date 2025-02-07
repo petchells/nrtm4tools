@@ -1,0 +1,11 @@
+{
+    "nrtm_version": 4,
+    "type": "delta",
+    "source": "TEST",
+    "session_id": "db44e038-1f07-4d54-a307-1b32339f141a",
+    "version": 4
+}
+{
+    "action": "add_modify",
+    "object": "inetnum:        5.134.117.150 - 5.134.117.150\nnetname:        AAANET\ndescr:          Dummified\ncountry:        ES\nadmin-c:        DUMY-TEST\ntech-c:         DUMY-TEST\nstatus:         ASSIGNED PA\nmnt-by:         GINERNET-MNT\ncreated:        2025-01-27T01:08:05Z\nlast-modified:  2025-01-27T01:08:05Z\nsource:         TEST\nremarks:        ****************************\n"
+}

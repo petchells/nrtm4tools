@@ -1,0 +1,35 @@
+{
+	"nrtm_version": 4,
+	"timestamp": "2023-09-19T00:10:00Z",
+	"type": "notification",
+	"source": "TEST",
+	"session_id": "17db6715-18ae-410f-973e-47981b52f023",
+	"version": 6,
+	"snapshot": {
+		"version": 2,
+		"url": "snapshot.2.TEST.jsonseq.gz",
+		"hash": "86667003dbd07ac575d8ad49a654da3fcdfc345acf3270435b85177d94d5ad88"
+	},
+	"deltas": [
+		{
+			"version": 3,
+			"url": "delta.003.TEST.jsonseq",
+			"hash": "111111111"
+		},
+		{
+			"version": 4,
+			"url": "delta.004.TEST.jsonseq",
+			"hash": "111111111"
+		},
+		{
+			"version": 5,
+			"url": "delta.005.TEST.jsonseq",
+			"hash": "111111111"
+		},
+		{
+			"version": 6,
+			"url": "delta.006.TEST.jsonseq",
+			"hash": "111111111"
+		}
+	]
+}
