@@ -22,7 +22,7 @@ func TestConnectWithPgRepo(t *testing.T) {
 		NRTMFilePath: tmpDir,
 	}
 	pgTestRepo := testresources.SetTestEnvAndInitializePG(t)
-	stubClient := NewFileReaderClient(t, baseURL, "version2to6", "unf_2-4.json")
+	stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-4.json")
 	processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
 
 	// Run test
@@ -74,7 +74,7 @@ type TestClient struct {
 	t    *testing.T
 }
 
-func NewFileReaderClient(t *testing.T, baseURL, testDataDir, notifile string) TestClient {
+func NewTestClient(t *testing.T, baseURL, testDataDir, notifile string) TestClient {
 	return TestClient{
 		conf: tcConfig{baseURL, testDataDir, notifile},
 		t:    t,

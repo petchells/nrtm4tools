@@ -14,8 +14,6 @@ import (
 const (
 	baseURL             = "https://example.com/source1/"
 	stubNotificationURL = "notification.json"
-	stubSnapshot2URL    = "nrtm-snapshot.2.047.json.gz"
-	delta3URL           = "nrtm-delta.3.d9c.json"
 )
 
 type labelExpectation struct {
@@ -210,7 +208,7 @@ func TestValidateURLString(t *testing.T) {
 func TestConnectErrors(t *testing.T) {
 	// Set up
 	pgTestRepo := mockRepo{}
-	stubClient := NewStubClient(t)
+	stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-4.json")
 	tmpDir, err := os.MkdirTemp("", "nrtmtest*")
 	if err != nil {
 		t.Fatal("Could not create temp test directory")

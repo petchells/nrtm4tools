@@ -18,9 +18,6 @@ func TestApplyDeltas(t *testing.T) {
 	var err error
 	repo := testresources.SetTestEnvAndInitializePG(t)
 	f := testresources.OpenFile(t, "nrtm-delta.multiple-ops-same-pk.jsonseq")
-	if f == nil {
-		t.Fatal("Could not open delta file")
-	}
 	defer f.Close()
 	bytes, _ := io.ReadAll(f)
 

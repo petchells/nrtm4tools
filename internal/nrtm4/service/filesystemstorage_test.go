@@ -1,20 +1,17 @@
 package service
 
 import (
+	"io"
 	"os"
-	"strings"
+	"path/filepath"
 	"testing"
-	"time"
 
-	"github.com/google/uuid"
 	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/util"
+	"github.com/petchells/nrtm4client/internal/nrtm4/testresources"
 )
 
-var testResourcePath = "../testresources/"
-
 func TestSuccess(t *testing.T) {
-	fm := fileManager{dlClientStub{}}
+	fm := fileManager{NewTestClient(t, baseURL, "version2to6", "unf_2-4.json")}
 	_, err := fm.downloadNotificationFile("")
 	if err != nil {
 		t.Error("should not be any errors but found:", err)
@@ -23,42 +20,9 @@ func TestSuccess(t *testing.T) {
 	}
 }
 
-type dlClientStub struct {
-	Client
-}
-
-func (c dlClientStub) getUpdateNotification(string) (persist.NotificationJSON, error) {
-	notification := persist.NotificationJSON{
-		NrtmFileJSON: persist.NrtmFileJSON{
-			NrtmVersion: 4,
-			SessionID:   uuid.NewString(),
-			Type:        persist.NotificationFile.String(),
-			Source:      "ZZZZ",
-			Version:     22,
-		},
-		Timestamp:      util.AppClock.Now().Format(time.RFC3339),
-		NextSigningKey: new(string),
-		SnapshotRef: persist.FileRefJSON{
-			URL: "https://xxx.xxx.xx/snapshot-21.json",
-		},
-		DeltaRefs: []persist.FileRefJSON{
-			{
-				URL:     "https://xxx.xxx.xx/delta-22.json",
-				Version: 22,
-			},
-		},
-	}
-	return notification, nil
-}
-
 func TestGZIPSnapshotReader(t *testing.T) {
 	filename := "snapshot-sample.jsonseq.gz"
-
-	snapshotFile, err := os.Open(testResourcePath + filename)
-	if err != nil {
-		t.Fatal("Cannot open", filename)
-	}
-	t.Log("Opened", snapshotFile.Name())
+	snapshotFile := testresources.OpenFile(t, filename)
 
 	fm := fileManager{}
 	numErrors := 0
@@ -81,17 +45,12 @@ func TestGZIPSnapshotReader(t *testing.T) {
 
 func TestPlainSnapshotReader(t *testing.T) {
 	filename := "snapshot-sample.jsonseq"
-
-	snapshotFile, err := os.Open(testResourcePath + filename)
-	if err != nil {
-		t.Fatal("Cannot open", filename)
-	}
-	t.Log("Opened", snapshotFile.Name())
+	snapshotFile := testresources.OpenFile(t, filename)
 
 	fm := fileManager{}
 	numErrors := 0
 	counter := 0
-	fm.readJSONSeqRecords(snapshotFile, func(bytes []byte, err error) error {
+	err := fm.readJSONSeqRecords(snapshotFile, func(bytes []byte, err error) error {
 		counter++
 		if err != nil {
 			numErrors++
@@ -100,33 +59,18 @@ func TestPlainSnapshotReader(t *testing.T) {
 		return nil
 	})
 	if numErrors != 1 {
-		t.Error("Expected only one (EOF) error, but was", numErrors)
+		t.Error("Expected only one error, but was", numErrors)
+	}
+	if err != io.EOF {
+		t.Error("Expected EOF but was", err)
 	}
 	if counter != 10 {
 		t.Error("Expected to read 10 lines, but was", counter)
 	}
 }
 
-func TestWriteFromReaderToFile(t *testing.T) {
-	file, err := os.CreateTemp("", "testfile")
-	if err != nil {
-		t.Fatal("Could not create temp file", err)
-	}
-	defer func() {
-		file.Close()
-		os.Remove(file.Name())
-	}()
-
-	fromStr := "Far and few, far and few are the lands where the Jumblies live.\n"
-	reader := strings.NewReader(fromStr)
-
-	err = transferReaderToFile(reader, file)
-	if err != nil {
-		t.Error("Did not save file", err)
-	}
-}
-
 func TestWriteFileToPath(t *testing.T) {
+	// Given...
 	tmpdir, err := os.MkdirTemp("", "nrtmtest*")
 	if err != nil {
 		t.Fatal("Could not create temp directory", err)
@@ -136,12 +80,20 @@ func TestWriteFileToPath(t *testing.T) {
 	}()
 
 	fm := fileManager{
-		client: NewStubClient(t),
+		client: NewTestClient(t, baseURL, "version2to6", "unf_2-4.json"),
 	}
+	snapshotPath := "snapshot.2.TEST.jsonseq.gz"
 
-	file, err := fm.writeResourceToPath(baseURL+stubSnapshot2URL, tmpdir)
+	// When...
+	file, err := fm.writeResourceToPath(baseURL+snapshotPath, filepath.Join(tmpdir, snapshotPath))
 	if file == nil || err != nil {
 		t.Fatal("File was not written:", err)
+	}
+
+	// Then...
+	expected := filepath.Join(tmpdir, snapshotPath)
+	if file.Name() != expected {
+		t.Error("File name failed. Expected", expected, "but was", file.Name())
 	}
 
 }
