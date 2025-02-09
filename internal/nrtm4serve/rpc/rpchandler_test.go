@@ -399,7 +399,7 @@ func TestSingleBadCommand(t *testing.T) {
 	if res.Error == nil {
 		t.Fatal("Expected an error but it was nil")
 	}
-	var expectedCode int64 = invalidParamsResponse.Error.Code
+	expectedCode := invalidParamsResponse.Error.Code
 	if res.Error.Code != expectedCode {
 		t.Fatalf("Expected '%v' but got '%v'", expectedCode, res.Error.Code)
 	}
