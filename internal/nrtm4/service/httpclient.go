@@ -30,11 +30,13 @@ type Client interface {
 type HTTPClient struct{}
 
 func (cl HTTPClient) getUpdateNotification(url string) (persist.NotificationJSON, error) {
-	var file persist.NotificationJSON
-	if err := cl.getObject(url, &file); err != nil {
-		return file, err
+	var unf persist.NotificationJSON
+	body, err := cl.getResponseBody(url)
+	if err != nil {
+		return unf, err
 	}
-	return file, nil
+	err = json.NewDecoder(body).Decode(&unf)
+	return unf, err
 }
 
 func (cl HTTPClient) getResponseBody(url string) (io.Reader, error) {
@@ -47,19 +49,6 @@ func (cl HTTPClient) getResponseBody(url string) (io.Reader, error) {
 	}
 	logger.Warn("HTTPClient getResponseBody received bad response", "status", resp.StatusCode, "message", resp.Status)
 	return nil, clientErrFromResponse(resp)
-}
-
-func (cl HTTPClient) getObject(url string, obj any) error {
-	var resp *http.Response
-	var err error
-	if resp, err = http.Get(url); err != nil {
-		return err
-	}
-	if resp.StatusCode == http.StatusOK {
-		return json.NewDecoder(resp.Body).Decode(&obj)
-	}
-	logger.Warn("HTTPClient getResponseBody received bad response", "status", resp.StatusCode, "message", resp.Status)
-	return clientErrFromResponse(resp)
 }
 
 func clientErrFromResponse(resp *http.Response) HTTPResponseError {

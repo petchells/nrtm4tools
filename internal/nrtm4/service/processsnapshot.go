@@ -147,7 +147,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 				counterMsgChan <- FAILURE
 				counterMsgChan <- STOP
 				close(counterMsgChan)
-				logger.Warn("error unmarshalling JSON. Expected SnapshotFile", "error", err)
+				logger.Warn("Error unmarshalling JSON. Expected SnapshotFile header", "error", err)
 				return err
 			}
 			if sf.Version != notification.SnapshotRef.Version {
