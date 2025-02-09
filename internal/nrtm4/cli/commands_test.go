@@ -38,3 +38,8 @@ func TestCommandExecutorUpdate(t *testing.T) {
 	ce := CommandExecutor{ProcessorStub{}}
 	ce.Update("srcName", "label")
 }
+
+func TestCommandExecutorRename(t *testing.T) {
+	ce := CommandExecutor{ProcessorStub{}}
+	ce.ReplaceLabel("srcName", "label", "to")
+}

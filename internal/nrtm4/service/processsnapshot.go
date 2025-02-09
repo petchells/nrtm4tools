@@ -74,9 +74,9 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 
 	objectList := util.NewLockingList[rpsl.Rpsl](rpslInsertBatchSize * 2)
 	counterMsgChan := make(chan CounterMsg, 1000)
-	expectHeader := true
 	successCount := 0
 	failureCount := 0
+	expectHeader := true
 
 	ticker := time.NewTicker(1 * time.Minute)
 	go func() {

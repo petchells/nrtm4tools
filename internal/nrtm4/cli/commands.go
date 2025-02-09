@@ -55,12 +55,17 @@ func (ce CommandExecutor) ListSources(src, label string) {
 		return
 	}
 	for i, src := range sources {
+
+		var created string
+		if len(src.Notifications) > 0 {
+			created = src.Notifications[0].Created.String()
+		}
 		fmt.Printf(`		%02d Source    : %v
 		Label        : %v
 		Version      : %v
 		Last updated : %v
 
-`, i+1, src.Source, src.Label, src.Version, src.Notifications[0].Created)
+`, i+1, src.Source, src.Label, src.Version, created)
 	}
 	logger.Info("List finished successfully")
 }
