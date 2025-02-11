@@ -29,7 +29,10 @@ type WebSession struct {
 	Session any
 }
 
-// API Implementation of API for customer web client
+// API provides functions that are bound to the incoming request by the RPC handler
+//
+// If the implementation returns false, the RPC function will not be called and the http
+// handler return 403 FORBIDDEN
 type API interface {
 	GetAuth(w http.ResponseWriter, r *http.Request, req JSONRPCRequest) (WebSession, bool)
 }
@@ -230,6 +233,7 @@ func (handler Handler) execRPCRequest(w http.ResponseWriter, r *http.Request, se
 
 	switch targetMethod.Type().NumOut() {
 	case 0:
+		rpcResponse.Result = struct{}{}
 	case 1:
 		rs1, err := collectReturns(res[0].Interface())
 		if err != nil {

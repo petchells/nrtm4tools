@@ -12,7 +12,6 @@ import (
 )
 
 type testAPI struct {
-	API
 }
 
 type ComplexTextObject struct {
@@ -70,7 +69,9 @@ func (ta testAPI) StringSliceResultTest(p []string) ([]string, error) {
 	return p, nil
 }
 
-func (ta testAPI) IntSliceResultTest(p []int64) ([]int64, error) {
+type CustomSliceOfInt []int64
+
+func (ta testAPI) IntSliceResultTest(p CustomSliceOfInt) ([]int64, error) {
 	return p, nil
 }
 
@@ -251,8 +252,8 @@ func TestArrayOfCommandsRequest(t *testing.T) {
 
 func TestSingleSimpleParams(t *testing.T) {
 	{
-		var expected = "Hello World!"
-		var jsonStr = `{
+		expected := "Hello World!"
+		jsonStr := `{
 		"jsonrpc": "2.0",
 		"id": "1",
 		"method": "Echo",
@@ -264,8 +265,8 @@ func TestSingleSimpleParams(t *testing.T) {
 		}
 	}
 	{
-		var expected = "test-user"
-		var jsonStr = `{
+		expected := "test-user"
+		jsonStr := `{
 		"jsonrpc": "2.0",
 		"id": "1",
 		"method": "ShowSessionUser",
@@ -277,11 +278,26 @@ func TestSingleSimpleParams(t *testing.T) {
 		}
 	}
 	{
-		var expected int64 = 7
-		var jsonStr = `{
+		expected := 7
+		jsonStr := `{
 		"jsonrpc": "2.0",
 		"id": "1",
 		"method": "EchoI",
+		"params": [
+			7
+		]
+	}`
+		res := doRequest(t, jsonStr)
+		if int(res.Result.(float64)) != expected {
+			t.Errorf("Expected '%d' but got '%d'", expected, res.Result)
+		}
+	}
+	{
+		expected := int64(7)
+		jsonStr := `{
+		"jsonrpc": "2.0",
+		"id": "1",
+		"method": "EchoI64",
 		"params": [
 			7
 		]
@@ -367,25 +383,6 @@ func TestSingleComplexParam(t *testing.T) {
 	}
 }
 
-//	func TestInt64ConversionBounds(t *testing.T) {
-//		var jsonStr = `{
-//		"jsonrpc": "2.0",
-//		"id": "1",
-//		"method": "EchoNumber",
-//		"params": [%v]
-//	}`
-//
-//		var expected int64 = 211585055384929410
-//		jpcres := doRequest(t, fmt.Sprintf(jsonStr, expected))
-//		if jpcres.Error != nil {
-//			t.Fatalf("Expected successful call to rpcHandler, got '%v'", jpcres.Error)
-//		}
-//		res := jpcres.Result.(int64)
-//		if res != expected {
-//			t.Fatalf("Expected '%v' but got '%v'", expected, res)
-//		}
-//	}
-
 func TestSingleBadCommand(t *testing.T) {
 	var jsonStr = `{
 		"jsonrpc": "2.0",
@@ -446,6 +443,7 @@ func TestParseErrorHandling(t *testing.T) {
 		"params": [""]}`
 	doTestWith(jsonStr, emptyResponse.Error)
 }
+
 func TestSliceTypeHandling(t *testing.T) {
 
 	var doTestWith = func(jsonStr string) JSONRPCResponse {
@@ -488,24 +486,9 @@ func TestSliceTypeHandling(t *testing.T) {
 			t.Errorf("StringSliceResultTest failed with error")
 		}
 		if fmt.Sprint(o.Result) != "[how now brown cow]" {
-			t.Errorf("StringSliceResultTest failed with bad result %v", o.Result)
+			t.Errorf("StringSliceResultTest failed with bad result: %v", o.Result)
 		}
 	}
-	// TODO: implement RPC so this and ComplexSliceResultTest work
-	// {
-	// 	jsonStr = `{
-	// 	"jsonrpc": "2.0",
-	// 	"id": "id",
-	// 	"method": "IntSliceResultTest",
-	// 	"params": [[3, 4, 5]]}`
-	// 	o := doTestWith(jsonStr)
-	// 	if o.Error != nil {
-	// 		t.Errorf("IntSliceResultTest failed %v", o.Error)
-	// 	}
-	// 	if fmt.Sprint(o.Result) != "[3 4 5]" {
-	// 		t.Errorf("IntSliceResultTest failed %v", o.Result)
-	// 	}
-	// }
 }
 
 var doRequest = func(t *testing.T, jsonStr string) JSONRPCResponse {
@@ -518,10 +501,10 @@ var doRequest = func(t *testing.T, jsonStr string) JSONRPCResponse {
 	req.Header.Set("Accept", "application/json")
 	rr := setupResponseRecorder(req)
 	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 	res := JSONRPCResponse{}
-	json.Unmarshal([]byte(rr.Body.String()), &res)
+	json.Unmarshal(rr.Body.Bytes(), &res)
 	return res
 }
 
