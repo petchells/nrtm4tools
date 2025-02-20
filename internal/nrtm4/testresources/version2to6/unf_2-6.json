@@ -19,17 +19,17 @@
 		{
 			"version": 4,
 			"url": "delta.004.TEST.jsonseq",
-			"hash": "2222222222"
+			"hash": "e334916c5a63508fe43e21dee2c35bed13ce3d055b8d28a82793b3cc7f89121f ditto"
 		},
 		{
 			"version": 5,
 			"url": "delta.005.TEST.jsonseq",
-			"hash": "555555555555"
+			"hash": "e78f3d656ea8ab5c405ecf1b4267593a6820e4fcf5e63086c8bd686f4c608072"
 		},
 		{
 			"version": 6,
 			"url": "delta.006.TEST.jsonseq",
-			"hash": "666666666"
+			"hash": "222b85ff37e83253981a68750078719881fe8f920b19073588e44d817a60feea"
 		}
 	]
 }

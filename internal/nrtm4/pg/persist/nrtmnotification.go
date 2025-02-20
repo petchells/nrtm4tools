@@ -48,7 +48,7 @@ func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSO
 		})
 	}
 
-	err := tx.QueryRow(context.Background(), sql, sourceID).Scan(db.SelectValues(lastN)...)
+	err := tx.QueryRow(context.Background(), sql, sourceID).Scan(db.ValuesForSelect(lastN)...)
 	if err == pgx.ErrNoRows {
 		return newNotification(tx)
 	} else if err != nil {

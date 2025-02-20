@@ -12,6 +12,7 @@ import (
 )
 
 func TestConnectWithPgRepo(t *testing.T) {
+
 	// Set up
 	tmpDir, err := os.MkdirTemp("", "nrtmtest*")
 	if err != nil {
@@ -22,28 +23,57 @@ func TestConnectWithPgRepo(t *testing.T) {
 		NRTMFilePath: tmpDir,
 	}
 	pgTestRepo := testresources.SetTestEnvAndInitializePG(t)
-	stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-4.json")
-	processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
 
 	// Run test
 	srcname := "TEST"
 	label := filepath.Base(tmpDir)
-	if err = processor.Connect(baseURL+stubNotificationURL, label); err != nil {
+
+	{
+		stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-4.json")
+		processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
+		invoke := processInvoker{t: t, p: processor}
+		invoke.testConnect(srcname, label)
+	}
+	{
+		stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-6.json")
+		processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
+		invoke := processInvoker{t: t, p: processor}
+		invoke.testUpdate(srcname, label)
+	}
+	newLabel := "new-" + label
+	{
+		stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-6.json")
+		processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
+		invoke := processInvoker{t: t, p: processor}
+		invoke.testRename(srcname, label, newLabel)
+	}
+	{
+		stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-6.json")
+		processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
+		invoke := processInvoker{t: t, p: processor}
+		invoke.testRemove(srcname, newLabel)
+	}
+
+}
+
+type processInvoker struct {
+	t *testing.T
+	p NRTMProcessor
+}
+
+func (pi processInvoker) testConnect(srcname, label string) {
+	t := pi.t
+	var err error
+	if err = pi.p.Connect(baseURL+stubNotificationURL, label); err != nil {
 		t.Fatal("Failed to Connect", err)
 	}
 
 	// Assertions
-	sources, err := processor.ListSources()
+	sources, err := pi.p.ListSources()
 	if len(sources) < 1 {
 		t.Error("Should be at least one source")
 	}
-	var src persist.NRTMSourceDetails
-	for _, s := range sources {
-		if s.Source == srcname && s.Label == label {
-			src = s
-			break
-		}
-	}
+	src := findSource(sources, srcname, label)
 	if src.Source != srcname {
 		t.Error("Source should be", srcname)
 	}
@@ -56,13 +86,68 @@ func TestConnectWithPgRepo(t *testing.T) {
 	if src.SessionID != "17db6715-18ae-410f-973e-47981b52f023" {
 		t.Error("SessionID should be", "17db6715-18ae-410f-973e-47981b52f023")
 	}
+}
 
-	stubClient.NotificationFileName("unf2_6.json")
-	err = processor.Update(strings.ToLower(srcname), label)
-
+func (pi processInvoker) testUpdate(srcname, label string) {
+	t := pi.t
+	err := pi.p.Update(strings.ToLower(srcname), label)
 	if err != nil {
 		t.Error("Error update returned an error", err)
 	}
+
+	sources, err := pi.p.ListSources()
+	if len(sources) < 1 {
+		t.Error("Should be at least one source")
+	}
+	src := findSource(sources, srcname, label)
+	if src.Version != 6 {
+		t.Error("Version should be 6")
+	}
+}
+
+func (pi processInvoker) testRename(srcname, label, to string) {
+	t := pi.t
+	_, err := pi.p.ReplaceLabel(srcname, label, to)
+	if err != nil {
+		t.Error("Error update returned an error", err)
+	}
+
+	sources, err := pi.p.ListSources()
+	if len(sources) < 1 {
+		t.Error("Should be at least one source")
+	}
+	src := findSource(sources, srcname, to)
+	if src.Label != to {
+		t.Error("Label should be", to)
+	}
+}
+
+func (pi processInvoker) testRemove(srcname, label string) {
+	t := pi.t
+	err := pi.p.RemoveSource(srcname, label)
+	if err != nil {
+		t.Error("Error RemoveSouce returned an error", err)
+	}
+
+	sources, err := pi.p.ListSources()
+	if err != nil {
+		t.Error("Error ListSources returned an error", err)
+	}
+	src := findSource(sources, srcname, label)
+	if src.Source != "" {
+		t.Error("Should be no source", srcname, label)
+	}
+}
+
+func findSource(sources []persist.NRTMSourceDetails, srcname, label string) persist.NRTMSourceDetails {
+	var src persist.NRTMSourceDetails
+	for _, s := range sources {
+		if s.Source == srcname && s.Label == label {
+			src = s
+			break
+		}
+	}
+	return src
 }
 
 type tcConfig struct {

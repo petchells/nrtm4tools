@@ -26,9 +26,8 @@ func (repo PostgresRepository) ListSources() ([]persist.NRTMSource, error) {
 	var sources []persist.NRTMSource
 	var err error
 	var pgsources []pgpersist.NRTMSource
-	src := new(pgpersist.NRTMSource)
 	err = db.WithTransaction(func(tx pgx.Tx) error {
-		pgsources, err = db.GetAll(tx, *src, nil)
+		pgsources, err = db.GetAll(tx, pgpersist.NRTMSource{}, nil)
 		return err
 	})
 	if err != nil {
@@ -103,7 +102,7 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 		}
 		for rows.Next() {
 			ent := *notif
-			err = rows.Scan(db.SelectValues(&ent)...)
+			err = rows.Scan(db.ValuesForSelect(&ent)...)
 			if err != nil {
 				return err
 			}
@@ -222,7 +221,7 @@ func (repo PostgresRepository) AddModifyObject(
 
 		sql := selectCurrentObjectQuery()
 		rpslObject := new(pgpersist.RPSLObject)
-		err = tx.QueryRow(context.Background(), sql, source.ID, rpsl.PrimaryKey, rpsl.ObjectType).Scan(db.SelectValues(rpslObject)...)
+		err = tx.QueryRow(context.Background(), sql, source.ID, rpsl.PrimaryKey, rpsl.ObjectType).Scan(db.ValuesForSelect(rpslObject)...)
 		if err != nil && err != pgx.ErrNoRows {
 			return err
 		}
@@ -248,7 +247,7 @@ func (repo PostgresRepository) DeleteObject(
 	return db.WithTransaction(func(tx pgx.Tx) error {
 		sql := selectCurrentObjectQuery()
 		rpslObject := new(pgpersist.RPSLObject)
-		err := tx.QueryRow(context.Background(), sql, source.ID, primaryKey, objectType).Scan(db.SelectValues(rpslObject)...)
+		err := tx.QueryRow(context.Background(), sql, source.ID, primaryKey, objectType).Scan(db.ValuesForSelect(rpslObject)...)
 		if err != nil {
 			return err
 		}
@@ -286,7 +285,7 @@ func getPossibleCurrentDeltaFrom(tx pgx.Tx, curRPSL pgpersist.RPSLObject) *pgper
 		rpslObjectDesc.TableName(),
 	)
 	rpslObject := new(pgpersist.RPSLObject)
-	err := tx.QueryRow(context.Background(), sql, curRPSL.NRTMSourceID, curRPSL.PrimaryKey, curRPSL.ObjectType, curRPSL.FromVersion).Scan(db.SelectValues(rpslObject)...)
+	err := tx.QueryRow(context.Background(), sql, curRPSL.NRTMSourceID, curRPSL.PrimaryKey, curRPSL.ObjectType, curRPSL.FromVersion).Scan(db.ValuesForSelect(rpslObject)...)
 	if err != nil {
 		if err != pgx.ErrNoRows {
 			logger.Error("Could not get current delta", "curRPSL", curRPSL)

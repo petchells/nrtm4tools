@@ -66,7 +66,7 @@ func (d *Descriptor) ColumnNames() []string {
 func (d *Descriptor) ColumnNamesWithAlias() []string {
 	names := []string{}
 	for _, name := range d.columnNames {
-		names = append(names, d.tableAlias+"."+name+" "+d.tableAlias+"_"+name)
+		names = append(names, fmt.Sprintf("%v.%v %v_%v", d.tableAlias, name, d.tableAlias, name))
 	}
 	return names
 }
@@ -76,8 +76,8 @@ func (d *Descriptor) ColumnNamesCommaSeparated() string {
 	return strings.Join(d.ColumnNames(), ", ")
 }
 
-// SelectValues returns field pointers so an EntityManaged row can be 'Scan(...)'ed
-func SelectValues(e EntityManaged) []any {
+// ValuesForSelect returns field pointers so an EntityManaged row can be 'Scan(...)'ed
+func ValuesForSelect(e EntityManaged) []any {
 	sflds := []any{}
 	val := reflect.ValueOf(e).Elem()
 	if val.Kind() == reflect.Invalid {
@@ -90,8 +90,8 @@ func SelectValues(e EntityManaged) []any {
 	return sflds
 }
 
-// InsertOrUpdateValues returns field pointers so an EntityManaged row can be updated or inserted
-func InsertOrUpdateValues(e EntityManaged) []any {
+// ValuesForModify returns field pointers so an EntityManaged row can be updated or inserted
+func ValuesForModify(e EntityManaged) []any {
 	sflds := []any{}
 	val := reflect.ValueOf(e).Elem()
 	kind := val.Kind().String()
@@ -153,20 +153,20 @@ func GetDescriptor(e EntityManaged) Descriptor {
 	return desc
 }
 
-// GetAll performs a select and calls back a function with transformed entities.
-func GetAll[T EntityManaged](tx pgx.Tx, entity T, fn func(entity T)) ([]T, error) {
+// GetAll performs a select with a callback for each entity
+func GetAll[T EntityManaged](tx pgx.Tx, entity T, fn func(T)) ([]T, error) {
 	dtor := GetDescriptor(&entity)
 	cols := strings.Join(dtor.columnNames, ", ")
 	sql := fmt.Sprintf("SELECT %v FROM %v", cols, dtor.tableName)
 	res := []T{}
 	rows, err := tx.Query(context.Background(), sql)
 	if err != nil {
-		return res, err
+		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		err = rows.Scan(SelectValues(&entity)...)
+		err = rows.Scan(ValuesForSelect(&entity)...)
 		if err != nil {
 			return res, err
 		}
@@ -192,7 +192,7 @@ func GetTypeByColumn[T EntityManaged](tx pgx.Tx, colname string, value interface
 
 	for rows.Next() {
 		ent := *entity
-		err = rows.Scan(SelectValues(&ent)...)
+		err = rows.Scan(ValuesForSelect(&ent)...)
 		if err != nil {
 			return res, err
 		}
@@ -218,7 +218,7 @@ func GetTypeByColumnAndIDValues[T EntityManaged](tx pgx.Tx, colname string, valu
 
 	for rows.Next() {
 		ent := *entity
-		err = rows.Scan(SelectValues(&ent)...)
+		err = rows.Scan(ValuesForSelect(&ent)...)
 		if err != nil {
 			return res, err
 		}
@@ -236,7 +236,7 @@ func GetByID(tx pgx.Tx, ID int64, entityPtr EntityManaged) error {
 	cols := strings.Join(dtor.columnNames, ", ")
 	tableName := dtor.tableName
 	sql := fmt.Sprintf("SELECT %v FROM %v WHERE id=$1", cols, tableName)
-	return tx.QueryRow(context.Background(), sql, ID).Scan(SelectValues(entityPtr)...)
+	return tx.QueryRow(context.Background(), sql, ID).Scan(ValuesForSelect(entityPtr)...)
 }
 
 // GetByColumn Fills the entityPtr with a single row matched by the value
@@ -245,7 +245,7 @@ func GetByColumn(tx pgx.Tx, colname string, value interface{}, entityPtr EntityM
 	cols := strings.Join(dtor.columnNames, ", ")
 	tableName := dtor.tableName
 	sql := fmt.Sprintf("SELECT %v FROM %v WHERE %v=$1", cols, tableName, colname)
-	return tx.QueryRow(context.Background(), sql, value).Scan(SelectValues(entityPtr)...)
+	return tx.QueryRow(context.Background(), sql, value).Scan(ValuesForSelect(entityPtr)...)
 }
 
 // Create an entity -- entity must be a pointer
@@ -259,7 +259,7 @@ func Create(tx pgx.Tx, entityPtr EntityManaged) error {
 	for i := range cols {
 		placeholders = append(placeholders, "$"+strconv.Itoa(i+1))
 	}
-	values := InsertOrUpdateValues(entityPtr)
+	values := ValuesForModify(entityPtr)
 	sql := fmt.Sprintf("INSERT INTO %v (%v) VALUES (%v)",
 		dtor.tableName,
 		strings.Join(cols, ", "),
@@ -281,7 +281,7 @@ func Update(tx pgx.Tx, e EntityManaged) error {
 		placeholders = append(placeholders, cn+"=$"+strconv.Itoa(i+1))
 	}
 	placeholders = placeholders[1:]
-	values := InsertOrUpdateValues(e)
+	values := ValuesForModify(e)
 	sql := fmt.Sprintf("UPDATE %v SET %v WHERE id=$1",
 		dtor.tableName,
 		strings.Join(placeholders, ", "),
