@@ -126,7 +126,7 @@ func (pi processInvoker) testRemove(srcname, label string) {
 	t := pi.t
 	err := pi.p.RemoveSource(srcname, label)
 	if err != nil {
-		t.Error("Error RemoveSouce returned an error", err)
+		t.Error("Error RemoveSource returned an error", err)
 	}
 
 	sources, err := pi.p.ListSources()

@@ -290,15 +290,6 @@ func Update(tx pgx.Tx, e EntityManaged) error {
 	return err
 }
 
-func columnNamesWithAlias(e EntityManaged) []string {
-	dtor := GetDescriptor(e)
-	names := []string{}
-	for _, name := range dtor.columnNames {
-		names = append(names, dtor.tableAlias+"."+name+" "+dtor.tableAlias+"_"+name)
-	}
-	return names
-}
-
 func getTaggedFields(t EntityManaged) []taggedField {
 	var fields []taggedField
 	ty := reflect.TypeOf(t).Elem()

@@ -11,7 +11,6 @@ type RPSLObject struct {
 	ObjectType       string `em:"."`
 	PrimaryKey       string `em:"."`
 	NRTMSourceID     uint64 `em:"."`
-	FromVersion      uint32 `em:"."`
-	ToVersion        uint32 `em:"."`
+	Version          uint32 `em:"."`
 	RPSL             string `em:"."`
 }
