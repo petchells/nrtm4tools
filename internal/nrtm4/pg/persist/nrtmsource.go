@@ -3,9 +3,9 @@ package persist
 import (
 	"time"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
-	"github.com/petchells/nrtm4client/internal/nrtm4/util"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/pg/db"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/util"
 )
 
 // NRTMSource pg database mapping for nrtm_source

@@ -1,4 +1,4 @@
-module github.com/petchells/nrtm4client
+module github.com/petchells/nrtm4tools
 
 go 1.23.0
 

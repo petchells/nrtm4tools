@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/jsonseq"
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/rpsl"
-	"github.com/petchells/nrtm4client/internal/nrtm4/util"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/jsonseq"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/rpsl"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/util"
 )
 
 type rpslObjectParser struct{}

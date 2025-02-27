@@ -3,8 +3,8 @@ package cli
 import (
 	"log"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
-	"github.com/petchells/nrtm4client/internal/nrtm4/service"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/pg"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/service"
 )
 
 // InitializeCommandProcessor starts a db connection pool

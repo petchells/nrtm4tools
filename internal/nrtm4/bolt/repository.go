@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/rpsl"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/rpsl"
 	bolt "go.etcd.io/bbolt"
 )
 

@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/jsonseq"
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/rpsl"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/jsonseq"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/rpsl"
 )
 
 func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source persist.NRTMSource) error {

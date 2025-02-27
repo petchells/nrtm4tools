@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/testresources"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/testresources"
 )
 
 func TestGetNotification(t *testing.T) {

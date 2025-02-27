@@ -1,7 +1,7 @@
 package persist
 
 import (
-	"github.com/petchells/nrtm4client/internal/nrtm4/rpsl"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/rpsl"
 )
 
 // Repository defines the functions for NRTMClient's persistent storage

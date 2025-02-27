@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/pg"
-	"github.com/petchells/nrtm4client/internal/nrtm4/service"
-	"github.com/petchells/nrtm4client/internal/nrtm4serve/rpc"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/pg"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/service"
+	"github.com/petchells/nrtm4tools/internal/nrtm4serve/rpc"
 )
 
 // Launch sets up the rpc handler and starts the server

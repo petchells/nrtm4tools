@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
 
 func fileNameFromURLString(rawURL string) (string, error) {

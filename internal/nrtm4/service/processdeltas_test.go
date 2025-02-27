@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/testresources"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/testresources"
 )
 
 func TestApplyDeltas(t *testing.T) {

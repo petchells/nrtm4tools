@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/pg/db"
-	"github.com/petchells/nrtm4client/internal/nrtm4/util"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/pg/db"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/util"
 )
 
 // Notification is a binding to a PG database table

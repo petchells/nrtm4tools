@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
 
 // ExecutionProcessor top-level processing for app functions

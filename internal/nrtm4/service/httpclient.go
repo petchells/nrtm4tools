@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
 
 // HTTPResponseError is used to model an error response from a http client

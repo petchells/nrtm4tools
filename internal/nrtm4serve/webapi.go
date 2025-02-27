@@ -3,9 +3,9 @@ package nrtm4serve
 import (
 	"net/http"
 
-	"github.com/petchells/nrtm4client/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4client/internal/nrtm4/service"
-	"github.com/petchells/nrtm4client/internal/nrtm4serve/rpc"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/service"
+	"github.com/petchells/nrtm4tools/internal/nrtm4serve/rpc"
 )
 
 // WebAPI defines the RPC functions used by the web client

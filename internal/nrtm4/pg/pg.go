@@ -4,6 +4,6 @@ connecting to a PostgreSQL database.
 */
 package pg
 
-import "github.com/petchells/nrtm4client/internal/nrtm4/util"
+import "github.com/petchells/nrtm4tools/internal/nrtm4/util"
 
 var logger = util.Logger
