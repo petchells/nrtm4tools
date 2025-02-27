@@ -43,25 +43,50 @@ func (repo PostgresRepository) ListSources() ([]persist.NRTMSource, error) {
 // RemoveSource removes a source from the repo
 func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
 	err := db.WithTransaction(func(tx pgx.Tx) error {
-		sqls := []string{`
+		type pgcmd struct {
+			sql  string
+			args []any
+		}
+		cmds := []pgcmd{
+			{`
+			ALTER TABLE
+				nrtm_rpslobject
+			DISABLE TRIGGER modify_rpsl_trigger
+			`, []any{},
+			}, {`
 			DELETE FROM
 				nrtm_rpslobject
 			WHERE nrtm_source_id = $1
-			`, `
+			`, []any{source.ID},
+			}, {`
+			ALTER TABLE
+				nrtm_rpslobject
+			ENABLE TRIGGER modify_rpsl_trigger
+			`, []any{},
+			}, {`
+			DELETE FROM
+				nrtm_rpslobject_history
+			WHERE nrtm_source_id = $1
+			`, []any{source.ID},
+			}, {`
 			DELETE FROM
 				nrtm_notification
 			WHERE nrtm_source_id = $1
-			`, `
+			`, []any{source.ID},
+			}, {`
 			DELETE FROM
 				nrtm_file
 			WHERE nrtm_source_id = $1
-			`, `
+			`, []any{source.ID},
+			}, {`
 			DELETE FROM
 				nrtm_source
 			WHERE id = $1
-			`}
-		for _, sql := range sqls {
-			_, err := tx.Exec(context.Background(), sql, source.ID)
+			`, []any{source.ID},
+			},
+		}
+		for _, cmd := range cmds {
+			_, err := tx.Exec(context.Background(), cmd.sql, cmd.args...)
 			if err != nil {
 				return err
 			}
@@ -171,7 +196,6 @@ func (repo PostgresRepository) SaveSnapshotObjects(
 				rpslObject.PrimaryKey,
 				source.ID,
 				file.Version,
-				0,
 				rpslObject.Payload,
 			}
 			inputRows[i] = inputRow
@@ -195,7 +219,7 @@ func (repo PostgresRepository) SaveSnapshotObjects(
 	})
 }
 
-// AddModifyObject updates an RPSL object by setting `to_version` and inserting a new row
+// AddModifyObject updates an RPSL finding the current matching pk then updating or adding
 func (repo PostgresRepository) AddModifyObject(
 	source persist.NRTMSource,
 	rpsl rpsl.Rpsl,
@@ -205,19 +229,12 @@ func (repo PostgresRepository) AddModifyObject(
 		ObjectType:   rpsl.ObjectType,
 		PrimaryKey:   rpsl.PrimaryKey,
 		NRTMSourceID: source.ID,
-		FromVersion:  uint32(file.Version),
+		Version:      uint32(file.Version),
 		RPSL:         rpsl.Payload,
 	}
 	return db.WithTransaction(func(tx pgx.Tx) error {
 
 		var err error
-
-		curDelta := getPossibleCurrentDeltaFrom(tx, *newRow)
-		if curDelta != nil {
-			// Already processed an operation, just overwrite it
-			newRow.ID = curDelta.ID
-			return db.Update(tx, newRow)
-		}
 
 		sql := selectCurrentObjectQuery()
 		rpslObject := new(pgpersist.RPSLObject)
@@ -225,19 +242,16 @@ func (repo PostgresRepository) AddModifyObject(
 		if err != nil && err != pgx.ErrNoRows {
 			return err
 		}
-		if err != pgx.ErrNoRows {
-			rpslObject.ToVersion = uint32(file.Version)
-			err = db.Update(tx, rpslObject)
-			if err != nil {
-				return err
-			}
+		if err == pgx.ErrNoRows {
+			newRow.ID = db.NextID()
+			return db.Create(tx, newRow)
 		}
-		newRow.ID = db.NextID()
-		return db.Create(tx, newRow)
+		newRow.ID = rpslObject.ID
+		return db.Update(tx, newRow)
 	})
 }
 
-// DeleteObject doesn't remove any rows, instead it sets `to_version` to the file version
+// DeleteObject removes a row matching the params
 func (repo PostgresRepository) DeleteObject(
 	source persist.NRTMSource,
 	objectType string,
@@ -251,8 +265,10 @@ func (repo PostgresRepository) DeleteObject(
 		if err != nil {
 			return err
 		}
-		rpslObject.ToVersion = uint32(file.Version)
-		return db.Update(tx, rpslObject)
+		rpslObjectDesc := db.GetDescriptor(&pgpersist.RPSLObject{})
+		sql = fmt.Sprintf(`DELETE FROM %v WHERE id=$1`, rpslObjectDesc.TableName())
+		_, err = tx.Exec(context.Background(), sql, rpslObject.ID)
+		return err
 	})
 }
 
@@ -264,35 +280,10 @@ func selectCurrentObjectQuery() string {
 		WHERE
 			nrtm_source_id = $1
 			AND primary_key = UPPER($2)
-			AND object_type = UPPER($3)
-			AND to_version = 0`,
+			AND object_type = UPPER($3)`,
 		rpslObjectDesc.ColumnNamesCommaSeparated(),
 		rpslObjectDesc.TableName(),
 	)
-}
-
-func getPossibleCurrentDeltaFrom(tx pgx.Tx, curRPSL pgpersist.RPSLObject) *pgpersist.RPSLObject {
-	rpslObjectDesc := db.GetDescriptor(&pgpersist.RPSLObject{})
-	sql := fmt.Sprintf(`
-		SELECT %v
-		FROM %v
-		WHERE
-			nrtm_source_id = $1
-			AND primary_key = UPPER($2)
-			AND object_type = UPPER($3)
-			AND from_version = $4`,
-		rpslObjectDesc.ColumnNamesCommaSeparated(),
-		rpslObjectDesc.TableName(),
-	)
-	rpslObject := new(pgpersist.RPSLObject)
-	err := tx.QueryRow(context.Background(), sql, curRPSL.NRTMSourceID, curRPSL.PrimaryKey, curRPSL.ObjectType, curRPSL.FromVersion).Scan(db.ValuesForSelect(rpslObject)...)
-	if err != nil {
-		if err != pgx.ErrNoRows {
-			logger.Error("Could not get current delta", "curRPSL", curRPSL)
-		}
-		return nil
-	}
-	return rpslObject
 }
 
 func asNotification(n pgpersist.Notification) persist.Notification {

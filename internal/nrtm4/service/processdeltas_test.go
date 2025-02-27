@@ -13,8 +13,6 @@ import (
 
 func TestApplyDeltas(t *testing.T) {
 
-	label := "TestApplyDeltas"
-
 	var err error
 	repo := testresources.SetTestEnvAndInitializePG(t)
 	f := testresources.OpenFile(t, "nrtm-delta.multiple-ops-same-pk.jsonseq")
@@ -26,6 +24,8 @@ func TestApplyDeltas(t *testing.T) {
 		t.Fatal("Could not create temp dir")
 	}
 	defer os.RemoveAll(tmpDir)
+
+	label := "TestApplyDeltas-" + filepath.Base(tmpDir)
 
 	config := AppConfig{
 		NRTMFilePath: tmpDir,
