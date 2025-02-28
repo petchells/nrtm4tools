@@ -6,34 +6,32 @@ vars:
   WEB_BUILD_DIR: "{{.WEB_DIR}}/dist"
   TERN_DIR: "./third_party/tern"
 
+silent: true
+
 tasks:
   default:
     cmds:
       - task --list-all
-    silent: true
 
   migrate:
+    deps: [migrationscript]
     desc: Brings the database schema up to the latest version
     cmds:
       - tern migrate --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
-    silent: true
 
   build:
     desc: Builds, then tests all binaries and the web client
     deps: [buildgo, testgo, buildweb, testweb]
-    silent: true
 
   test:
     desc: Tests the web client
     deps: [testgo, testweb]
-    silent: true
 
   coverage:
     desc: Prints a coverage report of the Go code in ./docs/_generated
     deps: [test]
     cmds:
       - sh ./scripts/coverage.sh
-    silent: true
 
   clean:
     desc: Removes all generated files except cached web modules
@@ -41,14 +39,12 @@ tasks:
     cmds:
       - rm -rf {{.WEB_BUILD_DIR}}
       - rm -rf ./docs/_generated
-    silent: true
 
   cleanall:
     desc: Removes all generated files
     deps: [clean]
     cmds:
       - rm -rf {{.WEB_DIR}}/node_modules
-    silent: true
 
   buildgo:
     desc: Builds the Go binaries
@@ -59,35 +55,30 @@ tasks:
       vars:
         APP: "{{.app}}"
       task: buildbinary
-    silent: true
 
   testgo:
     desc: Runs all Go tests
     deps: [migratetest]
     cmds:
       - go test ./internal/...
-    silent: true
 
   buildweb:
     desc: Does a production build of the web client
     deps: [installweb]
     cmds:
       - cd {{.WEB_DIR}} && npm run build
-    silent: true
 
   testweb:
     desc: Runs web client tests
     deps: [installweb]
     cmds:
       - cd {{.WEB_DIR}} && npx vitest run
-    silent: true
 
   # Development utils
   rewinddb:
     desc: Rolls the database schema back one version
     cmds:
       - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
-    silent: true
 
   migratetest:
     desc: Brings the test database schema up to the latest version
@@ -105,7 +96,6 @@ tasks:
     deps: [installweb]
     cmds:
       - cd {{.WEB_DIR}} && npm run dev
-    silent: true
 
   cleanbinaries:
     desc: Removes all generated Go binaries
@@ -116,7 +106,6 @@ tasks:
       vars:
         APP: "{{.app}}"
       task: cleanbinary
-    silent: true
 
   # Internal targets
   installweb:
@@ -125,7 +114,6 @@ tasks:
       - cd {{.WEB_DIR}} && test -d node_modules
     cmds:
       - cd {{.WEB_DIR}} && npm install
-    silent: true
 
   buildbinary:
     internal: true
@@ -141,10 +129,19 @@ tasks:
     internal: true
     cmds:
       - cd ./cmd/{{.APP}} && rm -rf {{.APP}} __debug_bin*
-    silent: true
 
   testmigrations:
     internal: true
     cmds:
       - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
       - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
+
+  migrationscript:
+    internal: true
+    cmds:
+      - tern gengen --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} > migrationscript.sql
+    sources:
+      - "{{.TERN_DIR}}/*.sql"
+    generates:
+      - migrationscript.sql
+    run: when_changed
