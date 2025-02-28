@@ -1,0 +1,33 @@
+services:
+  nrtm4serve:
+    image: nrtm4serve
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent --fail http://localhost:8000/index.html || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    networks:
+      - db
+  postgresql:
+    image: docker.io/library/postgres:16
+    user: postgres
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - db
+    ports:
+      - "5432:5432"
+
+networks:
+  db:
+
+
