@@ -6,4 +6,4 @@ COPY ./app /app
 
 EXPOSE 8080
 ENTRYPOINT ["/app/nrtm4serve_unix"]
-CMD ["--port", "8080"]
+CMD ["--port", "8080", "--webroot", "/app/dist"]

@@ -2,7 +2,7 @@ services:
   nrtm4serve:
     image: nrtm4serve
     ports:
-      - "8000:8000"
+      - "8000:8080"
     depends_on:
       - postgresql
     healthcheck:
