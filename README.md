@@ -110,7 +110,7 @@ Edit `tern.conf` to contain the variables for your database, then...
 Creates a binary at `./cmd/nrtmclient/nrtmclient`. The `testgo` target uses a db
 to do integration testing. See above for PostgreSQL setup.
 
-    task cleanbinaries buildgo testgo
+    task clean testgo buildgo
 
 The `run.sh` command should now be usable. See Usage above.
 

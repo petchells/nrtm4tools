@@ -2,26 +2,53 @@ version: "3"
 
 vars:
   BINARIES: ["nrtm4client", "nrtm4serve"]
+  WEB_APP: "nrtm4serve"
   WEB_DIR: "./web"
   WEB_BUILD_DIR: "{{.WEB_DIR}}/dist"
   TERN_DIR: "./third_party/tern"
+  RELEASE_REPO: docker.io/etchells
+  PGDUMP_CMD: pg_dump -h localhost -U postgres
+  DOCKER_CMD:
+    sh: command -v podman || command -v docker
+  REVISION:
+    sh: git rev-parse --short HEAD
 
 silent: true
 
 tasks:
   default:
+    desc: List all tasks
     cmds:
       - task --list-all
 
   migrate:
-    deps: [migrationscript]
     desc: Brings the database schema up to the latest version
+    deps: [nrtm4_schema]
     cmds:
       - tern migrate --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
 
   build:
     desc: Builds, then tests all binaries and the web client
     deps: [buildgo, testgo, buildweb, testweb]
+
+  install:
+    desc: Builds all binaries and creates an image of the server
+    deps: [test, buildweb]
+    cmds:
+      - mkdir ./build/{{.WEB_APP}}/app >/dev/null 2>&1 || true
+      - rsync -a --delete {{.WEB_BUILD_DIR}} ./build/{{.WEB_APP}}/app
+      - cd ./cmd/{{.WEB_APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.WEB_APP}}_unix -v
+      - mv ./cmd/{{.WEB_APP}}/{{.WEB_APP}}_unix ./build/{{.WEB_APP}}/app
+      - cd ./build/{{.WEB_APP}} && {{.DOCKER_CMD}} build -t {{.WEB_APP}}-dev .
+
+  release:
+    desc: Pushes an image to the remote repository
+    deps: [install]
+    cmds:
+      - "{{.DOCKER_CMD}} tag {{.WEB_APP}}-dev {{.RELEASE_REPO}}/{{.WEB_APP}}:{{.REVISION}}"
+      - "{{.DOCKER_CMD}} push {{.RELEASE_REPO}}/{{.WEB_APP}}:{{.REVISION}}"
+      - "{{.DOCKER_CMD}} tag {{.WEB_APP}}-dev {{.RELEASE_REPO}}/{{.WEB_APP}}:latest"
+      - "{{.DOCKER_CMD}} push {{.RELEASE_REPO}}/{{.WEB_APP}}:latest"
 
   test:
     desc: Tests the web client
@@ -39,15 +66,18 @@ tasks:
     cmds:
       - rm -rf {{.WEB_BUILD_DIR}}
       - rm -rf ./docs/_generated
+      - rm -rf ./build/{{.WEB_APP}}/app
+      - '{{.DOCKER_CMD}} rmi "{{.WEB_APP}}-dev" >/dev/null 2>&1 || true'
 
   cleanall:
     desc: Removes all generated files
     deps: [clean]
     cmds:
       - rm -rf {{.WEB_DIR}}/node_modules
+      # - echo '{{.DOCKER_CMD}} rmi $({{.DOCKER_CMD}} images --filter=reference="{{.RELEASE_REPO}}/{{.WEB_APP}}:*" -q) >/dev/null || true'
 
   buildgo:
-    desc: Builds the Go binaries
+    desc: Builds binaries
     cmd:
       for:
         var: BINARIES
@@ -97,16 +127,6 @@ tasks:
     cmds:
       - cd {{.WEB_DIR}} && npm run dev
 
-  cleanbinaries:
-    desc: Removes all generated Go binaries
-    cmd:
-      for:
-        var: BINARIES
-        as: app
-      vars:
-        APP: "{{.app}}"
-      task: cleanbinary
-
   # Internal targets
   installweb:
     internal: true
@@ -124,11 +144,15 @@ tasks:
       - ./internal/**/*.go
     generates:
       - ./cmd/{{.APP}}/{{.APP}}
+    run: when_changed
 
-  cleanbinary:
+  cleanbinaries:
     internal: true
-    cmds:
-      - cd ./cmd/{{.APP}} && rm -rf {{.APP}} __debug_bin*
+    cmd:
+      for:
+        var: BINARIES
+        as: app
+      cmd: cd ./cmd/{{.app}} && rm -rf {{.app}} __debug_bin*
 
   testmigrations:
     internal: true
@@ -136,12 +160,12 @@ tasks:
       - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
       - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
 
-  migrationscript:
+  nrtm4_schema:
     internal: true
     cmds:
-      - tern gengen --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} > migrationscript.sql
+      - "{{.PGDUMP_CMD}} --schema-only --no-privileges --no-comments --no-tablespaces nrtm4 > ./deployments/docker/nrtm4_schema.sql"
     sources:
       - "{{.TERN_DIR}}/*.sql"
     generates:
-      - migrationscript.sql
+      - ./deployments/docker/nrtm4_schema.sql
     run: when_changed
