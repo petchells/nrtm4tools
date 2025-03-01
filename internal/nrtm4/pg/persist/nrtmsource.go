@@ -11,13 +11,13 @@ import (
 // NRTMSource pg database mapping for nrtm_source
 type NRTMSource struct {
 	db.EntityManaged `em:"nrtm_source src"`
-	ID               uint64    `em:"."`
-	Source           string    `em:"."`
-	SessionID        string    `em:"."`
-	Version          uint32    `em:"."`
-	NotificationURL  string    `em:"."`
-	Label            string    `em:"."`
-	Created          time.Time `em:"."`
+	ID               uint64    `em:"-"`
+	Source           string    `em:"-"`
+	SessionID        string    `em:"-"`
+	Version          uint32    `em:"-"`
+	NotificationURL  string    `em:"-"`
+	Label            string    `em:"-"`
+	Created          time.Time `em:"-"`
 }
 
 // NewNRTMSource is a shorthand function which prepares a source object for storage

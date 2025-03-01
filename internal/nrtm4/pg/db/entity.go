@@ -145,7 +145,11 @@ func GetDescriptor(e EntityManaged) Descriptor {
 			tableNameSet[desc.tableName] = struct{}{}
 			tableAliasSet[desc.tableAlias] = struct{}{}
 		} else {
-			desc.columnNames = append(desc.columnNames, fieldNameToColumnName(field.f.Name))
+			if field.tag == "-" {
+				desc.columnNames = append(desc.columnNames, fieldNameToColumnName(field.f.Name))
+			} else {
+				desc.columnNames = append(desc.columnNames, field.tag)
+			}
 			desc.fields = append(desc.fields, field)
 		}
 	}

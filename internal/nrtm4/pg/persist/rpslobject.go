@@ -7,10 +7,10 @@ import (
 // RPSLObject is an RPSL object
 type RPSLObject struct {
 	db.EntityManaged `em:"nrtm_rpslobject rpsl"`
-	ID               uint64 `em:"."`
-	ObjectType       string `em:"."`
-	PrimaryKey       string `em:"."`
-	NRTMSourceID     uint64 `em:"."`
-	Version          uint32 `em:"."`
-	RPSL             string `em:"."`
+	ID               uint64 `em:"-"`
+	ObjectType       string `em:"-"`
+	PrimaryKey       string `em:"-"`
+	NRTMSourceID     uint64 `em:"-"`
+	Version          uint32 `em:"-"`
+	RPSL             string `em:"-"`
 }

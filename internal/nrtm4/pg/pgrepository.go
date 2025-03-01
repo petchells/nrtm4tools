@@ -40,7 +40,10 @@ func (repo PostgresRepository) ListSources() ([]persist.NRTMSource, error) {
 	return sources, nil
 }
 
-// RemoveSource removes a source from the repo
+// RemoveSource removes a source from the repo, including history
+//
+// A lock is put on table `nrtm_rpslobject` before deletions happen, so this might slow down
+// updates to other sources when this is running.
 func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
 	err := db.WithTransaction(func(tx pgx.Tx) error {
 		type pgcmd struct {

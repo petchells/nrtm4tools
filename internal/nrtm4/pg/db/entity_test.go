@@ -17,7 +17,7 @@ type testOrg struct {
 	Updated       time.Time  `em:"-"`
 	Name          *string    `em:"-"`
 	Quantity      uint       `em:"-"`
-	DateOfBirth   *time.Time `em:"-"`
+	Birthday      *time.Time `em:"date_of_birth"`
 }
 
 func TestFieldNameConversion(t *testing.T) {
@@ -67,14 +67,14 @@ func TestColumnNames(t *testing.T) {
 
 func TestScannableFieldsAndValues(t *testing.T) {
 	o := filledNewOrg()
-	o.DateOfBirth = nil
+	o.Birthday = nil
 	f := ValuesForSelect(&o)
 	sc := []interface{}{
 		&o.ID,
 		&o.Updated,
 		&o.Name,
 		&o.Quantity,
-		&o.DateOfBirth,
+		&o.Birthday,
 	}
 	if len(f) != len(sc) {
 		t.Fatalf("ScannableFields failed. Expected %d got %d", len(sc), len(f))
@@ -88,7 +88,7 @@ func TestScannableFieldsAndValues(t *testing.T) {
 
 func TestUInsertOrpdateValues(t *testing.T) {
 	o := filledNewOrg()
-	o.DateOfBirth = nil
+	o.Birthday = nil
 	f := ValuesForModify(&o)
 	sc := []any{
 		&o.ID,
@@ -114,10 +114,7 @@ type stubRows struct {
 }
 
 func (r stubRows) Next() bool {
-	if *r.state[0] >= len(r.rows) {
-		return false
-	}
-	return true
+	return *r.state[0] < len(r.rows)
 }
 
 func (r stubRows) Scan(dest ...any) error {
@@ -156,7 +153,7 @@ func TestGetAll(t *testing.T) {
 	name := "Next Gen"
 	o2.Name = &name
 	o2.Quantity = 7
-	o2.DateOfBirth = nil
+	o2.Birthday = nil
 
 	rowCounter := 0
 	state := [1]*int{&rowCounter}
@@ -167,14 +164,14 @@ func TestGetAll(t *testing.T) {
 				o.Updated,
 				o.Name,
 				o.Quantity,
-				o.DateOfBirth,
+				o.Birthday,
 			},
 			{
 				o2.ID,
 				o2.Updated,
 				o2.Name,
 				o2.Quantity,
-				o2.DateOfBirth,
+				o2.Birthday,
 			},
 		},
 		state: state,
@@ -226,10 +223,10 @@ func filledNewOrg() testOrg {
 
 func newOrg(id int64, dtu time.Time, name *string, qty uint, dob *time.Time) testOrg {
 	return testOrg{
-		ID:          id,
-		Updated:     dtu,
-		Name:        name,
-		Quantity:    qty,
-		DateOfBirth: dob,
+		ID:       id,
+		Updated:  dtu,
+		Name:     name,
+		Quantity: qty,
+		Birthday: dob,
 	}
 }
