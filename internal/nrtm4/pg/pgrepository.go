@@ -49,21 +49,6 @@ func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
 		}
 		cmds := []pgcmd{
 			{`
-			ALTER TABLE
-				nrtm_rpslobject
-			DISABLE TRIGGER modify_rpsl_trigger
-			`, []any{},
-			}, {`
-			DELETE FROM
-				nrtm_rpslobject
-			WHERE nrtm_source_id = $1
-			`, []any{source.ID},
-			}, {`
-			ALTER TABLE
-				nrtm_rpslobject
-			ENABLE TRIGGER modify_rpsl_trigger
-			`, []any{},
-			}, {`
 			DELETE FROM
 				nrtm_rpslobject_history
 			WHERE nrtm_source_id = $1
@@ -78,6 +63,24 @@ func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
 				nrtm_file
 			WHERE nrtm_source_id = $1
 			`, []any{source.ID},
+			}, {`
+			LOCK TABLE nrtm_rpslobject IN SHARE MODE
+			`, []any{},
+			}, {`
+			ALTER TABLE
+				nrtm_rpslobject
+			DISABLE TRIGGER modify_rpsl_trigger
+			`, []any{},
+			}, {`
+			DELETE FROM
+				nrtm_rpslobject
+			WHERE nrtm_source_id = $1
+			`, []any{source.ID},
+			}, {`
+			ALTER TABLE
+				nrtm_rpslobject
+			ENABLE TRIGGER modify_rpsl_trigger
+			`, []any{},
 			}, {`
 			DELETE FROM
 				nrtm_source
