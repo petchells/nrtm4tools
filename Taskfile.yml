@@ -33,13 +33,13 @@ tasks:
 
   install:
     desc: Builds all binaries and creates a local image
-    deps: [test, buildweb]
+    deps: [test, buildunixbinary, buildweb]
     cmds:
-      - mkdir -p ./build/{{.WEB_APP}}/app/nrtm4-files >/dev/null 2>&1 || true
-      - rsync -a --delete {{.WEB_BUILD_DIR}} ./build/{{.WEB_APP}}/app
-      - cd ./cmd/{{.WEB_APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.WEB_APP}}_unix -v
-      - mv ./cmd/{{.WEB_APP}}/{{.WEB_APP}}_unix ./build/{{.WEB_APP}}/app
-      - cd ./build/{{.WEB_APP}} && {{.DOCKER_CMD}} build -t {{.WEB_APP}}-dev .
+      - mkdir -p ./build/docker/app/nrtm4-files >/dev/null 2>&1 || true
+      - rsync -a --delete {{.WEB_BUILD_DIR}} ./build/docker/app
+      # - cd ./cmd/{{.WEB_APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.WEB_APP}}_unix -v
+      # - mv ./cmd/{{.WEB_APP}}/{{.WEB_APP}}_unix ./build/docker/app
+      - cd ./build/docker && {{.DOCKER_CMD}} build -t {{.WEB_APP}}-dev .
 
   release:
     desc: Pushes an image to the remote repository
@@ -66,7 +66,7 @@ tasks:
     cmds:
       - rm -rf {{.WEB_BUILD_DIR}}
       - rm -rf ./docs/_generated
-      - rm -rf ./build/{{.WEB_APP}}/app
+      - rm -rf ./build/docker/app
       - '{{.DOCKER_CMD}} rmi "{{.WEB_APP}}-dev" >/dev/null 2>&1 || true'
 
   cleanall:
@@ -144,6 +144,17 @@ tasks:
     generates:
       - ./cmd/{{.APP}}/{{.APP}}
     run: when_changed
+
+  buildunixbinary:
+    internal: true
+    cmd:
+      for:
+        var: BINARIES
+        as: app
+      cmds:
+        - cd ./cmd/{{.app}} && go build -race -o {{.app}} -v
+        - cd ./cmd/{{.app}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.app}}_unix -v
+        - mv ./cmd/{{.app}}/{{.APP}}_unix ./build/docker/app
 
   cleanbinaries:
     internal: true

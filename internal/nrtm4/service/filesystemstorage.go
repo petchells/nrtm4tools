@@ -10,7 +10,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
+
+	"slices"
 
 	"github.com/petchells/nrtm4tools/internal/nrtm4/jsonseq"
 	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
@@ -49,7 +50,7 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 	fURL := fullURL(unfURL, fileRef.URL)
 	if !validateURLString(fURL) {
 		logger.Info("URL in fileRef cannot be parsed", "fURL", fURL)
-		return nil, errors.New("Invalid URL in reference")
+		return nil, errors.New("invalid URL in reference")
 	}
 	vdir := (fileRef.Version / numVersionsPerDirectory) + numVersionsPerDirectory
 	subdir := filepath.Join(basePath, fmt.Sprintf("%d", vdir))
@@ -64,7 +65,7 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 	var file *os.File
 	if file, err = os.Open(path); err != nil {
 		logger.Info("Downloading file", "url", fURL)
-		if file, err = fm.writeResourceToPath(fURL, path); err != nil {
+		if _, err = fm.writeResourceToPath(fURL, path); err != nil {
 			logger.Error("Failed to write file", "url", fURL, "path", path)
 			return nil, err
 		}
@@ -132,11 +133,10 @@ func (fm fileManager) downloadNotificationFile(url string) (persist.Notification
 	var notification persist.NotificationJSON
 	var err error
 	if notification, err = fm.client.getUpdateNotification(url); err != nil {
-		logger.Error("fetching notificationFile", "error", err)
+		logger.Error("getUpdateNotification returned an error", "error", err)
 		return notification, err
 	}
-	err = validateNotificationFile(notification)
-	return notification, err
+	return notification, validateNotificationFile(notification)
 }
 
 func validateNotificationFile(file persist.NotificationJSON) error {
@@ -155,7 +155,7 @@ func validateNotificationFile(file persist.NotificationJSON) error {
 	if len(file.SnapshotRef.URL) < 10 {
 		return newNRTMServiceError("notificationFile snapshot url is not valid: '%v'", file.SnapshotRef.URL)
 	}
-	if file.DeltaRefs == nil || len(file.DeltaRefs) == 0 {
+	if len(file.DeltaRefs) == 0 {
 		return ErrNRTM4NoDeltasInNotification
 	}
 	versions := make([]int64, len(file.DeltaRefs))
@@ -167,9 +167,7 @@ func validateNotificationFile(file persist.NotificationJSON) error {
 		logger.Error("Duplicate delta version found in notification file", "source", file.Source)
 		return ErrNRTM4DuplicateDeltaVersion
 	}
-	sort.Slice(versions, func(i, j int) bool {
-		return versions[i] < versions[j]
-	})
+	slices.Sort(versions)
 	lo := versions[0]
 	hi := versions[len(versions)-1]
 	if hi != file.Version {
