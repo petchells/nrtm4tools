@@ -11,7 +11,7 @@ import (
 )
 
 // Launch sets up the rpc handler and starts the server
-func Launch(config service.AppConfig, port int, webRoot string) {
+func Launch(config service.AppConfig, port int, webDir string) {
 	repo := pg.PostgresRepository{}
 	if err := repo.Initialize(config.PgDatabaseURL); err != nil {
 		log.Fatal("Failed to initialize repository")
@@ -30,8 +30,8 @@ func Launch(config service.AppConfig, port int, webRoot string) {
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("POST")
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("OPTIONS")
 
-	if len(webRoot) > 0 {
-		s.Router().PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webRoot))))
+	if len(webDir) > 0 {
+		s.Router().PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webDir))))
 
 	}
 	s.Serve(port)

@@ -18,21 +18,21 @@ export default defineConfig({
 			output: {
 				manualChunks(id) {
 					if (id.includes("node_modules")) {
-						const libParts = id
-							.toString()
-							.split("node_modules/")[1]
-							.toString()
-							.split("/");
-						if (libParts[0] === "@mui") {
-							if (libParts[1].indexOf("x-data-grid") === 0) {
-								return "@mui-" + libParts[1];
-							}
-							if (libParts[1].indexOf("x-") === 0) {
-								return "@mui-x-libs";
-							}
-							return "@mui";
-						}
-						return "lib";
+						// const libParts = id
+						// 	.toString()
+						// 	.split("node_modules/")[1]
+						// 	.toString()
+						// 	.split("/");
+						// if (libParts[0] === "@mui") {
+						// 	if (libParts[1].indexOf("x-data-grid") === 0) {
+						// 		return "@mui-" + libParts[1];
+						// 	}
+						// 	if (libParts[1].indexOf("x-") === 0) {
+						// 		return "@mui-x-libs";
+						// 	}
+						// 	return "@mui";
+						// }
+						return "libs";
 					}
 				},
 			},

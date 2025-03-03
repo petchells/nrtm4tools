@@ -243,8 +243,7 @@ func TestArrayOfCommandsRequest(t *testing.T) {
 	if res[1].Result != nil {
 		t.Fatal("When called with no such method, result should be nil")
 	}
-	var errorCode int64
-	errorCode = res[1].Error.Code
+	errorCode := res[1].Error.Code
 	if errorCode != emptyResponse.Error.Code {
 		t.Fatalf("No such method error code expected %d but was %d", emptyResponse.Error.Code, errorCode)
 	}

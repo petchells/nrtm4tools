@@ -8,6 +8,10 @@ import (
 	"github.com/petchells/nrtm4tools/internal/nrtm4serve/rpc"
 )
 
+var (
+	DeltaUnavaliableErrCode = -32020
+)
+
 // WebAPI defines the RPC functions used by the web client
 type WebAPI struct {
 	//	rpc.API
@@ -38,6 +42,9 @@ func (api WebAPI) Connect(url, label string) (string, error) {
 // Update updates a source to the latest version
 func (api WebAPI) Update(src, label string) (string, error) {
 	err := api.Processor.Update(src, label)
+	if err == service.ErrNextConsecutiveDeltaUnavaliable {
+		return "", rpc.JSONRPCError{Code: DeltaUnavaliableErrCode, Message: err.Error()}
+	}
 	return "OK", err
 }
 

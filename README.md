@@ -64,13 +64,13 @@ Set an environment variable `POSTGRES_HOST_AUTH_METHOD=trust` so you won't need 
 It's very insecure but also very handy for a local setup just to get things up and running. You
 can always `pg_dump` the data and put it on a more securely configured server later.
 
-    docker pull postgres:16
-    docker run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:16
+    docker pull postgres:17
+    docker run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:17
 
 Or with podman
 
-    podman pull docker.io/library/postgres:16
-    podman run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:16
+    podman pull docker.io/library/postgres:17
+    podman run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust --name db postgres:17
 
 From then on:
 
