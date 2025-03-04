@@ -15,7 +15,7 @@ func TestGetNotification(t *testing.T) {
 	var buf *strings.Builder
 	var err error
 
-	f := testresources.OpenFile(t, "ripe-notification-file.json")
+	f := testresources.OpenFile(t, "update-notification-file.jose")
 	buf = new(strings.Builder)
 	_, err = io.Copy(buf, f)
 	if err != nil {
@@ -37,8 +37,8 @@ func TestGetNotification(t *testing.T) {
 	if err = validateNotificationFile(res); err != nil {
 		t.Fatal("Notification file failed to validated:", err)
 	}
-	if res.Version != 350693 {
-		t.Errorf("expected version to be %v got %v", 350693, res.Version)
+	if res.Version != 399659 {
+		t.Errorf("expected version to be %v got %v", 399659, res.Version)
 	}
 }
 

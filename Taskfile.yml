@@ -37,8 +37,6 @@ tasks:
     cmds:
       - mkdir -p ./build/docker/app/nrtm4-files >/dev/null 2>&1 || true
       - rsync -a --delete {{.WEB_BUILD_DIR}} ./build/docker/app
-      # - cd ./cmd/{{.WEB_APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.WEB_APP}}_unix -v
-      # - mv ./cmd/{{.WEB_APP}}/{{.WEB_APP}}_unix ./build/docker/app
       - cd ./build/docker && {{.DOCKER_CMD}} build -t {{.WEB_APP}}-dev .
 
   release:
@@ -151,10 +149,16 @@ tasks:
       for:
         var: BINARIES
         as: app
-      cmds:
-        - cd ./cmd/{{.app}} && go build -race -o {{.app}} -v
-        - cd ./cmd/{{.app}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.app}}_unix -v
-        - mv ./cmd/{{.app}}/{{.APP}}_unix ./build/docker/app
+      task: unixbinary
+      vars:
+        APP: "{{.app}}"
+
+  unixbinary:
+    internal: true
+    cmds:
+      - test -d ./build/docker/app || mkdir ./build/docker/app
+      - cd ./cmd/{{.APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.APP}}_unix -v
+      - mv ./cmd/{{.APP}}/{{.APP}}_unix ./build/docker/app
 
   cleanbinaries:
     internal: true

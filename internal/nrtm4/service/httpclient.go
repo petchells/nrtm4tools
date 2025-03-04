@@ -77,20 +77,21 @@ Xi2rLlCSXc5EZ3L3PycAdDmWQtGHD8GF++RqWgrdKv+9l+InalmiCGkpRQ==
 		return pub, nil
 	})
 	if err != nil {
-		logger.Warn("Failed to parse with claims", "urlStr", urlStr, "error", err)
-		return unf, err
+		_, isValidationError := err.(*jwt.ValidationError)
+		if havePublicKey || !isValidationError {
+			logger.Warn("Failed to parse with claims", "urlStr", urlStr, "error", err)
+			return unf, err
+		}
 	}
 	// do something with decoded claims
 	cljson, err := json.Marshal(claims)
 	if err != nil {
 		logger.Warn("Failed to marshal claims", "urlStr", urlStr, "error", err)
+		return unf, err
 	}
 	notification := new(persist.NotificationJSON)
 	err = json.Unmarshal(cljson, notification)
-	if err != nil {
-		logger.Warn("Failed to unmarshal claims", "urlStr", urlStr, "error", err)
-	}
-	return unf, err
+	return *notification, err
 }
 
 func (cl HTTPClient) getResponseBody(url string) (io.Reader, error) {
