@@ -64,6 +64,9 @@ UPDATE ON nrtm_rpslobject FOR each ROW
 EXECUTE function store_rpslobject_history ()
 ;
 
+ALTER TABLE nrtm_rpslobject
+DROP CONSTRAINT rpslobject__source__type__primary_key__from_version__uid;
+
 ---- create above / drop below ----
 
 DROP TRIGGER modify_rpsl_trigger ON nrtm_rpslobject
@@ -89,6 +92,9 @@ add constraint rpslobject__source__type__primary_key__to_version__uid
 ALTER TABLE nrtm_rpslobject
 RENAME COLUMN version TO from_version
 ;
+ALTER TABLE nrtm_rpslobject
+ADD CONSTRAINT rpslobject__source__type__primary_key__from_version__uid UNIQUE
+(nrtm_source_id, object_type, primary_key, from_version);
 
 DROP TABLE nrtm_rpslobject_history
 ;

@@ -52,7 +52,7 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 		logger.Info("URL in fileRef cannot be parsed", "fURL", fURL)
 		return nil, errors.New("invalid URL in reference")
 	}
-	vdir := (fileRef.Version / numVersionsPerDirectory) + numVersionsPerDirectory
+	vdir := (fileRef.Version / numVersionsPerDirectory) * numVersionsPerDirectory
 	subdir := filepath.Join(basePath, fmt.Sprintf("%d", vdir))
 	_, err := os.Stat(subdir)
 	if os.IsNotExist(err) {

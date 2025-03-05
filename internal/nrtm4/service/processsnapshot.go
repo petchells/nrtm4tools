@@ -70,7 +70,8 @@ const (
 func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON) jsonseq.RecordReaderFunc {
 
 	var snapshotHeader *persist.SnapshotFileJSON
-	var wg sync.WaitGroup
+	var wgParsers sync.WaitGroup
+	var wgCounter sync.WaitGroup
 
 	objectList := util.NewLockingList[rpsl.Rpsl](rpslInsertBatchSize * 2)
 	counterMsgChan := make(chan CounterMsg, 1000)
@@ -79,7 +80,9 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 	expectHeader := true
 
 	ticker := time.NewTicker(1 * time.Minute)
+	wgCounter.Add(1)
 	go func() {
+		defer wgCounter.Done()
 		for {
 			select {
 			case <-ticker.C:
@@ -123,10 +126,11 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			parser := parserPool.Acquire()
 			incrementCounters(parser.bytesToRPSL(bytes))
 			parserPool.Release(parser)
-			wg.Wait()
+			wgParsers.Wait()
 			parserPool.Close()
 			counterMsgChan <- STOP
 			close(counterMsgChan)
+			wgCounter.Wait()
 			logger.Info("Closed snapshot file", "numFailures", failureCount, "numSuccess", successCount)
 			rpslObjects := objectList.GetAll()
 			err = repo.SaveSnapshotObjects(source, rpslObjects, snapshotHeader.NrtmFileJSON)
@@ -159,9 +163,9 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 		} else {
 			// Subsequent records are objects
 			parser := parserPool.Acquire()
-			wg.Add(1)
+			wgParsers.Add(1)
 			go func() {
-				defer wg.Done()
+				defer wgParsers.Done()
 				defer parserPool.Release(parser)
 				incrementCounters(parser.bytesToRPSL(bytes))
 			}()
