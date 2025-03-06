@@ -82,7 +82,9 @@ OR
 UPDATE ON nrtm_rpslobject FOR each ROW
 EXECUTE function store_rpslobject_history ();
 
+-----------------------------------
 ---- create above / drop below ----
+-----------------------------------
 DROP TRIGGER modify_rpsl_trigger ON nrtm_rpslobject;
 
 DROP FUNCTION store_rpslobject_history;

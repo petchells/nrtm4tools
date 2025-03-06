@@ -62,11 +62,6 @@ func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
 			WHERE source_id = $1
 			`, []any{source.ID},
 			}, {`
-			DELETE FROM
-				nrtm_file
-			WHERE source_id = $1
-			`, []any{source.ID},
-			}, {`
 			LOCK TABLE nrtm_rpslobject IN SHARE MODE
 			`, []any{},
 			}, {`
