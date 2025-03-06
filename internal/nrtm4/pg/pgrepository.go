@@ -54,17 +54,17 @@ func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
 			{`
 			DELETE FROM
 				nrtm_rpslobject_history
-			WHERE nrtm_source_id = $1
+			WHERE source_id = $1
 			`, []any{source.ID},
 			}, {`
 			DELETE FROM
 				nrtm_notification
-			WHERE nrtm_source_id = $1
+			WHERE source_id = $1
 			`, []any{source.ID},
 			}, {`
 			DELETE FROM
 				nrtm_file
-			WHERE nrtm_source_id = $1
+			WHERE source_id = $1
 			`, []any{source.ID},
 			}, {`
 			LOCK TABLE nrtm_rpslobject IN SHARE MODE
@@ -77,7 +77,7 @@ func (repo PostgresRepository) RemoveSource(source persist.NRTMSource) error {
 			}, {`
 			DELETE FROM
 				nrtm_rpslobject
-			WHERE nrtm_source_id = $1
+			WHERE source_id = $1
 			`, []any{source.ID},
 			}, {`
 			ALTER TABLE
@@ -116,7 +116,7 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 	sql := fmt.Sprintf(`
 		SELECT %v
 		FROM %v
-		WHERE nrtm_source_id = $1
+		WHERE source_id = $1
 		AND version >= $2
 		AND version <= $3
 		ORDER BY version DESC
@@ -167,23 +167,6 @@ func (repo PostgresRepository) Close() error {
 	return nil
 }
 
-// SaveFile saves a reference to an NRTM file
-func (repo PostgresRepository) SaveFile(nrtmFile *persist.NRTMFile) error {
-	return db.WithTransaction(func(tx pgx.Tx) error {
-		st := pgpersist.NRTMFile{
-			ID:           uint64(db.NextID()),
-			Version:      nrtmFile.Version,
-			URL:          nrtmFile.URL,
-			Type:         nrtmFile.Type.String(),
-			NRTMSourceID: nrtmFile.NrtmSourceID,
-			FileName:     nrtmFile.FileName,
-			Created:      util.AppClock.Now(),
-		}
-		nrtmFile.ID = st.ID
-		return db.Create(tx, &st)
-	})
-}
-
 // SaveSnapshotObjects saves a list of rpsl object in a go routine
 func (repo PostgresRepository) SaveSnapshotObjects(
 	source persist.NRTMSource,
@@ -215,8 +198,9 @@ func (repo PostgresRepository) SaveSnapshotObjects(
 		)
 		if err != nil {
 			types := util.NewSet[string]()
-			for _, inp := range rpslObjects {
-				types.Add(inp.ObjectType)
+			for _, obj := range rpslObjects {
+				types.Add(obj.ObjectType)
+				logger.Debug("Possible failure", "type", obj.ObjectType, "primaryKey", obj.PrimaryKey)
 			}
 			logger.Warn("Failed to save objects", "types", types.String(), "error", err)
 			return err
@@ -232,11 +216,11 @@ func (repo PostgresRepository) AddModifyObject(
 	file persist.NrtmFileJSON,
 ) error {
 	newRow := &pgpersist.RPSLObject{
-		ObjectType:   rpsl.ObjectType,
-		PrimaryKey:   rpsl.PrimaryKey,
-		NRTMSourceID: source.ID,
-		Version:      uint32(file.Version),
-		RPSL:         rpsl.Payload,
+		ObjectType: rpsl.ObjectType,
+		PrimaryKey: rpsl.PrimaryKey,
+		SourceID:   source.ID,
+		Version:    uint32(file.Version),
+		RPSL:       rpsl.Payload,
 	}
 	return db.WithTransaction(func(tx pgx.Tx) error {
 
@@ -284,7 +268,7 @@ func selectCurrentObjectQuery() string {
 		SELECT %v
 		FROM %v
 		WHERE
-			nrtm_source_id = $1
+			source_id = $1
 			AND primary_key = UPPER($2)
 			AND object_type = UPPER($3)`,
 		rpslObjectDesc.ColumnNamesCommaSeparated(),
@@ -294,10 +278,10 @@ func selectCurrentObjectQuery() string {
 
 func asNotification(n pgpersist.Notification) persist.Notification {
 	return persist.Notification{
-		ID:           n.ID,
-		Version:      n.Version,
-		NRTMSourceID: n.NRTMSourceID,
-		Payload:      n.Payload,
-		Created:      n.Created,
+		ID:       n.ID,
+		Version:  n.Version,
+		SourceID: n.SourceID,
+		Payload:  n.Payload,
+		Created:  n.Created,
 	}
 }

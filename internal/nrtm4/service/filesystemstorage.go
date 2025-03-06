@@ -18,11 +18,6 @@ import (
 	"github.com/petchells/nrtm4tools/internal/nrtm4/util"
 )
 
-var (
-	// ErrHashMismatch when a file downloaded from 'url' does not match its 'hash'
-	ErrHashMismatch = errors.New("hash does not match downloaded file")
-)
-
 // GZIPSnapshotExtension extension GZIP files
 var GZIPSnapshotExtension = ".gz"
 
@@ -95,7 +90,7 @@ func (fm fileManager) readJSONSeqRecords(
 
 	var err error
 
-	logger.Debug("opening for reading", "filename", file.Name())
+	logger.Info("Reading file", "filename", file.Name())
 	var reader io.Reader
 	if reader, err = os.Open(file.Name()); err != nil {
 		return err

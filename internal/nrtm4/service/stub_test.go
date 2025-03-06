@@ -33,16 +33,6 @@ func (r *stubRepo) SaveSnapshotObjects(source persist.NRTMSource, state persist.
 	return nil
 }
 
-func (r *stubRepo) SaveFile(nrtmFile *persist.NRTMFile) error {
-	expected := "notification.json"
-	if nrtmFile.FileName == expected {
-		r.state = *nrtmFile
-		return nil
-	}
-	r.t.Error("SaveFile failed. expected file name", expected, "but was", nrtmFile.FileName)
-	return nil
-}
-
 func (r *stubRepo) AddModifyObject(src persist.NRTMSource, rpsl rpsl.Rpsl, file persist.NrtmFileJSON) error {
 	return nil
 }
@@ -70,7 +60,7 @@ func (mr mockRepo) SaveSource(source persist.NRTMSource, notifile persist.Notifi
 	// 		{
 	// 			ID:           id,
 	// 			Version:      uint32(notifile.Version),
-	// 			NRTMSourceID: src.ID,
+	// 			SourceID: src.ID,
 	// 			Payload:      notifile,
 	// 			Created:      util.AppClock.Now(),
 	// 		},

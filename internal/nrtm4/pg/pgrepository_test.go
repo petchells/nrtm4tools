@@ -22,10 +22,10 @@ func TestSelectObjectSQL(t *testing.T) {
 	sql := selectCurrentObjectQuery()
 
 	expected := `
-		SELECT id, object_type, primary_key, nrtm_source_id, version, rpsl
+		SELECT id, object_type, primary_key, source_id, version, rpsl
 		FROM nrtm_rpslobject
 		WHERE
-			nrtm_source_id = $1
+			source_id = $1
 			AND primary_key = UPPER($2)
 			AND object_type = UPPER($3)`
 	if reduceWhiteSpace(sql) != reduceWhiteSpace(expected) {

@@ -26,19 +26,19 @@ to your system, for example:
 
 Now run the `run*.sh` script in the [./scripts](./scripts) dir like so:
 
-    $ ./scripts/run.sh connect --url <url> # Be patient, snapshot files tend to be on the large side
+    $ ./scripts/run.sh connect -url <url> # Be patient, snapshot files tend to be on the large side
     $ ./scripts/run.sh list
 
 Command line arguments
 
-- `connect --url <NOTIFICATION_URL> [--label <LABEL>]`<br>
+- `connect -url <NOTIFICATION_URL> [-label <LABEL>]`<br>
   Reads the notification file, updates the repo with the latest snapshot, then the latest delta,
   and creates a new source record.
-- `update  --source <SOURCE> [--label <LABEL>]`
+- `update  -source <SOURCE> [-label <LABEL>]`
   Reads the notification file, then updates the repo the latest delta,
 - `list`
   Lists all sources in the repo.
-- `rename --source <SOURCE> --label <FROM_LABEL> --to <TO_LABEL>`
+- `rename -source <SOURCE> -label <FROM_LABEL> -to <TO_LABEL>`
   Replaces a label
 
 _A note about labels_
@@ -81,11 +81,11 @@ From then on:
 
 Assuming your database is running on localhost...
 
-    createuser -h localhost nrtm4
-    createdb -h localhost -O nrtm4 nrtm4
+    createuser -h localhost -U postgres nrtm4
+    createdb -h localhost -U postgres -O nrtm4 nrtm4
 
-    createuser -h localhost nrtm4_test
-    createdb -h localhost -O nrtm4_test nrtm4_test
+    createuser -h localhost -U postgres nrtm4_test
+    createdb -h localhost -U postgres -O nrtm4_test nrtm4_test
 
 ## Build
 
@@ -97,7 +97,8 @@ You'll need these tools:
   `$GOPATH/bin` is on your `$PATH`.
 - go 1.23+
 - node 21+ If you want to build the front end.
-- [tern](https://github.com/JackC/tern) v2.3.0+ for PostgreSQL migrations
+- [tern](https://github.com/JackC/tern) v2.3.0+ for PostgreSQL migrations, alternatively
+  use the SQL script to set up the schema.
 
 ### Initialize schema
 

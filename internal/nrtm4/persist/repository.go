@@ -11,7 +11,6 @@ type Repository interface {
 	RemoveSource(NRTMSource) error
 	ListSources() ([]NRTMSource, error)
 	GetNotificationHistory(NRTMSource, uint32, uint32) ([]Notification, error)
-	SaveFile(*NRTMFile) error
 	SaveSnapshotObjects(NRTMSource, []rpsl.Rpsl, NrtmFileJSON) error
 	AddModifyObject(NRTMSource, rpsl.Rpsl, NrtmFileJSON) error
 	DeleteObject(NRTMSource, string, string, NrtmFileJSON) error

@@ -36,11 +36,11 @@ func NewNRTMSource(notification NotificationJSON, label string, notificationURL 
 
 // Notification is a domain representation of a notification file
 type Notification struct {
-	ID           uint64 `json:",string"`
-	Version      uint32
-	NRTMSourceID uint64 `json:",string"`
-	Payload      NotificationJSON
-	Created      time.Time
+	ID       uint64 `json:",string"`
+	Version  uint32
+	SourceID uint64 `json:",string"`
+	Payload  NotificationJSON
+	Created  time.Time
 }
 
 // NRTMFile describes a downloaded NRTM file

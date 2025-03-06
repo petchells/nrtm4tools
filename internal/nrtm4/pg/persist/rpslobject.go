@@ -10,7 +10,7 @@ type RPSLObject struct {
 	ID               uint64 `em:"-"`
 	ObjectType       string `em:"-"`
 	PrimaryKey       string `em:"-"`
-	NRTMSourceID     uint64 `em:"-"`
+	SourceID         uint64 `em:"-"`
 	Version          uint32 `em:"-"`
 	RPSL             string `em:"-"`
 }

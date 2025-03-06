@@ -1,7 +1,6 @@
 package bolt
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -41,23 +40,6 @@ func (r *BBolt) SaveSource(source persist.NRTMSource, notificationURL string) (p
 // ListSources TODO: implement
 func (r *BBolt) ListSources() ([]persist.NRTMSource, error) {
 	return []persist.NRTMSource{}, nil
-}
-
-// SaveFile implements interface
-func (r *BBolt) SaveFile(state *persist.NRTMFile) error {
-	_, err := json.Marshal(*state)
-	if err != nil {
-		return err
-	}
-	// return r.db.Update(func(tx *bolt.Tx) error {
-	// 	stateBucket := tx.Bucket([]byte(stateBucketName))
-	// 	if err := stateBucket.Put([]byte(state.Source), stateBytes); err != nil {
-	// 		return err
-	// 	}
-	// 	_, err := tx.CreateBucket([]byte(state.Source))
-	// 	return err
-	// })
-	return nil
 }
 
 // SaveSnapshotObject implements the NRTM client Repository interface

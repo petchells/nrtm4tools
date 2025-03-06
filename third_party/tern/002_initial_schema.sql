@@ -1,64 +1,96 @@
-create table nrtm_source (
-	id bigint not null,
-	source varchar(255) not null,
-	session_id varchar(255) not null,
-	version integer not null,
-	notification_url text not null,
-	label varchar(255) not null,
-	created timestamp without time zone not null,
-
-	constraint nrtm_source__pk primary key (id),
-	constraint nrtm_source__source__label__uid unique (notification_url, label)
+CREATE TABLE nrtm_source (
+	id BIGINT NOT NULL,
+	source VARCHAR(255) NOT NULL,
+	session_id VARCHAR(255) NOT NULL,
+	VERSION INTEGER NOT NULL,
+	notification_url TEXT NOT NULL,
+	label VARCHAR(255) NOT NULL,
+	created TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	CONSTRAINT nrtm_source__pk PRIMARY KEY (id),
+	CONSTRAINT nrtm_source__source__label__uid UNIQUE (notification_url, label)
 );
 
-create table nrtm_notification (
-	id bigint not null,
-	version integer not null,
-	nrtm_source_id bigint not null,
-	payload jsonb not null,
-	created timestamp without time zone not null,
-
-	constraint nrtm_notification__pk primary key (id),
-	constraint nrtm_notification__nrtm_source__fk foreign key(nrtm_source_id) references nrtm_source(id)
+CREATE TABLE nrtm_notification (
+	id BIGINT NOT NULL,
+	VERSION INTEGER NOT NULL,
+	source_id BIGINT NOT NULL,
+	payload jsonb NOT NULL,
+	created TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	CONSTRAINT nrtm_notification__pk PRIMARY KEY (id),
+	CONSTRAINT nrtm_notification__nrtm_source__fk FOREIGN key (source_id) REFERENCES nrtm_source (id)
 );
 
-create index nrtm_notification__version__idx on nrtm_notification(nrtm_source_id, version);
+CREATE INDEX nrtm_notification__version__idx ON nrtm_notification (source_id, VERSION);
 
-create table nrtm_file (
-	id bigint not null,
-	version integer not null,
-	type varchar(255) not null,
-	url text not null,
-	file_name text not null,
-	nrtm_source_id bigint not null,
-	created timestamp without time zone not null,
-
-	constraint nrtm_file__pk primary key (id),
-	constraint nrtm_file__nrtm_source__fk foreign key(nrtm_source_id) references nrtm_source(id)
+CREATE TABLE nrtm_rpslobject (
+	id BIGINT NOT NULL,
+	object_type VARCHAR(255) NOT NULL,
+	primary_key VARCHAR(255) NOT NULL,
+	source_id BIGINT NOT NULL,
+	VERSION INTEGER NOT NULL,
+	rpsl TEXT NOT NULL,
+	CONSTRAINT rpslobject__pk PRIMARY KEY (id),
+	CONSTRAINT rpslobject__nrtm_source__fk FOREIGN key (source_id) REFERENCES nrtm_source (id),
+	CONSTRAINT rpslobject__source__type__primary_key__version__uid UNIQUE (source_id, object_type, primary_key, VERSION)
 );
 
-create index nrtm_file__source_version_idx on nrtm_file(nrtm_source_id, version);
+CREATE INDEX rpslobject__type__primary_key__idx ON nrtm_rpslobject (object_type, primary_key);
 
-create table nrtm_rpslobject (
-	id bigint not null,
-	object_type varchar(255) not null,
-	primary_key varchar(255) not null,
-	nrtm_source_id bigint not null,
-	from_version integer not null,
-	to_version integer not null,
-	rpsl text not null,
-
-	constraint rpslobject__pk primary key (id),
-	constraint rpslobject__nrtm_source__fk foreign key (nrtm_source_id) references nrtm_source(id),
-	constraint rpslobject__nrtm_source__object_type__primary_key__from_version__uid unique (nrtm_source_id, object_type, primary_key, from_version),
-	constraint rpslobject__nrtm_source__object_type__primary_key__to_version__uid unique (nrtm_source_id, object_type, primary_key, to_version)
+CREATE TABLE nrtm_rpslobject_history (
+	id BIGINT NOT NULL PRIMARY KEY,
+	seq BIGINT NOT NULL,
+	stamp TIMESTAMP WITHOUT TIME ZONE,
+	old_id BIGINT NOT NULL,
+	object_type CHARACTER VARYING(255) NOT NULL,
+	primary_key CHARACTER VARYING(255) NOT NULL,
+	source_id BIGINT NOT NULL,
+	VERSION INTEGER NOT NULL,
+	rpsl TEXT NOT NULL
 );
 
-create index rpslobject__primary_key__idx on nrtm_rpslobject(upper(primary_key));
+CREATE UNIQUE index nrtm_rpslobject_history__seq__idx ON nrtm_rpslobject_history (seq);
+
+CREATE INDEX nrtm_rpslobject_history__source__idx ON nrtm_rpslobject_history (source_id);
+
+CREATE INDEX nrtm_rpslobject_history__type__key__idx ON nrtm_rpslobject_history (object_type, primary_key);
+
+CREATE FUNCTION store_rpslobject_history () returns trigger AS $rpsl_history_recorder$
+    DECLARE
+        _seq bigint;
+    BEGIN
+        set timezone to 'UTC'; -- it should be anyway, but just in case
+        SELECT nextval('_history_seq') INTO _seq;
+        INSERT INTO nrtm_rpslobject_history
+            (id, seq, stamp, old_id, object_type, primary_key, source_id, version, rpsl)
+        VALUES (
+            id_generator(),
+            _seq,
+            now(),
+            OLD.id,
+            OLD.object_type,
+            OLD.primary_key,
+            OLD.source_id,
+            OLD.version,
+            OLD.rpsl
+        );
+        RETURN NEW;
+    END;
+$rpsl_history_recorder$ language plpgsql;
+
+CREATE TRIGGER modify_rpsl_trigger before delete
+OR
+UPDATE ON nrtm_rpslobject FOR each ROW
+EXECUTE function store_rpslobject_history ();
 
 ---- create above / drop below ----
+DROP TRIGGER modify_rpsl_trigger ON nrtm_rpslobject;
 
-drop table nrtm_rpslobject;
-drop table nrtm_file;
-drop table nrtm_notification;
-drop table nrtm_source;
+DROP FUNCTION store_rpslobject_history;
+
+DROP TABLE nrtm_rpslobject_history;
+
+DROP TABLE nrtm_rpslobject;
+
+DROP TABLE nrtm_notification;
+
+DROP TABLE nrtm_source;

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.8 (Debian 16.8-1.pgdg120+1)
+-- Dumped from database version 14.12 (Debian 14.12-1.pgdg120+1)
 -- Dumped by pg_dump version 17.0
 
 SET statement_timeout = 0;
@@ -18,6 +18,15 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
 -- Name: id_generator(); Type: FUNCTION; Schema: public; Owner: nrtm4
 --
 
@@ -25,12 +34,12 @@ CREATE FUNCTION public.id_generator(OUT result bigint) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    our_epoch bigint := 1713484069680;
+    our_epoch bigint := 1741209445083;
     seq_id bigint;
     now_millis bigint;
     -- the id of this DB shard, must be set for each
     -- schema shard you have - you could pass this as a parameter too
-    shard_id int := 1;
+    shard_id int := 1; -- up to 1024
 BEGIN
     SELECT nextval('_seq') % 4096 INTO seq_id;
     SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp()) * 1000) INTO now_millis;
@@ -56,7 +65,7 @@ CREATE FUNCTION public.store_rpslobject_history() RETURNS trigger
         set timezone to 'UTC'; -- it should be anyway, but just in case
         SELECT nextval('_history_seq') INTO _seq;
         INSERT INTO nrtm_rpslobject_history
-            (id, seq, stamp, old_id, object_type, primary_key, nrtm_source_id, version, rpsl)
+            (id, seq, stamp, old_id, object_type, primary_key, source_id, version, rpsl)
         VALUES (
             id_generator(),
             _seq,
@@ -64,7 +73,7 @@ CREATE FUNCTION public.store_rpslobject_history() RETURNS trigger
             OLD.id,
             OLD.object_type,
             OLD.primary_key,
-            OLD.nrtm_source_id,
+            OLD.source_id,
             OLD.version,
             OLD.rpsl
         );
@@ -94,7 +103,7 @@ ALTER SEQUENCE public._history_seq OWNER TO nrtm4;
 --
 
 CREATE SEQUENCE public._seq
-    START WITH 100
+    START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
@@ -115,7 +124,7 @@ CREATE TABLE public.nrtm_file (
     type character varying(255) NOT NULL,
     url text NOT NULL,
     file_name text NOT NULL,
-    nrtm_source_id bigint NOT NULL,
+    source_id bigint NOT NULL,
     created timestamp without time zone NOT NULL
 );
 
@@ -129,7 +138,7 @@ ALTER TABLE public.nrtm_file OWNER TO nrtm4;
 CREATE TABLE public.nrtm_notification (
     id bigint NOT NULL,
     version integer NOT NULL,
-    nrtm_source_id bigint NOT NULL,
+    source_id bigint NOT NULL,
     payload jsonb NOT NULL,
     created timestamp without time zone NOT NULL
 );
@@ -145,7 +154,7 @@ CREATE TABLE public.nrtm_rpslobject (
     id bigint NOT NULL,
     object_type character varying(255) NOT NULL,
     primary_key character varying(255) NOT NULL,
-    nrtm_source_id bigint NOT NULL,
+    source_id bigint NOT NULL,
     version integer NOT NULL,
     rpsl text NOT NULL
 );
@@ -164,7 +173,7 @@ CREATE TABLE public.nrtm_rpslobject_history (
     old_id bigint NOT NULL,
     object_type character varying(255) NOT NULL,
     primary_key character varying(255) NOT NULL,
-    nrtm_source_id bigint NOT NULL,
+    source_id bigint NOT NULL,
     version integer NOT NULL,
     rpsl text NOT NULL
 );
@@ -249,25 +258,25 @@ ALTER TABLE ONLY public.nrtm_rpslobject
 
 
 --
--- Name: nrtm_rpslobject rpslobject__source__type__primary_key__from_version__uid; Type: CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject rpslobject__source__type__primary_key__version__uid; Type: CONSTRAINT; Schema: public; Owner: nrtm4
 --
 
 ALTER TABLE ONLY public.nrtm_rpslobject
-    ADD CONSTRAINT rpslobject__source__type__primary_key__from_version__uid UNIQUE (nrtm_source_id, object_type, primary_key, version);
+    ADD CONSTRAINT rpslobject__source__type__primary_key__version__uid UNIQUE (source_id, object_type, primary_key, version);
 
 
 --
 -- Name: nrtm_file__source_version_idx; Type: INDEX; Schema: public; Owner: nrtm4
 --
 
-CREATE INDEX nrtm_file__source_version_idx ON public.nrtm_file USING btree (nrtm_source_id, version);
+CREATE INDEX nrtm_file__source_version_idx ON public.nrtm_file USING btree (source_id, version);
 
 
 --
 -- Name: nrtm_notification__version__idx; Type: INDEX; Schema: public; Owner: nrtm4
 --
 
-CREATE INDEX nrtm_notification__version__idx ON public.nrtm_notification USING btree (nrtm_source_id, version);
+CREATE INDEX nrtm_notification__version__idx ON public.nrtm_notification USING btree (source_id, version);
 
 
 --
@@ -281,7 +290,7 @@ CREATE UNIQUE INDEX nrtm_rpslobject_history__seq__idx ON public.nrtm_rpslobject_
 -- Name: nrtm_rpslobject_history__source__idx; Type: INDEX; Schema: public; Owner: nrtm4
 --
 
-CREATE INDEX nrtm_rpslobject_history__source__idx ON public.nrtm_rpslobject_history USING btree (nrtm_source_id);
+CREATE INDEX nrtm_rpslobject_history__source__idx ON public.nrtm_rpslobject_history USING btree (source_id);
 
 
 --
@@ -292,17 +301,10 @@ CREATE INDEX nrtm_rpslobject_history__type__key__idx ON public.nrtm_rpslobject_h
 
 
 --
--- Name: rpslobject__primary_key__idx; Type: INDEX; Schema: public; Owner: nrtm4
+-- Name: rpslobject__type__primary_key__idx; Type: INDEX; Schema: public; Owner: nrtm4
 --
 
-CREATE INDEX rpslobject__primary_key__idx ON public.nrtm_rpslobject USING btree (upper((primary_key)::text));
-
-
---
--- Name: nrtm_rpslobject modify_rpsl_trigger; Type: TRIGGER; Schema: public; Owner: nrtm4
---
-
-CREATE TRIGGER modify_rpsl_trigger BEFORE DELETE OR UPDATE ON public.nrtm_rpslobject FOR EACH ROW EXECUTE FUNCTION public.store_rpslobject_history();
+CREATE INDEX rpslobject__type__primary_key__idx ON public.nrtm_rpslobject USING btree (object_type, primary_key);
 
 
 --
@@ -310,7 +312,7 @@ CREATE TRIGGER modify_rpsl_trigger BEFORE DELETE OR UPDATE ON public.nrtm_rpslob
 --
 
 ALTER TABLE ONLY public.nrtm_file
-    ADD CONSTRAINT nrtm_file__nrtm_source__fk FOREIGN KEY (nrtm_source_id) REFERENCES public.nrtm_source(id);
+    ADD CONSTRAINT nrtm_file__nrtm_source__fk FOREIGN KEY (source_id) REFERENCES public.nrtm_source(id);
 
 
 --
@@ -318,7 +320,7 @@ ALTER TABLE ONLY public.nrtm_file
 --
 
 ALTER TABLE ONLY public.nrtm_notification
-    ADD CONSTRAINT nrtm_notification__nrtm_source__fk FOREIGN KEY (nrtm_source_id) REFERENCES public.nrtm_source(id);
+    ADD CONSTRAINT nrtm_notification__nrtm_source__fk FOREIGN KEY (source_id) REFERENCES public.nrtm_source(id);
 
 
 --
@@ -326,7 +328,7 @@ ALTER TABLE ONLY public.nrtm_notification
 --
 
 ALTER TABLE ONLY public.nrtm_rpslobject
-    ADD CONSTRAINT rpslobject__nrtm_source__fk FOREIGN KEY (nrtm_source_id) REFERENCES public.nrtm_source(id);
+    ADD CONSTRAINT rpslobject__nrtm_source__fk FOREIGN KEY (source_id) REFERENCES public.nrtm_source(id);
 
 
 --

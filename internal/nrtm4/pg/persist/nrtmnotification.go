@@ -17,7 +17,7 @@ type Notification struct {
 	db.EntityManaged `em:"nrtm_notification nnot"`
 	ID               uint64                   `em:"-"`
 	Version          uint32                   `em:"-"`
-	NRTMSourceID     uint64                   `em:"-"`
+	SourceID         uint64                   `em:"-"`
 	Payload          persist.NotificationJSON `em:"-"`
 	Created          time.Time                `em:"-"`
 }
@@ -29,7 +29,7 @@ func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSO
 	sql := fmt.Sprintf(`
 		SELECT %v
 		FROM %v
-		WHERE nrtm_source_id = $1
+		WHERE source_id = $1
 		ORDER BY
 			version DESC,
 			created DESC
@@ -40,11 +40,11 @@ func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSO
 	newNotification := func(tx pgx.Tx) error {
 		logger.Debug("Saving new notification")
 		return db.Create(tx, &Notification{
-			ID:           db.NextID(),
-			Version:      pver,
-			NRTMSourceID: sourceID,
-			Payload:      payload,
-			Created:      util.AppClock.Now(),
+			ID:       db.NextID(),
+			Version:  pver,
+			SourceID: sourceID,
+			Payload:  payload,
+			Created:  util.AppClock.Now(),
 		})
 	}
 
