@@ -3,6 +3,7 @@ package nrtm4serve
 import (
 	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/petchells/nrtm4tools/internal/nrtm4/pg"
@@ -30,9 +31,14 @@ func Launch(config service.AppConfig, port int, webDir string) {
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("POST")
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("OPTIONS")
 
-	if len(webDir) > 0 {
-		s.Router().PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webDir))))
+	returnIndex := func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
+	}
 
+	if len(webDir) > 0 {
+		s.Router().PathPrefix("/assets/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webDir))))
+		s.Router().HandleFunc("/", returnIndex).Methods("GET")
+		s.Router().HandleFunc("/{.*}", returnIndex).Methods("GET")
 	}
 	s.Serve(port)
 }

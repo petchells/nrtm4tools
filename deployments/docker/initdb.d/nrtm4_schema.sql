@@ -115,23 +115,6 @@ ALTER SEQUENCE public._seq OWNER TO nrtm4;
 SET default_table_access_method = heap;
 
 --
--- Name: nrtm_file; Type: TABLE; Schema: public; Owner: nrtm4
---
-
-CREATE TABLE public.nrtm_file (
-    id bigint NOT NULL,
-    version integer NOT NULL,
-    type character varying(255) NOT NULL,
-    url text NOT NULL,
-    file_name text NOT NULL,
-    source_id bigint NOT NULL,
-    created timestamp without time zone NOT NULL
-);
-
-
-ALTER TABLE public.nrtm_file OWNER TO nrtm4;
-
---
 -- Name: nrtm_notification; Type: TABLE; Schema: public; Owner: nrtm4
 --
 
@@ -210,14 +193,6 @@ CREATE TABLE public.schema_version (
 ALTER TABLE public.schema_version OWNER TO nrtm4;
 
 --
--- Name: nrtm_file nrtm_file__pk; Type: CONSTRAINT; Schema: public; Owner: nrtm4
---
-
-ALTER TABLE ONLY public.nrtm_file
-    ADD CONSTRAINT nrtm_file__pk PRIMARY KEY (id);
-
-
---
 -- Name: nrtm_notification nrtm_notification__pk; Type: CONSTRAINT; Schema: public; Owner: nrtm4
 --
 
@@ -266,13 +241,6 @@ ALTER TABLE ONLY public.nrtm_rpslobject
 
 
 --
--- Name: nrtm_file__source_version_idx; Type: INDEX; Schema: public; Owner: nrtm4
---
-
-CREATE INDEX nrtm_file__source_version_idx ON public.nrtm_file USING btree (source_id, version);
-
-
---
 -- Name: nrtm_notification__version__idx; Type: INDEX; Schema: public; Owner: nrtm4
 --
 
@@ -308,11 +276,10 @@ CREATE INDEX rpslobject__type__primary_key__idx ON public.nrtm_rpslobject USING 
 
 
 --
--- Name: nrtm_file nrtm_file__nrtm_source__fk; Type: FK CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject modify_rpsl_trigger; Type: TRIGGER; Schema: public; Owner: nrtm4
 --
 
-ALTER TABLE ONLY public.nrtm_file
-    ADD CONSTRAINT nrtm_file__nrtm_source__fk FOREIGN KEY (source_id) REFERENCES public.nrtm_source(id);
+CREATE TRIGGER modify_rpsl_trigger BEFORE DELETE OR UPDATE ON public.nrtm_rpslobject FOR EACH ROW EXECUTE FUNCTION public.store_rpslobject_history();
 
 
 --
