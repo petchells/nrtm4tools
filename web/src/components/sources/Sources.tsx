@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
+import CircularProgress from '@mui/material/CircularProgress';
 import Grid from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 

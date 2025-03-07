@@ -1,13 +1,15 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import ErrorPage from "./error-page";
-import LandingPage from "./components/LandingPage";
+import HostPage from "./components/HostPage";
+import Logs from "./components/logs/Logs";
 import Sources from "./components/sources/Sources";
 import MainGrid from "./components/dashboard/MainGrid";
+import Queries from "./components/queries/Queries";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <LandingPage />,
+    element: <HostPage />,
     errorElement: <ErrorPage />,
 
     children: [
@@ -21,11 +23,15 @@ const router = createBrowserRouter([
       },
       {
         path: "queries",
-        element: <Sources />,
+        element: <Queries />,
       },
       {
         path: "dashboard",
         element: <MainGrid />,
+      },
+      {
+        path: "logs",
+        element: <Logs />,
       },
     ],
   },

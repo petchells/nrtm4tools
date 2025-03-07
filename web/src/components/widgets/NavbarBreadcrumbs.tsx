@@ -24,9 +24,7 @@ export default function NavbarBreadcrumbs() {
       <Typography
         variant="body1"
         sx={{ color: "text.primary", fontWeight: 600 }}
-      >
-        Sources
-      </Typography>
+      ></Typography>
     </StyledBreadcrumbs>
   );
 }

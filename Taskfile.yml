@@ -45,8 +45,8 @@ tasks:
     deps: [install]
     cmds:
       - "{{.DOCKER_CMD}} tag {{.WEB_APP}}-dev {{.RELEASE_REPO}}/{{.WEB_APP}}:{{.REVISION}}"
-      - "{{.DOCKER_CMD}} push {{.RELEASE_REPO}}/{{.WEB_APP}}:{{.REVISION}}"
       - "{{.DOCKER_CMD}} tag {{.WEB_APP}}-dev {{.RELEASE_REPO}}/{{.WEB_APP}}:latest"
+      - "{{.DOCKER_CMD}} push {{.RELEASE_REPO}}/{{.WEB_APP}}:{{.REVISION}}"
       - "{{.DOCKER_CMD}} push {{.RELEASE_REPO}}/{{.WEB_APP}}:latest"
 
   test:
@@ -73,8 +73,6 @@ tasks:
     deps: [clean]
     cmds:
       - rm -rf {{.WEB_DIR}}/node_modules
-      - rm -rf ./deployments/docker/posgresql-data/*
-      # - '{{.DOCKER_CMD}} rmi $({{.DOCKER_CMD}} images --filter=reference="{{.RELEASE_REPO}}/{{.WEB_APP}}:*" -q) >/dev/null || true'
 
   buildgo:
     desc: Builds binaries
@@ -152,13 +150,14 @@ tasks:
         as: app
       vars:
         APP: "{{.app}}"
+        DEST: build/docker/imageroot/usr/local/bin
       task: unixbinary
 
   unixbinary:
     internal: true
     cmds:
-      - test -d ./build/docker/imageroot/usr/local/bin || mkdir -p ./build/docker/imageroot/usr/local/bin
-      - cd ./cmd/{{.APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../build/docker/imageroot/usr/local/bin/{{.APP}} -v
+      - test -d ./{{.DEST}} || mkdir -p ./{{.DEST}}
+      - cd ./cmd/{{.APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../{{.DEST}}/{{.APP}} -v
 
   cleanbinaries:
     internal: true

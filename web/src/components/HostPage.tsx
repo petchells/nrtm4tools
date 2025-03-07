@@ -38,9 +38,9 @@ const xThemeComponents = {
 };
 const mainListItems = [
   { text: "Sources", icon: <FileDownload />, href: "sources" },
-  { text: "Object queries", icon: <QuestionAnswer />, href: "queries" },
   { text: "Dashboard", icon: <AnalyticsRoundedIcon />, href: "dashboard" },
-  { text: "Logs", icon: <TerminalIcon /> },
+  { text: "Logs", icon: <TerminalIcon />, href: "logs" },
+  { text: "Object queries", icon: <QuestionAnswer />, href: "queries" },
 ];
 
 const secondaryListItems = [
@@ -49,7 +49,7 @@ const secondaryListItems = [
   { text: "Feedback", icon: <HelpRoundedIcon /> },
 ];
 
-export default function LandingPage(props: { disableCustomTheme?: boolean }) {
+export default function HostPage(props: { disableCustomTheme?: boolean }) {
   let navigate = useNavigate();
   const path = useLocation().pathname;
   let navIdx = 0;

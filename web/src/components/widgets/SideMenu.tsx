@@ -1,13 +1,15 @@
 import { styled } from "@mui/material/styles";
-import Avatar from "@mui/material/Avatar";
 import MuiDrawer, { drawerClasses } from "@mui/material/Drawer";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import SelectContent from "../SelectContent";
+
+import BuildCircleIcon from "@mui/icons-material/BuildCircle";
+import HardwareIcon from "@mui/icons-material/Hardware";
+import PlumbingIcon from "@mui/icons-material/Plumbing";
+import SquareFootIcon from "@mui/icons-material/SquareFoot";
+
 import MenuContent from "./MenuContent";
-import OptionsMenu from "./OptionsMenu";
 
 const drawerWidth = 240;
 
@@ -45,7 +47,26 @@ export default function SideMenu(props: {
           p: 1.5,
         }}
       >
-        <SelectContent />
+        <div>
+          <Typography
+            component="h2"
+            variant="h3"
+            sx={{ color: "text.secondary" }}
+          >
+            NRTM4
+          </Typography>
+          <Typography
+            component="h2"
+            variant="h3"
+            sx={{ color: "text.secondary" }}
+          >
+            <HardwareIcon />
+            <BuildCircleIcon />
+            <BuildCircleIcon />
+            <SquareFootIcon />
+            <PlumbingIcon />
+          </Typography>
+        </div>
       </Box>
       <Divider />
       <MenuContent
@@ -54,35 +75,6 @@ export default function SideMenu(props: {
         onSelected={(idx) => props.onSelected(idx)}
         menuItemSelectedIdx={props.menuItemSelectedIdx}
       />
-      <Stack
-        direction="row"
-        sx={{
-          p: 2,
-          gap: 1,
-          alignItems: "center",
-          borderTop: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Avatar
-          sizes="small"
-          alt="Riley Carter"
-          src="/static/images/avatar/7.jpg"
-          sx={{ width: 36, height: 36 }}
-        />
-        <Box sx={{ mr: "auto" }}>
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: 500, lineHeight: "16px" }}
-          >
-            Riley Carter
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            riley@email.com
-          </Typography>
-        </Box>
-        <OptionsMenu />
-      </Stack>
     </Drawer>
   );
 }
