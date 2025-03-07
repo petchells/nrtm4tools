@@ -35,8 +35,9 @@ tasks:
     desc: Builds all binaries and creates a local image
     deps: [test, buildunixbinary, buildweb]
     cmds:
-      - mkdir -p ./build/docker/app/nrtm4-files >/dev/null 2>&1 || true
-      - rsync -a --delete {{.WEB_BUILD_DIR}} ./build/docker/app
+      - mkdir -p ./build/docker/imageroot/nrtm4-files >/dev/null 2>&1 || true
+      - mkdir -p ./build/docker/imageroot/www >/dev/null 2>&1 || true
+      - rsync -a --delete {{.WEB_BUILD_DIR}}/ ./build/docker/imageroot/www
       - cd ./build/docker && {{.DOCKER_CMD}} build -t {{.WEB_APP}}-dev .
 
   release:
@@ -64,7 +65,7 @@ tasks:
     cmds:
       - rm -rf {{.WEB_BUILD_DIR}}
       - rm -rf ./docs/_generated
-      - rm -rf ./build/docker/app
+      - rm -rf ./build/docker/imageroot
       - '{{.DOCKER_CMD}} rmi "{{.WEB_APP}}-dev" >/dev/null 2>&1 || true'
 
   cleanall:
@@ -149,16 +150,15 @@ tasks:
       for:
         var: BINARIES
         as: app
-      task: unixbinary
       vars:
         APP: "{{.app}}"
+      task: unixbinary
 
   unixbinary:
     internal: true
     cmds:
-      - test -d ./build/docker/app || mkdir ./build/docker/app
-      - cd ./cmd/{{.APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o {{.APP}}_unix -v
-      - mv ./cmd/{{.APP}}/{{.APP}}_unix ./build/docker/app
+      - test -d ./build/docker/imageroot/usr/local/bin || mkdir -p ./build/docker/imageroot/usr/local/bin
+      - cd ./cmd/{{.APP}} && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ../../build/docker/imageroot/usr/local/bin/{{.APP}} -v
 
   cleanbinaries:
     internal: true

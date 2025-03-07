@@ -2,8 +2,8 @@ FROM alpine:3.21.3
 
 RUN apk add --no-cache tzdata
 ENV TZ=UTC
-COPY ./app /app
+COPY ./imageroot /
 
 EXPOSE 8080
-ENTRYPOINT ["/app/nrtm4serve_unix"]
-CMD ["--webdir", "/app/dist"]
+ENTRYPOINT ["/usr/local/bin/nrtm4serve"]
+CMD ["--webdir", "/www"]

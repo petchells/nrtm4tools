@@ -5,9 +5,9 @@ services:
       - "8000:8080"
     environment:
       - PG_DATABASE_URL=postgres://nrtm4@host.docker.internal:15432/postgres?sslmode=disable
-      - NRTM4_FILE_PATH=/app/nrtm4-files
+      - NRTM4_FILE_PATH=/nrtm4-files
     volumes:
-      - ./nrtm4-files:/app/nrtm4-files
+      - ./nrtm4-files:/nrtm4-files
     depends_on:
       - postgresql
     healthcheck:
