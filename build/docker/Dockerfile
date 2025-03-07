@@ -6,4 +6,4 @@ COPY ./imageroot /
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/nrtm4serve"]
-CMD ["--webdir", "/www"]
+CMD ["--webdir", "/srv/www"]

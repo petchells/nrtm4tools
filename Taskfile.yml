@@ -36,8 +36,8 @@ tasks:
     deps: [test, buildunixbinary, buildweb]
     cmds:
       - mkdir -p ./build/docker/imageroot/nrtm4-files >/dev/null 2>&1 || true
-      - mkdir -p ./build/docker/imageroot/www >/dev/null 2>&1 || true
-      - rsync -a --delete {{.WEB_BUILD_DIR}}/ ./build/docker/imageroot/www
+      - mkdir -p ./build/docker/imageroot/srv/www >/dev/null 2>&1 || true
+      - rsync -a --delete {{.WEB_BUILD_DIR}}/ ./build/docker/imageroot/srv/www
       - cd ./build/docker && {{.DOCKER_CMD}} build -t {{.WEB_APP}}-dev .
 
   release:

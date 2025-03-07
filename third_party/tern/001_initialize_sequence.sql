@@ -8,7 +8,7 @@ CREATE SEQUENCE _history_seq start 1;
 CREATE
 OR REPLACE function id_generator (OUT result BIGINT) AS $$
 DECLARE
-    our_epoch bigint := 1741209445083;
+    our_epoch bigint := 1741372424857;
     seq_id bigint;
     now_millis bigint;
     -- the id of this DB shard, must be set for each

@@ -20,8 +20,6 @@ services:
   postgresql:
     image: docker.io/library/postgres:17
     user: postgres
-    expose:
-      - 15432
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
