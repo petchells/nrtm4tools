@@ -74,7 +74,7 @@ export default function Sources() {
     return (
       <Alert
         icon={<WarningIcon fontSize="inherit" />}
-        severity="success"
+        severity="info"
         sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}
       >
         No sources are available. Add one with the 'connect' command.

@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 
@@ -14,12 +15,8 @@ func TestLockingList(t *testing.T) {
 
 	printBatch := func(b []string) {
 		if len(b) > 0 {
-			t.Logf("batch-------------")
-			for i, s := range b {
-				t.Logf("%02d %v", i, s)
-			}
+			t.Logf("Batch of %v strings. %v", len(b), strings.Join(b, ","))
 		}
-
 	}
 	var wg sync.WaitGroup
 	listClient := func(pfx string) {
@@ -27,7 +24,7 @@ func TestLockingList(t *testing.T) {
 		b := ll.GetBatch(15)
 		printBatch(b)
 	}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

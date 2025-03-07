@@ -175,7 +175,7 @@ func (repo PostgresRepository) SaveSnapshotObjects(
 		inputRows := make([][]any, len(rpslObjects))
 		for i, rpslObject := range rpslObjects {
 			inputRow := []any{
-				uint64(db.NextID()),
+				db.NextID(),
 				rpslObject.ObjectType,
 				rpslObject.PrimaryKey,
 				source.ID,
