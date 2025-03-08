@@ -11,7 +11,7 @@ import SquareFootIcon from "@mui/icons-material/SquareFoot";
 
 import MenuContent from "./MenuContent";
 
-const drawerWidth = 240;
+const drawerWidth = 180;
 
 const Drawer = styled(MuiDrawer)({
   width: drawerWidth,
@@ -24,6 +24,9 @@ const Drawer = styled(MuiDrawer)({
   },
 });
 
+const BuildCircleIcon90 = styled(BuildCircleIcon)`
+  transform: rotate(90deg);
+`;
 export default function SideMenu(props: {
   mainItems: any[];
   secondaryItems: any[];
@@ -62,7 +65,7 @@ export default function SideMenu(props: {
           >
             <HardwareIcon />
             <BuildCircleIcon />
-            <BuildCircleIcon />
+            <BuildCircleIcon90 />
             <SquareFootIcon />
             <PlumbingIcon />
           </Typography>
@@ -74,6 +77,7 @@ export default function SideMenu(props: {
         secondaryItems={props.secondaryItems}
         onSelected={(idx) => props.onSelected(idx)}
         menuItemSelectedIdx={props.menuItemSelectedIdx}
+        iconMode={false}
       />
     </Drawer>
   );

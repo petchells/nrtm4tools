@@ -10,7 +10,10 @@ export default function MenuContent(props: {
   secondaryItems: any[];
   menuItemSelectedIdx: number;
   onSelected: (idx: number) => void;
+  iconMode: boolean;
 }) {
+  const iconMode = props.iconMode;
+
   // handle click on menu item
   const menuClicked = (idx: number) => () => {
     props.onSelected(idx);
@@ -32,7 +35,7 @@ export default function MenuContent(props: {
                   onClick={menuClicked(index)}
                 >
                   <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
+                  {iconMode || <ListItemText primary={item.text} />}
                 </ListItemButton>
               </ListItem>
             )
@@ -43,7 +46,7 @@ export default function MenuContent(props: {
           <ListItem key={index} disablePadding sx={{ display: "block" }}>
             <ListItemButton>
               <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              {iconMode || <ListItemText primary={item.text} />}
             </ListItemButton>
           </ListItem>
         ))}
