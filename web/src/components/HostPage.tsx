@@ -6,13 +6,9 @@ import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 import Stack from "@mui/material/Stack";
 
-import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
-import FileDownload from "@mui/icons-material/FileDownload";
 import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
-import QuestionAnswer from "@mui/icons-material/QuestionAnswer";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import TerminalIcon from "@mui/icons-material/Terminal";
 
 import type {} from "@mui/x-date-pickers/themeAugmentation";
 import type {} from "@mui/x-charts/themeAugmentation";
@@ -23,6 +19,9 @@ import AppNavbar from "./widgets/AppNavbar";
 import Header from "./widgets/Header";
 import SideMenu from "./widgets/SideMenu";
 import AppTheme from "./shared-theme/AppTheme";
+
+import { mainListItems } from "./rootmap";
+
 import {
   chartsCustomizations,
   dataGridCustomizations,
@@ -36,12 +35,6 @@ const xThemeComponents = {
   ...datePickersCustomizations,
   ...treeViewCustomizations,
 };
-const mainListItems = [
-  { text: "Sources", icon: <FileDownload />, href: "sources" },
-  { text: "Dashboard", icon: <AnalyticsRoundedIcon />, href: "dashboard" },
-  { text: "Logs", icon: <TerminalIcon />, href: "logs" },
-  { text: "Object queries", icon: <QuestionAnswer />, href: "queries" },
-];
 
 const secondaryListItems = [
   { text: "Settings", icon: <SettingsRoundedIcon /> },
@@ -54,8 +47,8 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
   const path = useLocation().pathname;
   let navIdx = 0;
   for (let i = 0; i < mainListItems.length; i++) {
-    const href = mainListItems[i].href || "";
-    if (href && path.indexOf(href) > -1) {
+    const pth = mainListItems[i].path || "";
+    if (pth && path.indexOf(pth) > -1) {
       navIdx = i;
       break;
     }
@@ -64,8 +57,8 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
 
   const navigateToSection = (idx: number) => {
     setMenuItemSelectedIdx(idx);
-    if (mainListItems[idx].href) {
-      navigate(mainListItems[idx].href);
+    if (mainListItems[idx].path) {
+      navigate(mainListItems[idx].path);
     }
   };
 

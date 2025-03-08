@@ -13,7 +13,6 @@ export default function MenuContent(props: {
 }) {
   // handle click on menu item
   const menuClicked = (idx: number) => () => {
-    console.log("selected", idx);
     props.onSelected(idx);
     // setMenuItemSelectedIdx(idx);
     // if (mainListItems[idx].href) {
@@ -24,17 +23,20 @@ export default function MenuContent(props: {
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: "space-between" }}>
       <List dense>
-        {props.mainItems.map((item, index) => (
-          <ListItem key={index} disablePadding sx={{ display: "block" }}>
-            <ListItemButton
-              selected={index === props.menuItemSelectedIdx}
-              onClick={menuClicked(index)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {props.mainItems.map(
+          (item, index) =>
+            item.text && (
+              <ListItem key={index} disablePadding sx={{ display: "block" }}>
+                <ListItemButton
+                  selected={index === props.menuItemSelectedIdx}
+                  onClick={menuClicked(index)}
+                >
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
+              </ListItem>
+            )
+        )}
       </List>
       <List dense>
         {props.secondaryItems.map((item, index) => (
