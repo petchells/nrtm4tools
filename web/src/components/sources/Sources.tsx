@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import CircularProgress from '@mui/material/CircularProgress';
+import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 
@@ -84,7 +84,8 @@ export default function Sources() {
 
   const onUrlEntered = (url: string, label: string) => {
     setDataLoading(true);
-    client.connectSource(url, label)
+    client
+      .connectSource(url, label)
       .then(
         (msg) => {
           console.log("success", msg);
@@ -97,7 +98,8 @@ export default function Sources() {
           } else {
             setErr("" + rej);
           }
-        })
+        }
+      )
       .finally(() => setDataLoading(false));
   };
 
@@ -120,22 +122,26 @@ export default function Sources() {
 
   const removeSource = (source: SourceModel) => {
     setDataLoading(true);
-    client.removeSource(source.Source, source.Label)
-      .then(() => {
-        const idx = selectedIDs.indexOf(source.ID);
-        if (idx > -1) {
-          selectedIDs.splice(idx, 1);
-          setSelectedIDs(selectedIDs);
-        }
-        const oidx = sources.indexOf(source);
-        if (oidx > -1) {
-          sources.splice(oidx, 1);
-          setSources(sources);
-        }
-        setRefresh(refresh ^ 1);
-      }, (err) => setErr(err))
+    client
+      .removeSource(source.Source, source.Label)
+      .then(
+        () => {
+          const idx = selectedIDs.indexOf(source.ID);
+          if (idx > -1) {
+            selectedIDs.splice(idx, 1);
+            setSelectedIDs(selectedIDs);
+          }
+          const oidx = sources.indexOf(source);
+          if (oidx > -1) {
+            sources.splice(oidx, 1);
+            setSources(sources);
+          }
+          setRefresh(refresh ^ 1);
+        },
+        (err) => setErr(err)
+      )
       .finally(() => setDataLoading(false));
-  }
+  };
 
   const handleRemoveSource = (id: string) => {
     for (const s of sources) {
@@ -149,12 +155,14 @@ export default function Sources() {
 
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
-      <Typography variant="h3" component="h1" sx={{ mb: 2 }}>
-        Sources
-      </Typography>
       <Grid container spacing={2} columns={12}>
         <Box sx={{ mb: 1 }}>
-          <Button variant="outlined" onClick={fetchSources} startIcon={<RefreshIcon />}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={fetchSources}
+            startIcon={<RefreshIcon />}
+          >
             Refresh
           </Button>
         </Box>
@@ -192,7 +200,10 @@ export default function Sources() {
               <Typography variant="h6" component="h1" sx={{ mt: 2 }}>
                 Connect a new source
               </Typography>
-              <SourcesInput onUrlEntered={onUrlEntered} disabled={!!dataLoading} />
+              <SourcesInput
+                onUrlEntered={onUrlEntered}
+                disabled={!!dataLoading}
+              />
             </>
           )}
         </Grid>

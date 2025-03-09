@@ -9,8 +9,15 @@ import Logs from "./logs/Logs";
 import Sources from "./sources/Sources";
 import MainGrid from "./dashboard/MainGrid";
 import Queries from "./queries/Queries";
+import { MenuItem } from "./widgets/widgettypes";
 
-export const mainListItems: any[] = [
+interface MenuRouter extends MenuItem {
+  index?: boolean;
+  element: any;
+  path?: string;
+}
+
+export const mainListItems: MenuRouter[] = [
   {
     index: true,
     element: <Navigate to="sources" replace />,

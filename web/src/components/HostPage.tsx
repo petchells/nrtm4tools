@@ -72,7 +72,12 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
           onSelected={(idx) => navigateToSection(idx)}
           menuItemSelectedIdx={menuItemSelectedIdx}
         />
-        <AppNavbar pageTitle={mainListItems[menuItemSelectedIdx].text} />
+        <AppNavbar
+          mainItems={mainListItems}
+          secondaryItems={secondaryListItems}
+          pageTitle={mainListItems[menuItemSelectedIdx].text}
+          onSelected={(idx) => navigateToSection(idx)}
+        />
         {/* Main content */}
         <Box
           component="main"
@@ -85,7 +90,7 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
           })}
         >
           <Stack
-            spacing={2}
+            spacing={4}
             sx={{
               alignItems: "center",
               mx: 3,
@@ -93,7 +98,7 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
               mt: { xs: 8, md: 0 },
             }}
           >
-            <Header />
+            <Header pageTitle={mainListItems[menuItemSelectedIdx].text || ""} />
             <Outlet />
           </Stack>
         </Box>

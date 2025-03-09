@@ -10,6 +10,7 @@ import PlumbingIcon from "@mui/icons-material/Plumbing";
 import SquareFootIcon from "@mui/icons-material/SquareFoot";
 
 import MenuContent from "./MenuContent";
+import Stack from "@mui/material/Stack";
 
 const drawerWidth = 180;
 
@@ -48,9 +49,10 @@ export default function SideMenu(props: {
           display: "flex",
           mt: "calc(var(--template-frame-height, 0px) + 4px)",
           p: 1.5,
+          pl: 2.5,
         }}
       >
-        <div>
+        <Stack>
           <Typography
             component="h2"
             variant="h3"
@@ -69,7 +71,7 @@ export default function SideMenu(props: {
             <SquareFootIcon />
             <PlumbingIcon />
           </Typography>
-        </div>
+        </Stack>
       </Box>
       <Divider />
       <MenuContent
@@ -77,7 +79,6 @@ export default function SideMenu(props: {
         secondaryItems={props.secondaryItems}
         onSelected={(idx) => props.onSelected(idx)}
         menuItemSelectedIdx={props.menuItemSelectedIdx}
-        iconMode={false}
       />
     </Drawer>
   );

@@ -1,14 +1,19 @@
 import * as React from "react";
+
 import { styled } from "@mui/material/styles";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import MuiToolbar from "@mui/material/Toolbar";
-import { tabsClasses } from "@mui/material/Tabs";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import SideMenuMobile from "./SideMenuMobile";
+
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import DashboardRoundedIcon from "@mui/icons-material/Menu";
+
 import ColorModeIconDropdown from "../shared-theme/ColorModeIconDropdown";
+import MenuButton from "./MenuButton";
+import SideMenuMobile from "./SideMenuMobile";
+import { MenuItem } from "./widgettypes";
 
 const Toolbar = styled(MuiToolbar)({
   width: "100%",
@@ -19,21 +24,32 @@ const Toolbar = styled(MuiToolbar)({
   justifyContent: "center",
   gap: "12px",
   flexShrink: 0,
-  [`& ${tabsClasses.flexContainer}`]: {
-    gap: "8px",
-    p: "8px",
-    pb: 0,
-  },
 });
 
-export default function AppNavbar(props: { pageTitle?: string }) {
-  const [open, setOpen] = React.useState(true);
+interface AppNavbarProps {
+  pageTitle?: string;
+  onSelected: (idx: number) => void;
+  mainItems: MenuItem[];
+  secondaryItems: MenuItem[];
+}
+export default function AppNavbar({
+  pageTitle,
+  onSelected,
+  mainItems,
+  secondaryItems,
+}: AppNavbarProps) {
+  const [open, setOpen] = React.useState(false);
+
+  const onMenuSelected = (idx: number) => {
+    setOpen(false);
+    onSelected(idx);
+  };
 
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpen(newOpen);
   };
 
-  let pageTitle = props.pageTitle || "";
+  pageTitle = pageTitle || "";
 
   return (
     <AppBar
@@ -73,7 +89,16 @@ export default function AppNavbar(props: { pageTitle?: string }) {
             </Typography>
           </Stack>
           <ColorModeIconDropdown />
-          <SideMenuMobile open={open} toggleDrawer={toggleDrawer} />
+          <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
+            <DashboardRoundedIcon />
+          </MenuButton>
+          <SideMenuMobile
+            open={open}
+            toggleDrawer={toggleDrawer}
+            onSelected={onMenuSelected}
+            mainItems={mainItems}
+            secondaryItems={secondaryItems}
+          />
         </Stack>
       </Toolbar>
     </AppBar>
@@ -100,7 +125,7 @@ export function CustomIcon() {
         boxShadow: "inset 0 2px 5px rgba(255, 255, 255, 0.3)",
       }}
     >
-      <DashboardRoundedIcon color="inherit" sx={{ fontSize: "1rem" }} />
+      <FileDownloadIcon color="inherit" sx={{ fontSize: "1rem" }} />
     </Box>
   );
 }

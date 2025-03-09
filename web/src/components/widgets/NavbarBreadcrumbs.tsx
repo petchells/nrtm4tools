@@ -14,7 +14,13 @@ const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
   },
 }));
 
-export default function NavbarBreadcrumbs() {
+interface NavbarBreadcrumbsProps {
+  pageTitle: string;
+}
+
+export default function NavbarBreadcrumbs({
+  pageTitle,
+}: NavbarBreadcrumbsProps) {
   return (
     <StyledBreadcrumbs
       aria-label="breadcrumb"
@@ -24,7 +30,9 @@ export default function NavbarBreadcrumbs() {
       <Typography
         variant="body1"
         sx={{ color: "text.primary", fontWeight: 600 }}
-      ></Typography>
+      >
+        {pageTitle}
+      </Typography>
     </StyledBreadcrumbs>
   );
 }
