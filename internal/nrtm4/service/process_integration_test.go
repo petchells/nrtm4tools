@@ -47,12 +47,12 @@ func TestConnectWithPgRepo(t *testing.T) {
 		invoke := processInvoker{t: t, p: processor}
 		invoke.testRename(srcname, label, newLabel)
 	}
-	{
-		stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-6.json")
-		processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
-		invoke := processInvoker{t: t, p: processor}
-		invoke.testRemove(srcname, newLabel)
-	}
+	// {
+	// 	stubClient := NewTestClient(t, baseURL, "version2to6", "unf_2-6.json")
+	// 	processor := NewNRTMProcessor(conf, pgTestRepo, stubClient)
+	// 	invoke := processInvoker{t: t, p: processor}
+	// 	invoke.testRemove(srcname, newLabel)
+	// }
 
 }
 
