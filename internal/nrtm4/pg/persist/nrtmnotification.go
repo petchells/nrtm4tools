@@ -63,6 +63,6 @@ func NewNotification(tx pgx.Tx, sourceID uint64, payload persist.NotificationJSO
 	} else if pver > lastN.Version {
 		return newNotification(tx)
 	}
-	logger.Error("Expected higher notification version", "lastN.Version", lastN.Version, "payload.Version", pver)
-	return errors.New("expected higher notification version than the one found")
+	logger.Error("Notification is older than our most recent update", "lastN.Version", lastN.Version, "payload.Version", pver)
+	return errors.New("notification is older than our most recent update")
 }

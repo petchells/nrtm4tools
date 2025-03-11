@@ -11,22 +11,23 @@ services:
     depends_on:
       - postgresql
     healthcheck:
-      test: [ "CMD-SHELL", "curl --silent --fail http://localhost:8000/index.html || exit 1" ]
+      test:
+        ["CMD-SHELL", "curl --silent --fail http://localhost:8000/ || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 3
     networks:
       - db
+
   postgresql:
     image: docker.io/library/postgres:17
     user: postgres
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
-      - ./postgresql-data:/var/lib/postgresql/data
       - ./initdb.d:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: ["CMD", "pg_isready"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,5 +38,3 @@ services:
 
 networks:
   db:
-
-

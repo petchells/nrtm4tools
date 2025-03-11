@@ -2,13 +2,12 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.12 (Debian 14.12-1.pgdg120+1)
--- Dumped by pg_dump version 17.0
+-- Dumped from database version 14.13 (Debian 14.13-1.pgdg120+1)
+-- Dumped by pg_dump version 16.8 (Ubuntu 16.8-0ubuntu0.24.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -34,7 +33,7 @@ CREATE FUNCTION public.id_generator(OUT result bigint) RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    our_epoch bigint := 1741209445083;
+    our_epoch bigint := 1741372424857;
     seq_id bigint;
     now_millis bigint;
     -- the id of this DB shard, must be set for each
@@ -65,7 +64,7 @@ CREATE FUNCTION public.store_rpslobject_history() RETURNS trigger
         set timezone to 'UTC'; -- it should be anyway, but just in case
         SELECT nextval('_history_seq') INTO _seq;
         INSERT INTO nrtm_rpslobject_history
-            (id, seq, stamp, old_id, object_type, primary_key, source_id, version, rpsl)
+            (id, seq, stamp, original_id, object_type, primary_key, source_id, version, rpsl)
         VALUES (
             id_generator(),
             _seq,
@@ -153,7 +152,7 @@ CREATE TABLE public.nrtm_rpslobject_history (
     id bigint NOT NULL,
     seq bigint NOT NULL,
     stamp timestamp without time zone,
-    old_id bigint NOT NULL,
+    original_id bigint NOT NULL,
     object_type character varying(255) NOT NULL,
     primary_key character varying(255) NOT NULL,
     source_id bigint NOT NULL,

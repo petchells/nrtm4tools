@@ -40,7 +40,7 @@ CREATE TABLE nrtm_rpslobject_history (
 	id BIGINT NOT NULL PRIMARY KEY,
 	seq BIGINT NOT NULL,
 	stamp TIMESTAMP WITHOUT TIME ZONE,
-	old_id BIGINT NOT NULL,
+	original_id BIGINT NOT NULL,
 	object_type CHARACTER VARYING(255) NOT NULL,
 	primary_key CHARACTER VARYING(255) NOT NULL,
 	source_id BIGINT NOT NULL,
@@ -61,7 +61,7 @@ CREATE FUNCTION store_rpslobject_history () returns trigger AS $rpsl_history_rec
         set timezone to 'UTC'; -- it should be anyway, but just in case
         SELECT nextval('_history_seq') INTO _seq;
         INSERT INTO nrtm_rpslobject_history
-            (id, seq, stamp, old_id, object_type, primary_key, source_id, version, rpsl)
+            (id, seq, stamp, original_id, object_type, primary_key, source_id, version, rpsl)
         VALUES (
             id_generator(),
             _seq,

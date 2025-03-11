@@ -173,9 +173,24 @@ func (repo PostgresRepository) SaveSnapshotObjects(
 	}
 	return db.WithTransaction(func(tx pgx.Tx) error {
 		inputRows := make([][]any, len(rpslObjects))
+		ids := make([]uint64, len(rpslObjects))
+
+		rows, err := tx.Conn().Query(context.Background(), fmt.Sprintf("select id_generator() from generate_series(1, %v)", len(rpslObjects)))
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for i := 0; rows.Next(); i++ {
+			id := new(uint64)
+			err = rows.Scan(id)
+			if err != nil {
+				return err
+			}
+			ids[i] = *id
+		}
 		for i, rpslObject := range rpslObjects {
 			inputRow := []any{
-				db.NextID(),
+				ids[i],
 				rpslObject.ObjectType,
 				rpslObject.PrimaryKey,
 				source.ID,
@@ -185,7 +200,7 @@ func (repo PostgresRepository) SaveSnapshotObjects(
 			inputRows[i] = inputRow
 		}
 		rpslDescriptor := db.GetDescriptor(&pgpersist.RPSLObject{})
-		_, err := tx.CopyFrom(
+		_, err = tx.CopyFrom(
 			context.Background(),
 			pgx.Identifier{rpslDescriptor.TableName()},
 			rpslDescriptor.ColumnNames(),

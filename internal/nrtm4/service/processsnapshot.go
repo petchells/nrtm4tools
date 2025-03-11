@@ -141,7 +141,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 			_, err = repo.SaveSource(source, notification)
 			return err
 		} else if err != nil {
-			logger.Warn("error reading jsonseq records.", "error", err)
+			logger.Warn("Error reading jsonseq records.", "error", err)
 			return err
 		} else if expectHeader {
 			// First record is the Snapshot header

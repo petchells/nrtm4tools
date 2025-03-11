@@ -25,7 +25,8 @@ tasks:
     desc: Brings the database schema up to the latest version
     deps: [nrtm4_schema]
     cmds:
-      - tern migrate --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
+      - tern migrate --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}} >/dev/null
+      - tern status --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
 
   build:
     desc: Builds, then tests all binaries and the web client
@@ -106,18 +107,21 @@ tasks:
   rewinddb:
     desc: Rolls the database schema back one version
     cmds:
-      - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
+      - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}} >/dev/null
+      - tern status --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
 
   migratetest:
     desc: Brings the test database schema up to the latest version
     deps: [testmigrations]
     cmds:
-      - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
+      - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} >/dev/null
+      - tern status --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
 
   emptytestdb:
     desc: Rolls the database back to the initial state
     cmds:
-      - tern migrate --destination 1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
+      - tern migrate --destination 1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} >/dev/null
+      - tern status --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
 
   webdev:
     desc: Runs the web client on localhost in dev mode
@@ -170,8 +174,8 @@ tasks:
   testmigrations:
     internal: true
     cmds:
-      - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
-      - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}}
+      - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} >/dev/null
+      - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} >/dev/null
 
   nrtm4_schema:
     internal: true
