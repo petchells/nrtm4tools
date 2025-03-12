@@ -2,7 +2,10 @@ import { Navigate } from "react-router-dom";
 
 import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
 import FileDownload from "@mui/icons-material/FileDownload";
+import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
+import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import QuestionAnswer from "@mui/icons-material/QuestionAnswer";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import TerminalIcon from "@mui/icons-material/Terminal";
 
 import Logs from "./logs/Logs";
@@ -41,4 +44,11 @@ export const mainListItems: MenuRouter[] = [
     path: "queries",
     element: <Queries />,
   },
+];
+
+
+export const secondaryListItems: MenuItem[] = [
+  { text: "Settings", icon: <SettingsRoundedIcon /> },
+  { text: "About", icon: <InfoRoundedIcon /> },
+  { text: "Feedback", icon: <HelpRoundedIcon /> },
 ];

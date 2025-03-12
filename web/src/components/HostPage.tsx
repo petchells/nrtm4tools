@@ -6,21 +6,16 @@ import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 import Stack from "@mui/material/Stack";
 
-import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
-import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-
-import type {} from "@mui/x-date-pickers/themeAugmentation";
-import type {} from "@mui/x-charts/themeAugmentation";
-import type {} from "@mui/x-data-grid/themeAugmentation";
-import type {} from "@mui/x-tree-view/themeAugmentation";
+import type { } from "@mui/x-date-pickers/themeAugmentation";
+import type { } from "@mui/x-charts/themeAugmentation";
+import type { } from "@mui/x-data-grid/themeAugmentation";
+import type { } from "@mui/x-tree-view/themeAugmentation";
 
 import AppNavbar from "./widgets/AppNavbar";
 import Header from "./widgets/Header";
 import SideMenu from "./widgets/SideMenu";
 import AppTheme from "./shared-theme/AppTheme";
-
-import { mainListItems } from "./rootmap";
+import { mainListItems, secondaryListItems } from "./rootmap";
 
 import {
   chartsCustomizations,
@@ -36,16 +31,10 @@ const xThemeComponents = {
   ...treeViewCustomizations,
 };
 
-const secondaryListItems = [
-  { text: "Settings", icon: <SettingsRoundedIcon /> },
-  { text: "About", icon: <InfoRoundedIcon /> },
-  { text: "Feedback", icon: <HelpRoundedIcon /> },
-];
-
 export default function HostPage(props: { disableCustomTheme?: boolean }) {
   let navigate = useNavigate();
   const path = useLocation().pathname;
-  let navIdx = 0;
+  let navIdx = 1;
   for (let i = 0; i < mainListItems.length; i++) {
     const pth = mainListItems[i].path || "";
     if (pth && path.indexOf(pth) > -1) {

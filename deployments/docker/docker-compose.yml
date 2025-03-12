@@ -21,6 +21,8 @@ services:
 
   postgresql:
     image: docker.io/library/postgres:17
+    command: >
+      -c max_wal_size=2048
     user: postgres
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
