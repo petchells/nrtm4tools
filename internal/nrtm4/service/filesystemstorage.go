@@ -54,6 +54,7 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 		err = os.Mkdir(subdir, 0775)
 		if err != nil {
 			logger.Error("Failed to create subdirectory", "subdir", subdir, "error", err)
+			return nil, err
 		}
 	}
 	path := filepath.Join(subdir, filepath.Base(fURL))

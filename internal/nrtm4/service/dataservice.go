@@ -62,10 +62,18 @@ func (ds NrtmDataService) listSources() ([]persist.NRTMSource, error) {
 	return ds.Repository.ListSources()
 }
 
-func (ds NrtmDataService) getNotifications(src persist.NRTMSource, from, to uint32) ([]persist.Notification, error) {
-	return ds.Repository.GetNotificationHistory(src, from, to)
-}
+// func (ds NrtmDataService) getNotifications(src persist.NRTMSource, from, to uint32) ([]persist.Notification, error) {
+// 	return ds.Repository.GetNotificationHistory(src, from, to)
+// }
 
 func (ds NrtmDataService) saveNewSource(source persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
-	return ds.Repository.SaveSource(source, notification)
+	return ds.Repository.SaveSource(source, &notification)
+}
+
+func (ds NrtmDataService) updateSource(source persist.NRTMSource) (persist.NRTMSource, error) {
+	src, err := ds.Repository.SaveSource(source, nil)
+	if err != nil {
+		logger.Error("Failed to save source", "source", src, "error", err)
+	}
+	return src, nil
 }

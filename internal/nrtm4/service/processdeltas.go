@@ -70,7 +70,7 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 			}
 			header = deltaHeader
 			source.Version = uint32(deltaRef.Version)
-			_, err = repo.SaveSource(source, notification)
+			_, err = repo.SaveSource(source, &notification)
 			return err
 		}
 		delta := new(persist.DeltaJSON)

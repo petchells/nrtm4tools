@@ -138,7 +138,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 				return err
 			}
 			source.Version = uint32(snapshotHeader.Version)
-			_, err = repo.SaveSource(source, notification)
+			_, err = repo.SaveSource(source, &notification)
 			return err
 		} else if err != nil {
 			logger.Warn("Error reading jsonseq records.", "error", err)

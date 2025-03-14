@@ -170,6 +170,14 @@ export default function Source(props: {
           </Item>
         </Grid>
         <Grid size={{ xs: 4, md: 4 }}>
+          <Label>Status</Label>
+        </Grid>
+        <Grid size={{ xs: 8, md: 8 }}>
+          <Item>
+            {source.Status}
+          </Item>
+        </Grid>
+        <Grid size={{ xs: 4, md: 4 }}>
           <Label>Repo last updated</Label>
         </Grid>
         <Grid size={{ xs: 8, md: 8 }}>
@@ -185,6 +193,6 @@ export default function Source(props: {
           </Item>
         </Grid>
       </Grid>
-    </Box>
+    </Box >
   );
 }

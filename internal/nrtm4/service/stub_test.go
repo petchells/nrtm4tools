@@ -50,7 +50,7 @@ type mockRepo struct {
 	sources []persist.NRTMSource
 }
 
-func (mr mockRepo) SaveSource(source persist.NRTMSource, notifile persist.NotificationJSON) (persist.NRTMSource, error) {
+func (mr mockRepo) SaveSource(source persist.NRTMSource, notifile *persist.NotificationJSON) (persist.NRTMSource, error) {
 	id := uint64((len(mr.sources) + 1000))
 	src := source
 	src.ID = id

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.13 (Debian 14.13-1.pgdg120+1)
+-- Dumped from database version 16.8 (Debian 16.8-1.pgdg120+1)
 -- Dumped by pg_dump version 16.8 (Ubuntu 16.8-0ubuntu0.24.04.1)
 
 SET statement_timeout = 0;
@@ -15,15 +15,6 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
 
 --
 -- Name: id_generator(); Type: FUNCTION; Schema: public; Owner: nrtm4
@@ -174,6 +165,7 @@ CREATE TABLE public.nrtm_source (
     version integer NOT NULL,
     notification_url text NOT NULL,
     label character varying(255) NOT NULL,
+    status character varying(255) NOT NULL,
     created timestamp without time zone NOT NULL
 );
 

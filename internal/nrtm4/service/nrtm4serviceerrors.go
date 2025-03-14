@@ -9,6 +9,8 @@ var (
 	ErrNRTM4SourceMismatch = errors.New("session id does not match source")
 	// ErrNRTM4SourceNameMismatch source name does not match source
 	ErrNRTM4SourceNameMismatch = errors.New("source name does not match source")
+	// ErrNRTM4NotificationOutOfDate notification file is stale
+	ErrNRTM4NotificationOutOfDate = errors.New("notification file is stale")
 	// ErrNRTM4FileVersionMismatch file version does not match its reference
 	ErrNRTM4FileVersionMismatch = errors.New("file version does not match its reference")
 	// ErrNRTM4FileVersionInconsistency version is lower than source

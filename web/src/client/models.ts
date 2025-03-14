@@ -33,6 +33,7 @@ export type SourceModel = {
 	Version: number;
 	NotificationURL: string;
 	Label: string;
+	Status: string;
 	Created: string;
 	Notifications: Notification[];
 };

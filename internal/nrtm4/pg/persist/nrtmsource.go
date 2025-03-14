@@ -17,6 +17,7 @@ type NRTMSource struct {
 	Version          uint32    `em:"-"`
 	NotificationURL  string    `em:"-"`
 	Label            string    `em:"-"`
+	Status           string    `em:"-"`
 	Created          time.Time `em:"-"`
 }
 
@@ -30,6 +31,7 @@ func NewNRTMSource(source persist.NRTMSource) NRTMSource {
 		Version:         source.Version,
 		NotificationURL: source.NotificationURL,
 		Label:           source.Label,
+		Status:          source.Status,
 		Created:         util.AppClock.Now(),
 	}
 	return sourceObj
@@ -44,6 +46,7 @@ func FromNRTMSource(source persist.NRTMSource) NRTMSource {
 		Version:         source.Version,
 		NotificationURL: source.NotificationURL,
 		Label:           source.Label,
+		Status:          source.Status,
 		Created:         source.Created,
 	}
 }
@@ -57,6 +60,7 @@ func (s *NRTMSource) AsNRTMSource() persist.NRTMSource {
 		Version:         s.Version,
 		NotificationURL: s.NotificationURL,
 		Label:           s.Label,
+		Status:          s.Status,
 		Created:         s.Created,
 	}
 }

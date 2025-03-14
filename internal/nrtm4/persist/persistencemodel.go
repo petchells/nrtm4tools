@@ -14,6 +14,7 @@ type NRTMSource struct {
 	Version         uint32
 	NotificationURL string
 	Label           string
+	Status          string
 	Created         time.Time
 }
 

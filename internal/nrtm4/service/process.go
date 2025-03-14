@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"io"
 	"net/url"
 	"os"
@@ -76,6 +75,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	}
 	logger.Info("Saving new source", "source", notification.Source)
 	source := persist.NewNRTMSource(notification, label, unfURL)
+	source.Status = "new"
 	if source, err = ds.saveNewSource(source, notification); err != nil {
 		logger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
 		return err
@@ -91,6 +91,8 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	logger.Info("Fetching snapshot file...")
 	snapshotFile, err := fm.fetchFileAndCheckHash(unfURL, notification.SnapshotRef, dirname)
 	if err != nil {
+		source.Status = "snapshot.file.failed: " + err.Error()
+		ds.updateSource(source)
 		return err
 	}
 	logger.Info("Snapshot file downloaded")
@@ -98,10 +100,18 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 
 	logger.Info("Inserting snapshot objects", "source", notification.Source)
 	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification)); err != io.EOF {
-		logger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
+		logger.Warn("Invalid snapshot. Remove Source and restart sync", "error", err)
+		source.Status = "snapshot.insert.failed: " + err.Error()
+		ds.updateSource(source)
 		return err
 	}
-	return syncDeltas(p, notification, source)
+	err = syncDeltas(p, notification, source)
+	if err != nil {
+		source.Status = "delta.failed: " + err.Error()
+		ds.updateSource(source)
+		return err
+	}
+	return nil
 }
 
 // Update brings the local mirror up to date
@@ -118,16 +128,23 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 		return err
 	}
 	if notification.SessionID != source.SessionID {
-		return errors.New("server has a new mirror session")
+		source.Status = "session.restarted"
+		ds.updateSource(*source)
+		return ErrSessionRestarted
 	}
 	if notification.Version < int64(source.Version) {
-		return errors.New("server has old version")
+		return ErrNRTM4NotificationOutOfDate
 	}
 	if notification.Version == int64(source.Version) {
 		logger.Info("Already at latest version")
 		return nil
 	}
-	return syncDeltas(p, notification, *source)
+	if err = syncDeltas(p, notification, *source); err != nil {
+		source.Status = "delta.failed: " + err.Error()
+		ds.updateSource(*source)
+		return err
+	}
+	return nil
 }
 
 // ListSources gets details, including notifications, of all sources
