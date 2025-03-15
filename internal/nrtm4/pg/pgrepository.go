@@ -152,6 +152,9 @@ func (repo PostgresRepository) SaveSource(source persist.NRTMSource, notificatio
 		if err != nil {
 			return err
 		}
+		if notification == nil {
+			return nil
+		}
 		return pgpersist.NewNotification(tx, source.ID, *notification)
 	})
 	return pgSource.AsNRTMSource(), err

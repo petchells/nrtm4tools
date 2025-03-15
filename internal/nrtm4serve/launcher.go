@@ -31,14 +31,16 @@ func Launch(config service.AppConfig, port int, webDir string) {
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("POST")
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("OPTIONS")
 
-	returnIndex := func(w http.ResponseWriter, r *http.Request) {
+	s.Router().HandleFunc("/ws", wsHandler)
+
+	serveIndex := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
 	}
 
 	if len(webDir) > 0 {
 		s.Router().PathPrefix("/assets/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webDir))))
-		s.Router().HandleFunc("/", returnIndex).Methods("GET")
-		s.Router().HandleFunc("/{.*}", returnIndex).Methods("GET")
+		s.Router().HandleFunc("/", serveIndex).Methods("GET")
+		s.Router().HandleFunc("/{.*}", serveIndex).Methods("GET")
 	}
-	s.Serve(port)
+	log.Fatal(s.Serve(port))
 }
