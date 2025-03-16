@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { alpha } from "@mui/material/styles";
@@ -11,6 +11,7 @@ import type { } from "@mui/x-charts/themeAugmentation";
 import type { } from "@mui/x-data-grid/themeAugmentation";
 import type { } from "@mui/x-tree-view/themeAugmentation";
 
+import { AppConfig } from "../client/models";
 import AppNavbar from "./widgets/AppNavbar";
 import Header from "./widgets/Header";
 import SideMenu from "./widgets/SideMenu";
@@ -32,6 +33,20 @@ const xThemeComponents = {
 };
 
 export default function HostPage(props: { disableCustomTheme?: boolean }) {
+  // useEffect(() => {
+  //   fetch("/s/webclient.cfg")
+  //     .then(
+  //       (resp) => resp.json(),
+  //     )
+  //     .then(
+  //       (cfg: AppConfig) => {
+  //         window["__APP_CONFIG__"] = cfg;
+  //       },
+  //       () => console.log("Failed to get configuration"),
+  //     );
+  // }, []);
+  // console.log("config", config)
+
   let navigate = useNavigate();
   const path = useLocation().pathname;
   let navIdx = 1;

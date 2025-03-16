@@ -6,6 +6,17 @@ import { CssBaseline } from "@mui/material";
 import theme from "./theme";
 import router from "./root";
 
+// fetch("/s/webclient.cfg")
+//   .then(
+//     (resp) => resp.json(),
+//   )
+//   .then(
+//     (cfg: AppConfig) => {
+//       console.log(cfg);
+//     },
+//     () => console.log("Failed to get configuration"),
+//   );
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>

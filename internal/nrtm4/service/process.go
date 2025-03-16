@@ -23,6 +23,8 @@ type AppConfig struct {
 	NRTMFilePath     string
 	PgDatabaseURL    string
 	BoltDatabasePath string
+	WebSocketURL     string
+	RPCEndpoint      string
 }
 
 // NewNRTMProcessor injects repo and client into service and return a new instance

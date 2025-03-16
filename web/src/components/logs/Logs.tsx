@@ -2,24 +2,31 @@ import { useState, useEffect, useCallback } from "react";
 import useWebSocket, * as ws from 'react-use-websocket';
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid2";
+import { AppConfig } from "../../client/models";
 
 export default function Logs() {
-  //Public API that will echo messages sent to it back to the client
-  const [socketUrl, setSocketUrl] = useState('http://localhost:8090/ws');
-  const [messageHistory, setMessageHistory] = useState<MessageEvent<any>[]>([]);
 
-  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
+  //Public API that will echo messages sent to it back to the client
+  const [socketURL, setSocketURL] = useState<string | null>(null);
+  const [messageHistory, setMessageHistory] = useState<MessageEvent<any>[]>([]);
+  const { sendMessage, lastMessage, readyState } = useWebSocket(socketURL);
+
+  useEffect(() => {
+    fetch("/s/webclient.cfg")
+      .then(
+        (resp) => resp.json(),
+      )
+      .then(
+        (cfg: AppConfig) => setSocketURL(cfg.WebSocketURL),
+        () => console.log("Failed to get configuration"),
+      );
+  }, []);
 
   useEffect(() => {
     if (lastMessage !== null) {
       setMessageHistory((prev) => prev.concat(lastMessage));
     }
   }, [lastMessage]);
-
-  const handleClickChangeSocketUrl = useCallback(
-    () => setSocketUrl('wss://demos.kaazing.com/echo'),
-    []
-  );
 
   const handleClickSendMessage = useCallback(() => sendMessage('Hello'), []);
 
@@ -35,9 +42,6 @@ export default function Logs() {
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       <Grid container spacing={2} columns={12}>
         <Grid size={12}>
-          <button onClick={handleClickChangeSocketUrl}>
-            Click Me to change Socket Url
-          </button>
           <button
             onClick={handleClickSendMessage}
             disabled={readyState !== ws.ReadyState.OPEN}

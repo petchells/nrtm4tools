@@ -1,6 +1,8 @@
 package nrtm4serve
 
 import (
+	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -8,8 +10,15 @@ import (
 
 	"github.com/petchells/nrtm4tools/internal/nrtm4/pg"
 	"github.com/petchells/nrtm4tools/internal/nrtm4/service"
+	"github.com/petchells/nrtm4tools/internal/nrtm4/util"
 	"github.com/petchells/nrtm4tools/internal/nrtm4serve/rpc"
 )
+
+// ClientConfig is read by the web client when it starts
+type ClientConfig struct {
+	WebSocketURL string
+	RPCEndpoint  string
+}
 
 // Launch sets up the rpc handler and starts the server
 func Launch(config service.AppConfig, port int, webDir string) {
@@ -37,6 +46,19 @@ func Launch(config service.AppConfig, port int, webDir string) {
 		http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
 	}
 
+	serveConfig := func(w http.ResponseWriter, r *http.Request) {
+		cc := ClientConfig{
+			WebSocketURL: config.WebSocketURL,
+			RPCEndpoint:  config.RPCEndpoint,
+		}
+		ccJSON, err := json.Marshal(cc)
+		if err != nil {
+			log.Fatal("Cannot serialize client config", cc)
+		}
+		content := bytes.NewReader(ccJSON)
+		http.ServeContent(w, r, "webclient.cfg", util.AppClock.Now(), content)
+	}
+	s.Router().HandleFunc("/s/webclient.cfg", serveConfig).Methods("GET")
 	if len(webDir) > 0 {
 		s.Router().PathPrefix("/assets/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webDir))))
 		s.Router().HandleFunc("/", serveIndex).Methods("GET")
