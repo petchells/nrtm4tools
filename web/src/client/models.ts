@@ -1,3 +1,8 @@
+
+//
+// NRTM4 files
+//
+
 export interface FileRef {
 	hash: string;
 	url: string;
@@ -16,6 +21,10 @@ export interface NotificationJSON {
 	version: number;
 }
 
+//
+// Server models
+//
+
 export interface Notification {
 	ID: string;
 	Created: string;
@@ -26,7 +35,7 @@ export interface Notification {
 	Version: number;
 }
 
-export interface SourceModel {
+export interface SourceDetail {
 	ID: string;
 	Source: string;
 	SessionID: string;
