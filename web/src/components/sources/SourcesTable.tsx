@@ -12,20 +12,20 @@ import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
 import WarningIcon from '@mui/icons-material/Warning';
 
-import { SourceModel } from "../../client/models.ts";
+import { SourceDetail } from "../../client/models.ts";
 import { formatDateWithStyle } from "../../util/dates.ts";
 
 export default function SourcesTable(props: {
-  rows: SourceModel[];
+  rows: SourceDetail[];
   selectedIDs: string[];
-  onSelected: (row: SourceModel) => void;
+  onSelected: (row: SourceDetail) => void;
 }) {
   const [refresh, setRefresh] = useState<number>(0);
 
   const rows = props.rows;
   const selectedIDs = props.selectedIDs;
 
-  const handleClick = (row: SourceModel) => {
+  const handleClick = (row: SourceDetail) => {
     props.onSelected(row);
     setRefresh(refresh ^ 1);
   };

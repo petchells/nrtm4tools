@@ -6,7 +6,6 @@ import { AppConfig } from "../../client/models";
 
 export default function Logs() {
 
-  //Public API that will echo messages sent to it back to the client
   const [socketURL, setSocketURL] = useState<string | null>(null);
   const [messageHistory, setMessageHistory] = useState<MessageEvent<any>[]>([]);
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketURL);

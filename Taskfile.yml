@@ -189,7 +189,7 @@ tasks:
     internal: true
     deps: [migratelatest]
     cmds:
-      - "{{.PGDUMP_CMD}} --schema-only --no-privileges --no-comments --no-tablespaces nrtm4 > ./deployments/docker/initdb.d/nrtm4_schema.sql"
+      - "{{.PGDUMP_CMD}} --schema-only --no-owner --no-privileges --no-comments --no-tablespaces nrtm4 > ./deployments/docker/initdb.d/nrtm4_schema.sql"
     sources:
       - "{{.TERN_DIR}}/*.sql"
     generates:

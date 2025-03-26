@@ -19,13 +19,13 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import UpdateIcon from '@mui/icons-material/Update';
 
 import { formatDateWithStyle, parseISOString } from "../../util/dates";
-import { SourceModel } from "../../client/models";
+import { SourceDetail } from "../../client/models";
 import WebAPIClient from "../../client/WebAPIClient.ts";
 import LabelControl from "./LabelControl.tsx";
 
 export default function Source(props: {
-  source: SourceModel;
-  sourceUpdated: (id: string, source: SourceModel) => void;
+  source: SourceDetail;
+  sourceUpdated: (id: string, source: SourceDetail) => void;
   sourceRemoveConfirmed: (sourceID: string) => void;
 }) {
   const client = new WebAPIClient();
@@ -97,12 +97,11 @@ export default function Source(props: {
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title">
-          {"Confirm removal of source"}
+          Confirm removal of source
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            This will remove {source.Source} {source.Label} and all its objects and history from the repository.<br></br>
-            Click 'Confirm' to continue.
+            Are you sure you want to remove <b>{source.Source} {source.Label}</b> from the repository?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
