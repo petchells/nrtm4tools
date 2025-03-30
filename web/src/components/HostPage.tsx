@@ -6,16 +6,17 @@ import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
 import Stack from "@mui/material/Stack";
 
-import type { } from "@mui/x-date-pickers/themeAugmentation";
-import type { } from "@mui/x-charts/themeAugmentation";
-import type { } from "@mui/x-data-grid/themeAugmentation";
-import type { } from "@mui/x-tree-view/themeAugmentation";
+import type {} from "@mui/x-date-pickers/themeAugmentation";
+import type {} from "@mui/x-charts/themeAugmentation";
+import type {} from "@mui/x-data-grid/themeAugmentation";
+import type {} from "@mui/x-tree-view/themeAugmentation";
 
+import { mainListItems, secondaryListItems } from "./rootmap";
+import LogDrawer from "./logs/LogDrawer";
 import AppNavbar from "./widgets/AppNavbar";
 import Header from "./widgets/Header";
 import SideMenu from "./widgets/SideMenu";
 import AppTheme from "./shared-theme/AppTheme";
-import { mainListItems, secondaryListItems } from "./rootmap";
 
 import {
   chartsCustomizations,
@@ -32,7 +33,6 @@ const xThemeComponents = {
 };
 
 export default function HostPage(props: { disableCustomTheme?: boolean }) {
-
   let navigate = useNavigate();
   const path = useLocation().pathname;
   let navIdx = 1;
@@ -43,12 +43,21 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
       break;
     }
   }
+  const [openPane, setOpenPane] = useState(false);
   const [menuItemSelectedIdx, setMenuItemSelectedIdx] = useState(navIdx);
 
   const navigateToSection = (idx: number) => {
     setMenuItemSelectedIdx(idx);
     if (mainListItems[idx].path) {
       navigate(mainListItems[idx].path);
+    }
+  };
+
+  const secondaryItemClicked = (idx: number) => {
+    const item = secondaryListItems[idx];
+    console.log("clicked", item);
+    if (idx === 0) {
+      setOpenPane(!openPane);
     }
   };
 
@@ -60,6 +69,7 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
           mainItems={mainListItems}
           secondaryItems={secondaryListItems}
           onSelected={(idx) => navigateToSection(idx)}
+          onSecondarySelected={(idx) => secondaryItemClicked(idx)}
           menuItemSelectedIdx={menuItemSelectedIdx}
         />
         <AppNavbar
@@ -91,6 +101,7 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
             <Header pageTitle={mainListItems[menuItemSelectedIdx].text || ""} />
             <Outlet />
           </Stack>
+          <LogDrawer open={openPane} setOpen={setOpenPane} />
         </Box>
       </Box>
     </AppTheme>

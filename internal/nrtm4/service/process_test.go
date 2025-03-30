@@ -3,7 +3,6 @@ package service
 import (
 	"log"
 	"os"
-	"sort"
 	"testing"
 	"time"
 
@@ -43,38 +42,6 @@ func TestLabelRegex(t *testing.T) {
 			} else {
 				t.Error("Label regex should fail", lbl.label)
 			}
-		}
-	}
-}
-
-func TestFileRefSorter(t *testing.T) {
-	refs := []persist.FileRefJSON{
-		{
-			Version: 4,
-			URL:     "https://xxx.xxx.xxx/4",
-			Hash:    "4444",
-		},
-		{
-			Version: 6,
-			URL:     "https://xxx.xxx.xxx/6",
-			Hash:    "6666",
-		},
-		{
-			Version: 3,
-			URL:     "https://xxx.xxx.xxx/3",
-			Hash:    "3333",
-		},
-		{
-			Version: 5,
-			URL:     "https://xxx.xxx.xxx/5",
-			Hash:    "5",
-		},
-	}
-	sort.Sort(fileRefsByVersion(refs))
-	expect := [...]int64{3, 4, 5, 6}
-	for idx, v := range expect {
-		if refs[idx].Version != v {
-			t.Error("Expected", v, "but got", refs[idx].Version)
 		}
 	}
 }

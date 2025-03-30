@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/petchells/nrtm4tools/internal/nrtm4/service"
 )
 
 const (
@@ -29,7 +28,7 @@ var (
 
 type message struct {
 	ID      string
-	Content service.LogMessage
+	Content any
 }
 
 type Client struct {

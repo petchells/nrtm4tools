@@ -16,8 +16,8 @@ var upgrader = websocket.Upgrader{
 
 func wsHandler(hub *Hub) func(http.ResponseWriter, *http.Request) {
 	//messageBuffer := service.NewRingBuffer[service.LogMessage](1000)
-	var wg sync.WaitGroup
 	return func(w http.ResponseWriter, r *http.Request) {
+		var wg sync.WaitGroup
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			logger.Error("Error upgrading", "error", err)

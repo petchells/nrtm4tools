@@ -158,6 +158,7 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 // ListSources gets details, including notifications, of all sources
 func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	ds := NrtmDataService{Repository: p.repo}
+	UserLogger.Info("List sauces")
 	sources, err := ds.listSources()
 	deets := []persist.NRTMSourceDetails{}
 	if err != nil {

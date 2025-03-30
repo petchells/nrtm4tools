@@ -11,15 +11,18 @@ interface MenuContentProps {
   secondaryItems: any[];
   menuItemSelectedIdx: number;
   onSelected: (idx: number) => void;
+  onSecondarySelected: (idx: number) => void;
 }
 export default function MenuContent({
   mainItems,
   secondaryItems,
   menuItemSelectedIdx,
   onSelected,
+  onSecondarySelected,
 }: MenuContentProps) {
   // handle click on menu item
-  const menuClicked = (idx: number) => () => onSelected(idx);
+  const primaryItemClicked = (idx: number) => () => onSelected(idx);
+  const secondaryItemClicked = (idx: number) => () => onSecondarySelected(idx);
 
   return (
     <Stack sx={{ flexGrow: 1, p: 1, justifyContent: "space-between" }}>
@@ -30,7 +33,7 @@ export default function MenuContent({
               <ListItem key={index} disablePadding sx={{ display: "block" }}>
                 <ListItemButton
                   selected={index === menuItemSelectedIdx}
-                  onClick={menuClicked(index)}
+                  onClick={primaryItemClicked(index)}
                 >
                   <ListItemIcon>{item.icon}</ListItemIcon>
                   <ListItemText primary={item.text} />
@@ -42,7 +45,7 @@ export default function MenuContent({
       <List dense>
         {secondaryItems.map((item, index) => (
           <ListItem key={index} disablePadding sx={{ display: "block" }}>
-            <ListItemButton>
+            <ListItemButton onClick={secondaryItemClicked(index)}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>

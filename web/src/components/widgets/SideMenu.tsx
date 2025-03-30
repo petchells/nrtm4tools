@@ -33,6 +33,7 @@ export default function SideMenu(props: {
   secondaryItems: any[];
   menuItemSelectedIdx: number;
   onSelected: (idx: number) => void;
+  onSecondarySelected: (idx: number) => void;
 }) {
   return (
     <Drawer
@@ -78,6 +79,7 @@ export default function SideMenu(props: {
         mainItems={props.mainItems}
         secondaryItems={props.secondaryItems}
         onSelected={(idx) => props.onSelected(idx)}
+        onSecondarySelected={(idx) => props.onSecondarySelected(idx)}
         menuItemSelectedIdx={props.menuItemSelectedIdx}
       />
     </Drawer>
