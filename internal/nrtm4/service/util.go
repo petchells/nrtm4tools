@@ -2,10 +2,9 @@ package service
 
 import (
 	"errors"
+	"log/slog"
 	"net/url"
 	"strings"
-
-	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
 
 func fileNameFromURLString(rawURL string) (string, error) {
@@ -20,15 +19,4 @@ func fileNameFromURLString(rawURL string) (string, error) {
 	return "", errors.New("did not find file name in URL")
 }
 
-type fileRefsByVersion []persist.FileRefJSON
-
-func (s fileRefsByVersion) Len() int {
-	return len(s)
-}
-func (s fileRefsByVersion) Less(i, j int) bool {
-	return s[i].Version < s[j].Version
-}
-
-func (s fileRefsByVersion) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
+var UserLogger *slog.Logger

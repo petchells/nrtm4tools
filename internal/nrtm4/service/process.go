@@ -27,6 +27,12 @@ type AppConfig struct {
 	RPCEndpoint      string
 }
 
+type LogMessage struct {
+	Level   string
+	Text    string
+	Details map[string]any
+}
+
 // NewNRTMProcessor injects repo and client into service and return a new instance
 func NewNRTMProcessor(config AppConfig, repo persist.Repository, client Client) NRTMProcessor {
 	return NRTMProcessor{

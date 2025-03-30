@@ -1,25 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import useWebSocket, * as ws from 'react-use-websocket';
+import useWebSocket, * as ws from "react-use-websocket";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid2";
-import { AppConfig } from "../../client/models";
+import { websocketURL } from "../../main";
 
 export default function Logs() {
-
-  const [socketURL, setSocketURL] = useState<string | null>(null);
   const [messageHistory, setMessageHistory] = useState<MessageEvent<any>[]>([]);
-  const { sendMessage, lastMessage, readyState } = useWebSocket(socketURL);
-
-  useEffect(() => {
-    fetch("/s/webclient.cfg")
-      .then(
-        (resp) => resp.json(),
-      )
-      .then(
-        (cfg: AppConfig) => setSocketURL(cfg.WebSocketURL),
-        () => console.log("Failed to get configuration"),
-      );
-  }, []);
+  const { sendMessage, lastMessage, readyState } = useWebSocket(websocketURL);
 
   useEffect(() => {
     if (lastMessage !== null) {
@@ -27,14 +14,14 @@ export default function Logs() {
     }
   }, [lastMessage]);
 
-  const handleClickSendMessage = useCallback(() => sendMessage('Hello'), []);
+  const handleClickSendMessage = useCallback(() => sendMessage("Hello"), []);
 
   const connectionStatus = {
-    [ws.ReadyState.CONNECTING]: 'Connecting',
-    [ws.ReadyState.OPEN]: 'Open',
-    [ws.ReadyState.CLOSING]: 'Closing',
-    [ws.ReadyState.CLOSED]: 'Closed',
-    [ws.ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+    [ws.ReadyState.CONNECTING]: "Connecting",
+    [ws.ReadyState.OPEN]: "Open",
+    [ws.ReadyState.CLOSING]: "Closing",
+    [ws.ReadyState.CLOSED]: "Closed",
+    [ws.ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
 
   return (
@@ -48,9 +35,7 @@ export default function Logs() {
             Click Me to send 'Hello'
           </button>
         </Grid>
-        <Grid size={12}>
-          The WebSocket is currently {connectionStatus}
-        </Grid>
+        <Grid size={12}>The WebSocket is currently {connectionStatus}</Grid>
         <Grid size={12}>
           {lastMessage ? <span>Last message: {lastMessage.data}</span> : null}
         </Grid>
@@ -60,6 +45,6 @@ export default function Logs() {
           ))}
         </Grid>
       </Grid>
-    </Box >
+    </Box>
   );
-};
+}

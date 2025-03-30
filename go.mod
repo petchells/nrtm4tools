@@ -7,8 +7,9 @@ toolchain go1.23.2
 require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.7.2
-	go.etcd.io/bbolt v1.4.0
 )
+
+require github.com/stretchr/testify v1.10.0 // indirect
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -18,6 +19,5 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 )

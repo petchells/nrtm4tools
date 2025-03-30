@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -18,6 +19,24 @@ import (
 type ClientConfig struct {
 	WebSocketURL string
 	RPCEndpoint  string
+	Version      string
+}
+
+type messagewriter struct {
+	hub *Hub
+}
+
+func (mw messagewriter) Write(b []byte) (int, error) {
+	msg := message{
+		ID: "forty",
+		Content: service.LogMessage{
+			Level:   "Five",
+			Text:    "Success",
+			Details: nil,
+		},
+	}
+	mw.hub.send <- msg
+	return len(b), nil
 }
 
 // Launch sets up the rpc handler and starts the server
@@ -27,9 +46,9 @@ func Launch(config service.AppConfig, port int, webDir string) {
 		log.Fatal("Failed to initialize repository")
 	}
 	defer repo.Close()
+	logger.Info("NRTM4serve is starting", "port", port)
 	processor := service.NewNRTMProcessor(config, repo, service.HTTPClient{})
 	rpcHandler := rpc.Handler{API: WebAPI{Processor: processor}}
-	logger.Info("NRTM4serve is starting", "port", port)
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("Recovered from Panic in launcher", "recover", r)
@@ -40,25 +59,39 @@ func Launch(config service.AppConfig, port int, webDir string) {
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("POST")
 	s.Router().HandleFunc("/rpc", rpcHandler.ProcessRPC).Methods("OPTIONS")
 
-	s.Router().HandleFunc("/ws", wsHandler)
+	hub := newHub()
+	go hub.run()
+	s.Router().HandleFunc("/ws", wsHandler(hub))
+
+	mw := messagewriter{hub}
+	service.UserLogger = slog.New(
+		slog.NewJSONHandler(
+			mw,
+			&slog.HandlerOptions{
+				AddSource: false,
+				Level:     slog.LevelDebug,
+			},
+		),
+	)
 
 	serveIndex := func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
 	}
 
-	serveConfig := func(w http.ResponseWriter, r *http.Request) {
-		cc := ClientConfig{
-			WebSocketURL: config.WebSocketURL,
-			RPCEndpoint:  config.RPCEndpoint,
-		}
-		ccJSON, err := json.Marshal(cc)
-		if err != nil {
-			log.Fatal("Cannot serialize client config", cc)
-		}
-		content := bytes.NewReader(ccJSON)
-		http.ServeContent(w, r, "webclient.cfg", util.AppClock.Now(), content)
+	cc := ClientConfig{
+		WebSocketURL: config.WebSocketURL,
+		RPCEndpoint:  config.RPCEndpoint,
+		Version:      "alpha",
 	}
-	s.Router().HandleFunc("/s/webclient.cfg", serveConfig).Methods("GET")
+	ccJSON, err := json.Marshal(cc)
+	if err != nil {
+		log.Fatal("Cannot serialize client config", cc)
+	}
+	content := bytes.NewReader(ccJSON)
+	serveConfig := func(w http.ResponseWriter, r *http.Request) {
+		http.ServeContent(w, r, "clientcfg.json", util.AppClock.Now(), content)
+	}
+	s.Router().HandleFunc("/s/clientcfg.json", serveConfig).Methods("GET")
 	if len(webDir) > 0 {
 		s.Router().PathPrefix("/assets/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(webDir))))
 		s.Router().HandleFunc("/", serveIndex).Methods("GET")

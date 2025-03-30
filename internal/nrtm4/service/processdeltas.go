@@ -18,7 +18,6 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 	if err != nil {
 		return err
 	}
-	sort.Sort(fileRefsByVersion(deltaRefs))
 	fm := fileManager{p.client}
 	for _, deltaRef := range deltaRefs {
 		logger.Debug("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
@@ -32,7 +31,8 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 			return err
 		}
 	}
-	logger.Info("Finished syncing deltas")
+	logger.Info("Finished syncing deltas", "num deltaRefs", len(deltaRefs))
+	UserLogger.Info("Delta sync complete", "num deltaRefs", len(deltaRefs))
 	return nil
 }
 
