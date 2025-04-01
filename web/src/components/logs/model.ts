@@ -19,13 +19,12 @@ export interface UserMessage {
 //     : DeepReadonly<T[P]>
 // }
 
-export function printLogLine(line: LogLine): string {
-	let pmsg = line.msg;
+export function printParams(line: LogLine): string {
+	const pmsg: string[] = [];
 	for (let p in line) {
 		if (["time", "level", "msg"].indexOf(p) === -1) {
-			console.log("xxxxx", p);
-			pmsg+=`, ${p}=${line[p]}`
+			pmsg.push(`${p}=${line[p]}`)
 		}
 	}
-	return pmsg;
+	return pmsg.join(", ");
 }

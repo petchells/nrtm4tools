@@ -43,7 +43,7 @@ export default function FrameToolbar({ status, setOpen }: FrameToolbarProps) {
   };
 
   return (
-    <AppBar position="static">
+    <AppBar position="sticky">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           <Box sx={{ flexGrow: 0, display: { xs: "flex", sm: "none" }, mr: 1 }}>

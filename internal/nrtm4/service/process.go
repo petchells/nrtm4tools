@@ -198,6 +198,7 @@ func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NR
 
 // RemoveSource removes a source from the repo
 func (p NRTMProcessor) RemoveSource(src, label string) error {
+	UserLogger.Info("Remove source")
 	ds := NrtmDataService{Repository: p.repo}
 	target := ds.getSourceByNameAndLabel(src, label)
 	if target == nil {

@@ -21,12 +21,12 @@ interface LogDrawerProps {
 export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
   const [messageHistory, setMessageHistory] = useState<LogLine[]>([]);
   const { sendMessage, lastMessage, readyState } = useWebSocket(websocketURL);
-  const [refresh, setRefresh] = useState<boolean>(false);
+  //const [refresh, setRefresh] = useState<boolean>(false);
 
   useEffect(() => {
     if (lastMessage !== null) {
       const msg: UserMessage = JSON.parse(lastMessage.data);
-      setRefresh(!refresh);
+      //setRefresh(!refresh);
       setMessageHistory((prev) => prev.concat(msg.Content));
     }
   }, [lastMessage]);
