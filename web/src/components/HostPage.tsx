@@ -54,10 +54,7 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
   };
 
   const secondaryItemClicked = (idx: number) => {
-    const item = secondaryListItems[idx];
-    if (idx === 0) {
-      setOpenPane(!openPane);
-    }
+    setOpenPane(!openPane);
   };
 
   return (

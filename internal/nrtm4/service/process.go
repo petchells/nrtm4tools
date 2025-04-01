@@ -110,10 +110,13 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	}
 	err = syncDeltas(p, notification, source)
 	if err != nil {
+		UserLogger.Error("Failed to sync deltas", "source", source.Source, "error", err)
 		source.Status = "delta.failed: " + err.Error()
 		ds.updateSource(source)
 		return err
 	}
+	source.Status = "ok"
+	ds.updateSource(source)
 	return nil
 }
 
@@ -147,6 +150,8 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 		ds.updateSource(*source)
 		return err
 	}
+	source.Status = "ok"
+	ds.updateSource(*source)
 	return nil
 }
 

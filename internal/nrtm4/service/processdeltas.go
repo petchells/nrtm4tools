@@ -20,7 +20,7 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 	}
 	fm := fileManager{p.client}
 	for _, deltaRef := range deltaRefs {
-		logger.Debug("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
+		UserLogger.Info("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
 		file, err := fm.fetchFileAndCheckHash(source.NotificationURL, deltaRef, dlDir)
 		if err != nil {
 			return err
@@ -31,7 +31,6 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 			return err
 		}
 	}
-	logger.Info("Finished syncing deltas", "num deltaRefs", len(deltaRefs))
 	UserLogger.Info("Delta sync complete", "num deltaRefs", len(deltaRefs))
 	return nil
 }
@@ -81,22 +80,23 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 		case delta.Action == persist.DeltaAddModifyAction:
 			rpsl, err := rpsl.ParseFromJSONString(*delta.Object)
 			if err != nil {
+				UserLogger.Error("Cannot parse RPSL for AddModify action", "object", *delta.Object, "error", err)
 				return err
 			}
 			err = repo.AddModifyObject(source, rpsl, header.NrtmFileJSON)
 			if err != nil {
-				logger.Error("Delta AddModifyObject failed", "rpsl", rpsl, "error", err)
+				UserLogger.Error("Delta AddModifyObject failed", "rpsl", rpsl, "url", deltaRef.URL, "error", err)
 				return err
 			}
 		case delta.Action == persist.DeltaDeleteAction:
 			err = repo.DeleteObject(source, *delta.ObjectClass, *delta.PrimaryKey, header.NrtmFileJSON)
 			if err != nil {
-				logger.Error("Delta Delete0bject failed", "ObjectClass", *delta.ObjectClass, "PrimaryKey", *delta.PrimaryKey, "error", err)
+				UserLogger.Error("Delta DeleteObject failed", "url", deltaRef.URL, "ObjectClass", *delta.ObjectClass, "PrimaryKey", *delta.PrimaryKey, "error", err)
 				return err
 			}
 
 		default:
-			logger.Error("Invalid action", "delta.Action", delta.Action)
+			UserLogger.Error("Delta file contains invalid action", "url", deltaRef.URL, "delta.Action", delta.Action)
 			return errors.New("invalid action for delta")
 		}
 		return nil

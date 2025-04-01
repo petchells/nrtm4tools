@@ -3,7 +3,6 @@ import useWebSocket, * as ws from "react-use-websocket";
 
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-import Grid from "@mui/material/Grid2";
 
 import Stack from "@mui/material/Stack";
 
@@ -27,10 +26,8 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
   useEffect(() => {
     if (lastMessage !== null) {
       const msg: UserMessage = JSON.parse(lastMessage.data);
-      const logline: LogLine = JSON.parse(msg.Content);
-      console.log("lastMessage.data", logline);
       setRefresh(!refresh);
-      setMessageHistory((prev) => prev.concat(logline));
+      setMessageHistory((prev) => prev.concat(msg.Content));
     }
   }, [lastMessage]);
 
@@ -66,18 +63,8 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
       open={open}
     >
       <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
+        <FrameToolbar setOpen={setOpen} status={connectionStatus} />
         <Stack>
-          <FrameToolbar setOpen={setOpen} status={connectionStatus} />
-          <Grid container spacing={1} columns={12}>
-            <Grid size={12}>
-              <button
-                onClick={handleClickSendMessage}
-                disabled={readyState !== ws.ReadyState.OPEN}
-              >
-                Ping server
-              </button>
-            </Grid>
-          </Grid>
           <Box sx={{ m: 2 }}>
             <LogPanel messageHistory={messageHistory} />
           </Box>

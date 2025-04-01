@@ -142,8 +142,8 @@ func validateNotificationFile(file persist.NotificationJSON) error {
 	if len(file.SessionID) < 36 {
 		return newNRTMServiceError("notificationFile session ID is not valid: '%v'", file.SessionID)
 	}
-	if len(file.Source) < 3 {
-		return newNRTMServiceError("notificationFile source is not valid: '%v'", file.Source)
+	if len(file.Source) < 1 {
+		return newNRTMServiceError("notificationFile source name is not valid: '%v'", file.Source)
 	}
 	if file.Version < 1 {
 		return newNRTMServiceError("notificationFile version must be positive: '%v'", file.NrtmVersion)

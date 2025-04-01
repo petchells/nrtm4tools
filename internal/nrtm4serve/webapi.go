@@ -42,7 +42,7 @@ func (api WebAPI) ReplaceLabel(source, fromLabel, toLabel string) (*persist.NRTM
 func (api WebAPI) Connect(url, label string) (string, error) {
 	err := api.Processor.Connect(url, label)
 	if err != nil {
-		service.UserLogger.Info("Connect failed", "url", url, "label", label, "error", err)
+		service.UserLogger.Error("Connect failed", "url", url, "label", label, "error", err)
 	}
 	return wrapResponse("OK", err)
 }

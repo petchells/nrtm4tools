@@ -27,10 +27,13 @@ type messagewriter struct {
 }
 
 func (mw messagewriter) Write(b []byte) (int, error) {
-	logger.Debug("bytes", "string(b)", string(b))
+	var m map[string]any
+	if err := json.Unmarshal(b, &m); err != nil {
+		return 0, err
+	}
 	msg := message{
 		ID:      "logs",
-		Content: string(b),
+		Content: m,
 	}
 	mw.hub.send <- msg
 	return len(b), nil
