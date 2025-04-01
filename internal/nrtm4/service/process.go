@@ -27,12 +27,6 @@ type AppConfig struct {
 	RPCEndpoint      string
 }
 
-type LogMessage struct {
-	Level   string
-	Text    string
-	Details map[string]any
-}
-
 // NewNRTMProcessor injects repo and client into service and return a new instance
 func NewNRTMProcessor(config AppConfig, repo persist.Repository, client Client) NRTMProcessor {
 	return NRTMProcessor{
@@ -56,6 +50,7 @@ var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" +
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {
+	UserLogger.Info("Connect to source", "url", notificationURL, "label", label)
 	unfURL := strings.TrimSpace(notificationURL)
 	if !validateURLString(unfURL) {
 		return ErrBadNotificationURL
@@ -158,7 +153,7 @@ func (p NRTMProcessor) Update(sourceName string, label string) error {
 // ListSources gets details, including notifications, of all sources
 func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	ds := NrtmDataService{Repository: p.repo}
-	UserLogger.Info("List sauces")
+	UserLogger.Info("List sources")
 	sources, err := ds.listSources()
 	deets := []persist.NRTMSourceDetails{}
 	if err != nil {

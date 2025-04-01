@@ -55,7 +55,6 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
 
   const secondaryItemClicked = (idx: number) => {
     const item = secondaryListItems[idx];
-    console.log("clicked", item);
     if (idx === 0) {
       setOpenPane(!openPane);
     }
@@ -77,6 +76,7 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
           secondaryItems={secondaryListItems}
           pageTitle={mainListItems[menuItemSelectedIdx].text}
           onSelected={(idx) => navigateToSection(idx)}
+          onSecondarySelected={(idx) => secondaryItemClicked(idx)}
         />
         {/* Main content */}
         <Box

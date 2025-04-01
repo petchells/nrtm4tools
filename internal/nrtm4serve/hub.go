@@ -153,10 +153,14 @@ func (h *Hub) run() {
 		select {
 		case client := <-h.register:
 			h.clients[client.ID] = client
+			logger.Debug("Registered client", "client.ID", client.ID)
 		case client := <-h.unregister:
+			logger.Debug("Unregistering client", "client.ID", client.ID)
 			if _, ok := h.clients[client.ID]; ok {
 				delete(h.clients, client.ID)
 				close(client.send)
+			} else {
+				logger.Debug("No client found to unregister", "client.ID", client.ID, "len(h.clients)", len(h.clients))
 			}
 		case msg := <-h.send:
 			if client, ok := h.clients[msg.ID]; ok {
@@ -166,6 +170,8 @@ func (h *Hub) run() {
 					close(client.send)
 					delete(h.clients, client.ID)
 				}
+			} else {
+				logger.Debug("No client found to send message to", "msg.ID", msg.ID, "len(h.clients)", len(h.clients))
 			}
 		}
 	}

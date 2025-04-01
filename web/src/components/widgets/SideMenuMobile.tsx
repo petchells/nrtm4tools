@@ -23,6 +23,7 @@ interface SideMenuMobileProps {
   open: boolean | undefined;
   toggleDrawer: (newOpen: boolean) => () => void;
   onSelected: (idx: number) => void;
+  onSecondarySelected: (idx: number) => void;
   mainItems: MenuItem[];
   secondaryItems: MenuItem[];
 }
@@ -31,6 +32,7 @@ export default function SideMenuMobile({
   open,
   toggleDrawer,
   onSelected,
+  onSecondarySelected,
   mainItems,
   secondaryItems,
 }: SideMenuMobileProps) {
@@ -88,6 +90,7 @@ export default function SideMenuMobile({
             secondaryItems={secondaryItems}
             menuItemSelectedIdx={0}
             onSelected={(idx) => onSelected(idx)}
+            onSecondarySelected={(idx) => onSecondarySelected(idx)}
           />
           <Divider />
         </Stack>

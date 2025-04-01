@@ -25,7 +25,7 @@ func wsHandler(hub *Hub) func(http.ResponseWriter, *http.Request) {
 		}
 		defer conn.Close()
 
-		client := &Client{hub: hub, conn: conn, send: make(chan message, 256)}
+		client := &Client{ID: "logs", hub: hub, conn: conn, send: make(chan message, 256)}
 		hub.register <- client
 		wg.Add(2)
 		go client.writePump(&wg)

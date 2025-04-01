@@ -16,27 +16,28 @@ import CloseIcon from "@mui/icons-material/Close";
 import TerminalIcon from "@mui/icons-material/Terminal";
 
 const logLevel = ["Error", "Warning", "Info", "Debug"];
-const settings = ["Logs", "Close"];
 
 interface FrameToolbarProps {
+  status: string;
   setOpen: (b: boolean) => void;
 }
 
-export default function FrameToolbar({ setOpen }: FrameToolbarProps) {
-  const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
+export default function FrameToolbar({ status, setOpen }: FrameToolbarProps) {
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
-  const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElNav(event.currentTarget);
-  };
+
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
 
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
+  const levelClickHandlerWrapper = (lvl: string) => () => {
+    console.log("clicked", lvl);
   };
 
   const handleCloseUserMenu = () => {
+    setAnchorElUser(null);
+  };
+
+  const handleClosePanel = () => {
     setAnchorElUser(null);
     setOpen(false);
   };
@@ -45,35 +46,10 @@ export default function FrameToolbar({ setOpen }: FrameToolbarProps) {
     <AppBar position="static">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <TerminalIcon sx={{ display: { xs: "none", sm: "flex" }, mr: 1 }} />
-          <Typography
-            variant="h6"
-            noWrap
-            component="a"
-            sx={{
-              mr: 2,
-              fontWeight: 700,
-              color: "inherit",
-              textDecoration: "none",
-            }}
-          >
-            Logs
-          </Typography>
-          <Box sx={{ flexGrow: 1, display: { xs: "none", sm: "flex" } }}>
-            {logLevel.map((lvl) => (
-              <Button
-                key={lvl}
-                onClick={handleCloseNavMenu}
-                sx={{ my: 2, color: "white", display: "block" }}
-              >
-                {lvl}
-              </Button>
-            ))}
-          </Box>
-          <Box sx={{ flexGrow: 0 }}>
+          <Box sx={{ flexGrow: 0, display: { xs: "flex", sm: "none" }, mr: 1 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <CloseIcon />
+                <MenuIcon />
               </IconButton>
             </Tooltip>
             <Menu
@@ -92,14 +68,53 @@ export default function FrameToolbar({ setOpen }: FrameToolbarProps) {
               open={Boolean(anchorElUser)}
               onClose={handleCloseUserMenu}
             >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography sx={{ textAlign: "center" }}>
-                    {setting}
-                  </Typography>
+              {logLevel.map((lvl) => (
+                <MenuItem key={lvl} onClick={handleCloseUserMenu}>
+                  <Typography sx={{ textAlign: "center" }}>{lvl}</Typography>
                 </MenuItem>
               ))}
             </Menu>
+          </Box>
+          <TerminalIcon sx={{ display: { xs: "none", sm: "flex" }, mr: 1 }} />
+          <Typography
+            variant="h6"
+            noWrap
+            sx={{
+              mr: 2,
+              fontWeight: 700,
+            }}
+          >
+            Logs
+          </Typography>
+          <Box sx={{ flexGrow: 1, display: "flex" }}>
+            <Box sx={{ display: { xs: "none", sm: "flex" } }}>
+              {logLevel.map((lvl) => (
+                <Button
+                  key={lvl}
+                  onClick={levelClickHandlerWrapper(lvl)}
+                  sx={{ my: 0, color: "white", display: "block" }}
+                >
+                  {lvl}
+                </Button>
+              ))}
+            </Box>
+          </Box>
+          <Typography
+            variant="body1"
+            noWrap
+            sx={{
+              mr: 2,
+              color: status === "Open" ? "white" : "red",
+            }}
+          >
+            WS
+          </Typography>
+          <Box sx={{ flexGrow: 0, alignItems: "right" }}>
+            <Tooltip title="Close panel">
+              <IconButton onClick={handleClosePanel} sx={{ p: 0 }}>
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
         </Toolbar>
       </Container>

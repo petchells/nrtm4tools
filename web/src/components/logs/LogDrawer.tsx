@@ -1,22 +1,16 @@
-//import { styled } from "@mui/material/styles";
+import { useState, useEffect, useCallback } from "react";
+import useWebSocket, * as ws from "react-use-websocket";
+
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-//import MuiToolbar from "@mui/material/Toolbar";
+import Grid from "@mui/material/Grid2";
+
 import Stack from "@mui/material/Stack";
 
 import FrameToolbar from "./FrameToolbar";
 import LogPanel from "./LogPanel";
-
-// const Toolbar = styled(MuiToolbar)({
-//   width: "100%",
-//   padding: "12px",
-//   display: "flex",
-//   flexDirection: "column",
-//   alignItems: "start",
-//   justifyContent: "center",
-//   gap: "12px",
-//   flexShrink: 0,
-// });
+import { websocketURL } from "../../main";
+import { LogLine, UserMessage } from "./model";
 
 const drawerHeight = 360;
 
@@ -26,10 +20,37 @@ interface LogDrawerProps {
 }
 
 export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
-  const toolClick = () => {
-    console.log("clicked tool");
-    setOpen(false);
+  const [messageHistory, setMessageHistory] = useState<LogLine[]>([]);
+  const { sendMessage, lastMessage, readyState } = useWebSocket(websocketURL);
+  const [refresh, setRefresh] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (lastMessage !== null) {
+      const msg: UserMessage = JSON.parse(lastMessage.data);
+      const logline: LogLine = JSON.parse(msg.Content);
+      console.log("lastMessage.data", logline);
+      setRefresh(!refresh);
+      setMessageHistory((prev) => prev.concat(logline));
+    }
+  }, [lastMessage]);
+
+  const msg = {
+    ID: "logs",
+    Content: "Hello",
   };
+
+  const handleClickSendMessage = useCallback(
+    () => sendMessage(JSON.stringify(msg)),
+    []
+  );
+
+  const connectionStatus = {
+    [ws.ReadyState.CONNECTING]: "Connecting",
+    [ws.ReadyState.OPEN]: "Open",
+    [ws.ReadyState.CLOSING]: "Closing",
+    [ws.ReadyState.CLOSED]: "Closed",
+    [ws.ReadyState.UNINSTANTIATED]: "Uninstantiated",
+  }[readyState];
 
   return (
     <Drawer
@@ -46,9 +67,19 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
     >
       <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
         <Stack>
-          <FrameToolbar setOpen={setOpen} />
+          <FrameToolbar setOpen={setOpen} status={connectionStatus} />
+          <Grid container spacing={1} columns={12}>
+            <Grid size={12}>
+              <button
+                onClick={handleClickSendMessage}
+                disabled={readyState !== ws.ReadyState.OPEN}
+              >
+                Ping server
+              </button>
+            </Grid>
+          </Grid>
           <Box sx={{ m: 2 }}>
-            <LogPanel />
+            <LogPanel messageHistory={messageHistory} />
           </Box>
         </Stack>
       </Box>

@@ -29,7 +29,7 @@ type messagewriter struct {
 func (mw messagewriter) Write(b []byte) (int, error) {
 	logger.Debug("bytes", "string(b)", string(b))
 	msg := message{
-		ID:      "public",
+		ID:      "logs",
 		Content: string(b),
 	}
 	mw.hub.send <- msg
