@@ -10,7 +10,7 @@ import (
 
 var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-	memprofile = flag.String("memprofile", "", "write memory profile to this file")
+	memprofile = flag.String("memprofile", "", "write memory profile to file")
 )
 
 const mandatorySourceMessage = "Source name must be provided with the -source flag"
@@ -41,7 +41,7 @@ func Exec(commander CommandExecutor) {
 			return
 		}
 		if len(*src) == 0 {
-			log.Fatalf(mandatorySourceMessage)
+			log.Fatal(mandatorySourceMessage)
 		}
 		commander.Update(*src, *lbl)
 	}
@@ -67,7 +67,7 @@ func Exec(commander CommandExecutor) {
 			return
 		}
 		if len(*src) == 0 {
-			log.Fatalf(mandatorySourceMessage)
+			log.Fatal(mandatorySourceMessage)
 		}
 		if len(*lbl) == 0 && len(*tolbl) == 0 {
 			log.Fatalf("At least -label or -to must be specified")
@@ -84,7 +84,7 @@ func Exec(commander CommandExecutor) {
 			return
 		}
 		if len(*src) == 0 {
-			log.Fatalf(mandatorySourceMessage)
+			log.Fatal(mandatorySourceMessage)
 		}
 		commander.RemoveSource(*src, *lbl)
 	}

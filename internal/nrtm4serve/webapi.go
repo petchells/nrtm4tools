@@ -49,7 +49,7 @@ func (api WebAPI) Connect(url, label string) (string, error) {
 
 // Update updates a source to the latest version
 func (api WebAPI) Update(src, label string) (string, error) {
-	err := api.Processor.Update(src, label)
+	_, err := api.Processor.Update(src, label)
 	return wrapResponse("OK", err)
 }
 

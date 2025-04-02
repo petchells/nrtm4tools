@@ -9,7 +9,7 @@ import (
 // ExecutionProcessor top-level processing for app functions
 type ExecutionProcessor interface {
 	Connect(string, string) error
-	Update(string, string) error
+	Update(string, string) (*persist.NRTMSource, error)
 	ListSources() ([]persist.NRTMSourceDetails, error)
 	ReplaceLabel(string, string, string) (*persist.NRTMSource, error)
 	RemoveSource(string, string) error
@@ -37,7 +37,7 @@ func (ce CommandExecutor) Connect(notificationURL string, label string) {
 
 // Update brings local mirror up to date
 func (ce CommandExecutor) Update(source string, label string) {
-	err := ce.processor.Update(source, label)
+	_, err := ce.processor.Update(source, label)
 	if err != nil {
 		logger.Warn("Error occurred during update", "error", err)
 	} else {

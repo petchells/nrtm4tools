@@ -70,10 +70,10 @@ func (ds NrtmDataService) saveNewSource(source persist.NRTMSource, notification 
 	return ds.Repository.SaveSource(source, &notification)
 }
 
-func (ds NrtmDataService) updateSource(source persist.NRTMSource) (persist.NRTMSource, error) {
+func (ds NrtmDataService) updateSource(source persist.NRTMSource) (*persist.NRTMSource, error) {
 	src, err := ds.Repository.SaveSource(source, nil)
 	if err != nil {
 		logger.Error("Failed to save source", "source", src, "error", err)
 	}
-	return src, nil
+	return &src, nil
 }

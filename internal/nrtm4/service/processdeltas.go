@@ -19,19 +19,26 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 		return err
 	}
 	fm := fileManager{p.client}
+	ds := NrtmDataService{Repository: p.repo}
 	for _, deltaRef := range deltaRefs {
 		UserLogger.Info("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
 		file, err := fm.fetchFileAndCheckHash(source.NotificationURL, deltaRef, dlDir)
 		if err != nil {
+			UserLogger.Error("Error fetching delta", "source", source.Source, "delta", deltaRef.Version, "url", deltaRef.URL, "error", err)
 			return err
 		}
 		defer file.Close()
 		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, notification, deltaRef)); err != io.EOF {
-			logger.Warn("Failed to apply delta", "source", source, "error", err)
+			UserLogger.Error("Failed to apply delta", "source", source.Source, "delta", deltaRef.Version, "url", deltaRef.URL, "error", err)
+			return err
+		}
+		source.Version = uint32(deltaRef.Version)
+		_, err = ds.updateSource(source)
+		if err != nil {
 			return err
 		}
 	}
-	UserLogger.Info("Delta sync complete", "num deltaRefs", len(deltaRefs))
+	UserLogger.Info("Delta sync complete", "number of deltas files applied", len(deltaRefs))
 	return nil
 }
 
@@ -42,6 +49,9 @@ func findUpdates(notification persist.NotificationJSON, source persist.NRTMSourc
 		if deltaRef.Version > int64(source.Version) {
 			deltaRefs = append(deltaRefs, deltaRef)
 		}
+	}
+	if len(deltaRefs) == 0 {
+		return nil, nil
 	}
 	sort.Slice(deltaRefs, func(r1, r2 int) bool {
 		return deltaRefs[r1].Version < deltaRefs[r2].Version

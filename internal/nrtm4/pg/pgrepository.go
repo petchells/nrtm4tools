@@ -115,7 +115,6 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 		AND version >= $2
 		AND version <= $3
 		ORDER BY version DESC
-		LIMIT 100
 		`,
 		notifDesc.ColumnNamesCommaSeparated(),
 		notifDesc.TableName(),

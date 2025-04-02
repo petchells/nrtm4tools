@@ -1,7 +1,6 @@
 import { createTheme, ThemeProvider, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
-import { formatDateWithStyle } from "../../util/dates";
 import { LogLine, printParams } from "./model";
 import { Fragment } from "react/jsx-runtime";
 

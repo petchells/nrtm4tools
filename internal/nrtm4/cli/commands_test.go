@@ -13,8 +13,8 @@ func (ps ProcessorStub) Connect(url, label string) error {
 	return errors.New("test error")
 }
 
-func (ps ProcessorStub) Update(srcName, label string) error {
-	return nil
+func (ps ProcessorStub) Update(srcName, label string) (*persist.NRTMSource, error) {
+	return new(persist.NRTMSource), nil
 }
 
 func (ps ProcessorStub) ListSources() ([]persist.NRTMSourceDetails, error) {

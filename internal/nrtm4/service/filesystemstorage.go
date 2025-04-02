@@ -44,7 +44,7 @@ const numVersionsPerDirectory = 10000
 func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileRefJSON, basePath string) (*os.File, error) {
 	fURL := fullURL(unfURL, fileRef.URL)
 	if !validateURLString(fURL) {
-		logger.Info("URL in fileRef cannot be parsed", "fURL", fURL)
+		UserLogger.Info("URL in fileRef cannot be parsed", "fURL", fURL)
 		return nil, errors.New("invalid URL in reference")
 	}
 	vdir := (fileRef.Version / numVersionsPerDirectory) * numVersionsPerDirectory
@@ -60,7 +60,7 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 	path := filepath.Join(subdir, filepath.Base(fURL))
 	var file *os.File
 	if file, err = os.Open(path); err != nil {
-		logger.Info("Downloading file", "url", fURL)
+		UserLogger.Debug("Downloading file", "url", fURL, "path", path)
 		if _, err = fm.writeResourceToPath(fURL, path); err != nil {
 			logger.Error("Failed to write file", "url", fURL, "path", path)
 			return nil, err
@@ -69,6 +69,8 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 			logger.Error("Failed to open file", "url", fURL, "path", path)
 			return nil, err
 		}
+	} else {
+		UserLogger.Debug("Using existing file", "url", fURL, "path", path)
 	}
 	sum, err := calcHash256(file)
 	if err != nil {
@@ -78,9 +80,10 @@ func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileR
 		if err = os.Rename(file.Name(), file.Name()+"-BADHASH"); err != nil {
 			return nil, err
 		}
-		logger.Warn("Hash does not match the downloaded file", "file", file.Name(), "hash", fileRef.Hash, "calculated", sum)
+		UserLogger.Error("Hash does not match the downloaded file", "file", file.Name(), "hash", fileRef.Hash, "calculated", sum)
 		return nil, ErrHashMismatch
 	}
+	UserLogger.Debug("File hash is ok", "file", file.Name())
 	return file, nil
 }
 
