@@ -2,6 +2,8 @@ package cli
 
 import (
 	"log"
+	"log/slog"
+	"os"
 
 	"github.com/petchells/nrtm4tools/internal/nrtm4/pg"
 	"github.com/petchells/nrtm4tools/internal/nrtm4/service"
@@ -15,6 +17,15 @@ func InitializeCommandProcessor(config service.AppConfig) CommandExecutor {
 		log.Fatal("Failed to initialize repository")
 	}
 	defer repo.Close()
+	service.UserLogger = slog.New(
+		slog.NewTextHandler(
+			os.Stdout,
+			&slog.HandlerOptions{
+				AddSource: false,
+				Level:     slog.LevelInfo,
+			},
+		),
+	)
 	processor := service.NewNRTMProcessor(config, repo, httpClient)
 	return NewCommandProcessor(processor)
 }

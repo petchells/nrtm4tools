@@ -5,6 +5,7 @@ CREATE TABLE nrtm_source (
 	VERSION INTEGER NOT NULL,
 	notification_url TEXT NOT NULL,
 	label VARCHAR(255) NOT NULL,
+	status VARCHAR(255) NOT NULL,
 	created TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 	CONSTRAINT nrtm_source__pk PRIMARY KEY (id),
 	CONSTRAINT nrtm_source__source__label__uid UNIQUE (notification_url, label)

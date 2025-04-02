@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -10,7 +11,9 @@ import (
 )
 
 var port = flag.Int("port", 8080, "server port number")
-var webdir = flag.String("webdir", "", "path to static web root")
+var webdir = flag.String("webdir", "", "(optional) directory containing static web files")
+var wsURL = flag.String("wsurl", "", "web socket URL, defaults to http://localhost:<port>/ws")
+var rpcURL = flag.String("rpcurl", "", "JSON RPC endpoint URL, defaults to http://localhost:<port>/rpc")
 
 func main() {
 	flag.Parse()
@@ -20,6 +23,14 @@ func main() {
 			log.Fatalln("Environment variable not set: ", ev)
 		}
 	}
+	if wsURL == nil || len(*wsURL) == 0 {
+		u := fmt.Sprintf("http://localhost:%d/ws", *port)
+		wsURL = &u
+	}
+	if rpcURL == nil || len(*rpcURL) == 0 {
+		u := fmt.Sprintf("http://localhost:%d/rpc", *port)
+		rpcURL = &u
+	}
 	dbURL := os.Getenv("PG_DATABASE_URL")
 	boltDBPath := os.Getenv("BOLT_DATABASE_PATH")
 	nrtmFilePath := os.Getenv("NRTM4_FILE_PATH")
@@ -27,6 +38,8 @@ func main() {
 		NRTMFilePath:     nrtmFilePath,
 		PgDatabaseURL:    dbURL,
 		BoltDatabasePath: boltDBPath,
+		WebSocketURL:     *wsURL,
+		RPCEndpoint:      *rpcURL,
 	}
 	nrtm4serve.Launch(config, *port, *webdir)
 }

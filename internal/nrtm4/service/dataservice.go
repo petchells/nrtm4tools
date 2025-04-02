@@ -1,25 +1,11 @@
 package service
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
 	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
-
-// ErrNRTMServiceError is when sth is wrong with the NRTM server
-type ErrNRTMServiceError struct {
-	Message string
-}
-
-func (e ErrNRTMServiceError) Error() string {
-	return "nrtm service error: " + e.Message
-}
-
-func newNRTMServiceError(msg string, args ...any) ErrNRTMServiceError {
-	return ErrNRTMServiceError{fmt.Sprintf(msg, args...)}
-}
 
 // NrtmDataService is an implementation of a persist.Repository
 type NrtmDataService struct {
@@ -62,10 +48,18 @@ func (ds NrtmDataService) listSources() ([]persist.NRTMSource, error) {
 	return ds.Repository.ListSources()
 }
 
-func (ds NrtmDataService) getNotifications(src persist.NRTMSource, from, to uint32) ([]persist.Notification, error) {
-	return ds.Repository.GetNotificationHistory(src, from, to)
-}
+// func (ds NrtmDataService) getNotifications(src persist.NRTMSource, from, to uint32) ([]persist.Notification, error) {
+// 	return ds.Repository.GetNotificationHistory(src, from, to)
+// }
 
 func (ds NrtmDataService) saveNewSource(source persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
-	return ds.Repository.SaveSource(source, notification)
+	return ds.Repository.SaveSource(source, &notification)
+}
+
+func (ds NrtmDataService) updateSource(source persist.NRTMSource) (*persist.NRTMSource, error) {
+	src, err := ds.Repository.SaveSource(source, nil)
+	if err != nil {
+		logger.Error("Failed to save source", "source", src, "error", err)
+	}
+	return &src, nil
 }

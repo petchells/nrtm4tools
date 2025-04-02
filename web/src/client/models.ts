@@ -1,10 +1,15 @@
-export type FileRef = {
+
+//
+// NRTM4 files
+//
+
+export interface FileRef {
 	hash: string;
 	url: string;
 	version: number;
-};
+}
 
-export type NotificationJSON = {
+export interface NotificationJSON {
 	deltas: FileRef[];
 	next_signing_key: string;
 	nrtm_version: number;
@@ -14,9 +19,13 @@ export type NotificationJSON = {
 	timestamp: string;
 	type: string;
 	version: number;
-};
+}
 
-export type Notification = {
+//
+// Server models
+//
+
+export interface Notification {
 	ID: string;
 	Created: string;
 	SourceID: string;
@@ -24,15 +33,21 @@ export type Notification = {
 	SessionID: string;
 	Source: string;
 	Version: number;
-};
+}
 
-export type SourceModel = {
+export interface SourceDetail {
 	ID: string;
 	Source: string;
 	SessionID: string;
 	Version: number;
 	NotificationURL: string;
 	Label: string;
+	Status: string;
 	Created: string;
 	Notifications: Notification[];
-};
+}
+
+export interface AppConfig {
+	WebSocketURL: string;
+	RPCEndpoint: string;
+}

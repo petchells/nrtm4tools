@@ -5,10 +5,8 @@ import FileDownload from "@mui/icons-material/FileDownload";
 import HelpRoundedIcon from "@mui/icons-material/HelpRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import QuestionAnswer from "@mui/icons-material/QuestionAnswer";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import TerminalIcon from "@mui/icons-material/Terminal";
 
-import Logs from "./logs/Logs";
 import Sources from "./sources/Sources";
 import MainGrid from "./dashboard/MainGrid";
 import Queries from "./queries/Queries";
@@ -37,7 +35,6 @@ export const mainListItems: MenuRouter[] = [
     path: "dashboard",
     element: <MainGrid />,
   },
-  { text: "Logs", icon: <TerminalIcon />, path: "logs", element: <Logs /> },
   {
     text: "Object queries",
     icon: <QuestionAnswer />,
@@ -46,9 +43,8 @@ export const mainListItems: MenuRouter[] = [
   },
 ];
 
-
 export const secondaryListItems: MenuItem[] = [
-  { text: "Settings", icon: <SettingsRoundedIcon /> },
+  { text: "Logs", icon: <TerminalIcon /> },
   { text: "About", icon: <InfoRoundedIcon /> },
   { text: "Feedback", icon: <HelpRoundedIcon /> },
 ];

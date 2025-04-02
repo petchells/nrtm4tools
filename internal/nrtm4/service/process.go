@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"io"
 	"net/url"
 	"os"
@@ -9,9 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
-	"github.com/petchells/nrtm4tools/internal/nrtm4/pg/db"
 )
 
 var (
@@ -24,6 +21,8 @@ type AppConfig struct {
 	NRTMFilePath     string
 	PgDatabaseURL    string
 	BoltDatabasePath string
+	WebSocketURL     string
+	RPCEndpoint      string
 }
 
 // NewNRTMProcessor injects repo and client into service and return a new instance
@@ -49,6 +48,7 @@ var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" +
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {
+	UserLogger.Info("Connect to source", "url", notificationURL, "label", label)
 	unfURL := strings.TrimSpace(notificationURL)
 	if !validateURLString(unfURL) {
 		return ErrBadNotificationURL
@@ -64,7 +64,6 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	if ds.getSourceByURLAndLabel(unfURL, label) != nil {
 		return ErrSourceAlreadyExists
 	}
-	logger.Info("Fetching notification")
 	fm := fileManager{p.client}
 	notification, err := fm.downloadNotificationFile(unfURL)
 	if err != nil {
@@ -74,12 +73,13 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	if err != nil {
 		return err
 	}
-	logger.Info("Saving new source", "source", notification.Source)
 	source := persist.NewNRTMSource(notification, label, unfURL)
+	source.Status = "new"
 	if source, err = ds.saveNewSource(source, notification); err != nil {
-		logger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
+		UserLogger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
 		return err
 	}
+	UserLogger.Info("Saved source", "source", notification.Source, "version", notification.Version, "label", label)
 	dirname := filepath.Join(p.config.NRTMFilePath, source.Source, source.SessionID)
 	_, err = os.Stat(dirname)
 	if os.IsNotExist(err) {
@@ -88,51 +88,77 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 		}
 	}
 	// Download snapshot
-	logger.Info("Fetching snapshot file...")
+	UserLogger.Info("Fetching snapshot file", "url", notification.SnapshotRef.URL)
 	snapshotFile, err := fm.fetchFileAndCheckHash(unfURL, notification.SnapshotRef, dirname)
 	if err != nil {
+		source.Status = "snapshot.file.failed: " + err.Error()
+		ds.updateSource(source)
 		return err
 	}
-	logger.Info("Snapshot file downloaded")
 	defer snapshotFile.Close()
 
-	logger.Info("Inserting snapshot objects", "source", notification.Source)
+	UserLogger.Info("Inserting snapshot objects", "source", notification.Source)
 	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification)); err != io.EOF {
-		logger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
+		UserLogger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
+		source.Status = "snapshot.insert.failed: " + err.Error()
+		ds.updateSource(source)
 		return err
 	}
-	return syncDeltas(p, notification, source)
+	source.Status = "ok"
+	ds.updateSource(source)
+
+	UserLogger.Info("Synchronizing deltas", "total refs", len(notification.DeltaRefs))
+	source, err = syncDeltas(p, notification, source)
+	if err != nil {
+		UserLogger.Error("Failed to sync deltas", "source", source.Source, "version", source.Version, "error", err)
+		source.Status = "delta.failed: " + err.Error()
+		ds.updateSource(source)
+		return err
+	}
+	source.Status = "ok"
+	ds.updateSource(source)
+	return nil
 }
 
 // Update brings the local mirror up to date
-func (p NRTMProcessor) Update(sourceName string, label string) error {
+func (p NRTMProcessor) Update(sourceName string, label string) (*persist.NRTMSource, error) {
 	ds := NrtmDataService{Repository: p.repo}
 	source := ds.getSourceByNameAndLabel(sourceName, label)
 	if source == nil {
 		logger.Warn("No source with given name and label", "name", sourceName, "label", label)
-		return ErrSourceNotFound
+		return nil, ErrSourceNotFound
 	}
 	fm := fileManager{p.client}
 	notification, err := fm.downloadNotificationFile(source.NotificationURL)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if notification.SessionID != source.SessionID {
-		return errors.New("server has a new mirror session")
+		source.Status = "session.restarted"
+		ds.updateSource(*source)
+		return nil, ErrSessionRestarted
 	}
 	if notification.Version < int64(source.Version) {
-		return errors.New("server has old version")
+		return nil, ErrNRTM4NotificationOutOfDate
 	}
 	if notification.Version == int64(source.Version) {
-		logger.Info("Already at latest version")
-		return nil
+		UserLogger.Info("Already at latest version")
+		return nil, nil
 	}
-	return syncDeltas(p, notification, *source)
+	var updated persist.NRTMSource
+	if updated, err = syncDeltas(p, notification, *source); err != nil {
+		updated.Status = "delta.failed: " + err.Error()
+		_, err = ds.updateSource(updated)
+		return nil, err
+	}
+	updated.Status = "ok"
+	return ds.updateSource(updated)
 }
 
 // ListSources gets details, including notifications, of all sources
 func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	ds := NrtmDataService{Repository: p.repo}
+	UserLogger.Info("List sources")
 	sources, err := ds.listSources()
 	deets := []persist.NRTMSourceDetails{}
 	if err != nil {
@@ -155,6 +181,7 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 
 // ReplaceLabel replaces a label name
 func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NRTMSource, error) {
+	UserLogger.Info("Replace label", "src", src, "label", fromLabel, "replace with", toLabel)
 	ds := NrtmDataService{Repository: p.repo}
 	possDupe := ds.getSourceByNameAndLabel(src, toLabel)
 	if possDupe != nil {
@@ -165,13 +192,12 @@ func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NR
 		return nil, ErrSourceNotFound
 	}
 	target.Label = toLabel
-	return target, db.WithTransaction(func(tx pgx.Tx) error {
-		return db.Update(tx, target)
-	})
+	return ds.updateSource(*target)
 }
 
 // RemoveSource removes a source from the repo
 func (p NRTMProcessor) RemoveSource(src, label string) error {
+	UserLogger.Info("Remove source", "src", src, "label", label)
 	ds := NrtmDataService{Repository: p.repo}
 	target := ds.getSourceByNameAndLabel(src, label)
 	if target == nil {
@@ -186,11 +212,11 @@ func fullURL(base, relpath string) string {
 		logger.Error("fullURL called with a path that does not contain '/'", "base", base)
 		return ""
 	}
-	sepIdx := 1
+	sepIdx := 0
 	if strings.HasPrefix(relpath, "/") {
-		sepIdx = 0
+		sepIdx = 1
 	}
-	return base[:idx+sepIdx] + relpath
+	return base[:idx+1] + relpath[sepIdx:]
 }
 
 func validateURLString(str string) bool {

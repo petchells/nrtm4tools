@@ -115,7 +115,6 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 		AND version >= $2
 		AND version <= $3
 		ORDER BY version DESC
-		LIMIT 100
 		`,
 		notifDesc.ColumnNamesCommaSeparated(),
 		notifDesc.TableName(),
@@ -140,7 +139,7 @@ func (repo PostgresRepository) GetNotificationHistory(source persist.NRTMSource,
 }
 
 // SaveSource updates a source if ID is non-zero, or creates a new one if it is
-func (repo PostgresRepository) SaveSource(source persist.NRTMSource, notification persist.NotificationJSON) (persist.NRTMSource, error) {
+func (repo PostgresRepository) SaveSource(source persist.NRTMSource, notification *persist.NotificationJSON) (persist.NRTMSource, error) {
 	var pgSource pgpersist.NRTMSource
 	err := db.WithTransaction(func(tx pgx.Tx) error {
 		if source.ID == 0 {
@@ -152,7 +151,10 @@ func (repo PostgresRepository) SaveSource(source persist.NRTMSource, notificatio
 		if err != nil {
 			return err
 		}
-		return pgpersist.NewNotification(tx, source.ID, notification)
+		if notification == nil {
+			return nil
+		}
+		return pgpersist.NewNotification(tx, source.ID, *notification)
 	})
 	return pgSource.AsNRTMSource(), err
 }

@@ -1,4 +1,4 @@
-import { SourceModel } from "./models";
+import { SourceDetail } from "./models";
 import RPCClient from "./RPCClient";
 
 export default class WebAPIClient {
@@ -8,16 +8,16 @@ export default class WebAPIClient {
     this.client = new RPCClient();
   }
 
-  public listSources(): Promise<SourceModel[]> {
-    return this.client.execute<SourceModel[]>("ListSources");
+  public listSources(): Promise<SourceDetail[]> {
+    return this.client.execute<SourceDetail[]>("ListSources");
   }
 
   public saveLabel(
     source: string,
     fromLabel: string,
     toLabel: string
-  ): Promise<SourceModel> {
-    return this.client.execute<SourceModel>("ReplaceLabel", [
+  ): Promise<SourceDetail> {
+    return this.client.execute<SourceDetail>("ReplaceLabel", [
       source,
       fromLabel,
       toLabel,

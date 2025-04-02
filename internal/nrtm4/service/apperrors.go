@@ -8,7 +8,13 @@ var (
 	// ErrHashMismatch when a file downloaded from 'url' does not match its 'hash'
 	ErrHashMismatch = errors.New("hash does not match downloaded file")
 
+	// ErrSnapshotInsertFailed snapshot insertion failed
+	ErrSnapshotInsertFailed = errors.New("snapshot was not inserted into the repository")
+
 	// Repo errors
+
+	// ErrSessionRestarted server has started a new session
+	ErrSessionRestarted = errors.New("server has started a new session")
 
 	// ErrBadNotificationURL notification URL cannot be parsed
 	ErrBadNotificationURL = errors.New("notification URL cannot be parsed")

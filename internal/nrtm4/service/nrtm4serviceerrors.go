@@ -1,6 +1,9 @@
 package service
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	// ErrNRTM4VersionMismatch nrtm version is not 4
@@ -9,6 +12,8 @@ var (
 	ErrNRTM4SourceMismatch = errors.New("session id does not match source")
 	// ErrNRTM4SourceNameMismatch source name does not match source
 	ErrNRTM4SourceNameMismatch = errors.New("source name does not match source")
+	// ErrNRTM4NotificationOutOfDate notification file is stale
+	ErrNRTM4NotificationOutOfDate = errors.New("notification file is stale")
 	// ErrNRTM4FileVersionMismatch file version does not match its reference
 	ErrNRTM4FileVersionMismatch = errors.New("file version does not match its reference")
 	// ErrNRTM4FileVersionInconsistency version is lower than source
@@ -22,3 +27,16 @@ var (
 	// ErrNRTM4DuplicateDeltaVersion the highest delta version is not the notification version
 	ErrNRTM4DuplicateDeltaVersion = errors.New("notification file published a duplicate delta file")
 )
+
+// ErrNRTMServiceError is when sth is wrong with the NRTM server
+type ErrNRTMServiceError struct {
+	Message string
+}
+
+func (e ErrNRTMServiceError) Error() string {
+	return "NRTM4 Service Error: " + e.Message
+}
+
+func newNRTMServiceError(msg string, args ...any) ErrNRTMServiceError {
+	return ErrNRTMServiceError{fmt.Sprintf(msg, args...)}
+}

@@ -1,3 +1,6 @@
+import { useState } from "react";
+
+import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -6,24 +9,33 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
-import { SourceModel } from "../../client/models.ts";
 import Checkbox from "@mui/material/Checkbox";
-import { useState } from "react";
+import WarningIcon from '@mui/icons-material/Warning';
+
+import { SourceDetail } from "../../client/models.ts";
 import { formatDateWithStyle } from "../../util/dates.ts";
 
 export default function SourcesTable(props: {
-  rows: SourceModel[];
+  rows: SourceDetail[];
   selectedIDs: string[];
-  onSelected: (row: SourceModel) => void;
+  onSelected: (row: SourceDetail) => void;
 }) {
   const [refresh, setRefresh] = useState<number>(0);
 
   const rows = props.rows;
   const selectedIDs = props.selectedIDs;
 
-  const handleClick = (row: SourceModel) => {
+  const handleClick = (row: SourceDetail) => {
     props.onSelected(row);
     setRefresh(refresh ^ 1);
+  };
+
+  const rowIcon = (status: string) => {
+    if (status === "new") {
+      return <CircularProgress size="1em" />
+    } else if (status === "session.restarted") {
+      return <WarningIcon />
+    }
   };
 
   return (
@@ -82,20 +94,18 @@ export default function SourcesTable(props: {
                     scope="row"
                     padding="normal"
                   >
-                    {row.Source}
+                    {row.Source} {rowIcon(row.Status)}
                   </TableCell>
                   <TableCell component="td" scope="row" padding="normal">
                     {row.Label}
                   </TableCell>
                   <TableCell>
-                    {row.Notifications.length ? (
+                    {!!row.Notifications.length && (
                       formatDateWithStyle(
                         row.Notifications[0].Created,
                         "en-gb",
                         "short"
                       )
-                    ) : (
-                      <i>Incomplete...</i>
                     )}
                   </TableCell>
                   <TableCell

@@ -70,11 +70,11 @@ func TestApplyDeltas(t *testing.T) {
 			repo.RemoveSource(src)
 		}
 	}
-	if source, err = repo.SaveSource(source, notification); err != nil {
+	if source, err = repo.SaveSource(source, &notification); err != nil {
 		t.Fatal("Failed to save source")
 	}
 
-	err = syncDeltas(p, notification, source)
+	_, err = syncDeltas(p, notification, source)
 
 	if err != nil {
 		t.Error("Failed to apply deltas", err)

@@ -2,12 +2,13 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.13 (Debian 14.13-1.pgdg120+1)
--- Dumped by pg_dump version 16.8 (Ubuntu 16.8-0ubuntu0.24.04.1)
+-- Dumped from database version 17.4 (Debian 17.4-1.pgdg120+2)
+-- Dumped by pg_dump version 17.0
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -17,16 +18,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
-
---
--- Name: id_generator(); Type: FUNCTION; Schema: public; Owner: nrtm4
+-- Name: id_generator(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.id_generator(OUT result bigint) RETURNS bigint
@@ -49,10 +41,8 @@ END;
 $$;
 
 
-ALTER FUNCTION public.id_generator(OUT result bigint) OWNER TO nrtm4;
-
 --
--- Name: store_rpslobject_history(); Type: FUNCTION; Schema: public; Owner: nrtm4
+-- Name: store_rpslobject_history(); Type: FUNCTION; Schema: public; Owner: -
 --
 
 CREATE FUNCTION public.store_rpslobject_history() RETURNS trigger
@@ -81,10 +71,8 @@ CREATE FUNCTION public.store_rpslobject_history() RETURNS trigger
 $$;
 
 
-ALTER FUNCTION public.store_rpslobject_history() OWNER TO nrtm4;
-
 --
--- Name: _history_seq; Type: SEQUENCE; Schema: public; Owner: nrtm4
+-- Name: _history_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public._history_seq
@@ -95,10 +83,8 @@ CREATE SEQUENCE public._history_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public._history_seq OWNER TO nrtm4;
-
 --
--- Name: _seq; Type: SEQUENCE; Schema: public; Owner: nrtm4
+-- Name: _seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public._seq
@@ -109,12 +95,10 @@ CREATE SEQUENCE public._seq
     CACHE 1;
 
 
-ALTER SEQUENCE public._seq OWNER TO nrtm4;
-
 SET default_table_access_method = heap;
 
 --
--- Name: nrtm_notification; Type: TABLE; Schema: public; Owner: nrtm4
+-- Name: nrtm_notification; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.nrtm_notification (
@@ -126,10 +110,8 @@ CREATE TABLE public.nrtm_notification (
 );
 
 
-ALTER TABLE public.nrtm_notification OWNER TO nrtm4;
-
 --
--- Name: nrtm_rpslobject; Type: TABLE; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.nrtm_rpslobject (
@@ -142,10 +124,8 @@ CREATE TABLE public.nrtm_rpslobject (
 );
 
 
-ALTER TABLE public.nrtm_rpslobject OWNER TO nrtm4;
-
 --
--- Name: nrtm_rpslobject_history; Type: TABLE; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject_history; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.nrtm_rpslobject_history (
@@ -161,10 +141,8 @@ CREATE TABLE public.nrtm_rpslobject_history (
 );
 
 
-ALTER TABLE public.nrtm_rpslobject_history OWNER TO nrtm4;
-
 --
--- Name: nrtm_source; Type: TABLE; Schema: public; Owner: nrtm4
+-- Name: nrtm_source; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.nrtm_source (
@@ -178,10 +156,8 @@ CREATE TABLE public.nrtm_source (
 );
 
 
-ALTER TABLE public.nrtm_source OWNER TO nrtm4;
-
 --
--- Name: schema_version; Type: TABLE; Schema: public; Owner: nrtm4
+-- Name: schema_version; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.schema_version (
@@ -189,10 +165,8 @@ CREATE TABLE public.schema_version (
 );
 
 
-ALTER TABLE public.schema_version OWNER TO nrtm4;
-
 --
--- Name: nrtm_notification nrtm_notification__pk; Type: CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_notification nrtm_notification__pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_notification
@@ -200,7 +174,7 @@ ALTER TABLE ONLY public.nrtm_notification
 
 
 --
--- Name: nrtm_rpslobject_history nrtm_rpslobject_history_pkey; Type: CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject_history nrtm_rpslobject_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_rpslobject_history
@@ -208,7 +182,7 @@ ALTER TABLE ONLY public.nrtm_rpslobject_history
 
 
 --
--- Name: nrtm_source nrtm_source__pk; Type: CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_source nrtm_source__pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_source
@@ -216,7 +190,7 @@ ALTER TABLE ONLY public.nrtm_source
 
 
 --
--- Name: nrtm_source nrtm_source__source__label__uid; Type: CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_source nrtm_source__source__label__uid; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_source
@@ -224,7 +198,7 @@ ALTER TABLE ONLY public.nrtm_source
 
 
 --
--- Name: nrtm_rpslobject rpslobject__pk; Type: CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject rpslobject__pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_rpslobject
@@ -232,7 +206,7 @@ ALTER TABLE ONLY public.nrtm_rpslobject
 
 
 --
--- Name: nrtm_rpslobject rpslobject__source__type__primary_key__version__uid; Type: CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject rpslobject__source__type__primary_key__version__uid; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_rpslobject
@@ -240,49 +214,49 @@ ALTER TABLE ONLY public.nrtm_rpslobject
 
 
 --
--- Name: nrtm_notification__version__idx; Type: INDEX; Schema: public; Owner: nrtm4
+-- Name: nrtm_notification__version__idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX nrtm_notification__version__idx ON public.nrtm_notification USING btree (source_id, version);
 
 
 --
--- Name: nrtm_rpslobject_history__seq__idx; Type: INDEX; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject_history__seq__idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX nrtm_rpslobject_history__seq__idx ON public.nrtm_rpslobject_history USING btree (seq);
 
 
 --
--- Name: nrtm_rpslobject_history__source__idx; Type: INDEX; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject_history__source__idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX nrtm_rpslobject_history__source__idx ON public.nrtm_rpslobject_history USING btree (source_id);
 
 
 --
--- Name: nrtm_rpslobject_history__type__key__idx; Type: INDEX; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject_history__type__key__idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX nrtm_rpslobject_history__type__key__idx ON public.nrtm_rpslobject_history USING btree (object_type, primary_key);
 
 
 --
--- Name: rpslobject__type__primary_key__idx; Type: INDEX; Schema: public; Owner: nrtm4
+-- Name: rpslobject__type__primary_key__idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX rpslobject__type__primary_key__idx ON public.nrtm_rpslobject USING btree (object_type, primary_key);
 
 
 --
--- Name: nrtm_rpslobject modify_rpsl_trigger; Type: TRIGGER; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject modify_rpsl_trigger; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER modify_rpsl_trigger BEFORE DELETE OR UPDATE ON public.nrtm_rpslobject FOR EACH ROW EXECUTE FUNCTION public.store_rpslobject_history();
 
 
 --
--- Name: nrtm_notification nrtm_notification__nrtm_source__fk; Type: FK CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_notification nrtm_notification__nrtm_source__fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_notification
@@ -290,7 +264,7 @@ ALTER TABLE ONLY public.nrtm_notification
 
 
 --
--- Name: nrtm_rpslobject rpslobject__nrtm_source__fk; Type: FK CONSTRAINT; Schema: public; Owner: nrtm4
+-- Name: nrtm_rpslobject rpslobject__nrtm_source__fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_rpslobject

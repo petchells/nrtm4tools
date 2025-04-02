@@ -23,14 +23,17 @@ tasks:
 
   migrate:
     desc: Brings the database schema up to the latest version
-    deps: [nrtm4_schema]
+    deps: [generateschema]
     cmds:
-      - tern migrate --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}} >/dev/null
       - tern status --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}}
 
   build:
     desc: Builds, then tests all binaries and the web client
     deps: [buildgo, testgo, buildweb, testweb]
+
+  test:
+    desc: Runs all front and back end tests
+    deps: [testgo, testweb]
 
   install:
     desc: Builds all binaries and creates a local image
@@ -43,22 +46,12 @@ tasks:
 
   release:
     desc: Pushes an image to the remote repository
-    deps: [install]
+    deps: [migrate, install]
     cmds:
       - "{{.DOCKER_CMD}} tag {{.WEB_APP}}-dev {{.RELEASE_REPO}}/{{.WEB_APP}}:{{.REVISION}}"
       - "{{.DOCKER_CMD}} tag {{.WEB_APP}}-dev {{.RELEASE_REPO}}/{{.WEB_APP}}:latest"
       - "{{.DOCKER_CMD}} push {{.RELEASE_REPO}}/{{.WEB_APP}}:{{.REVISION}}"
       - "{{.DOCKER_CMD}} push {{.RELEASE_REPO}}/{{.WEB_APP}}:latest"
-
-  test:
-    desc: Runs all front and back end tests
-    deps: [testgo, testweb]
-
-  coverage:
-    desc: Prints a coverage report of the Go code in ./docs/_generated
-    deps: [test]
-    cmds:
-      - sh ./scripts/coverage.sh
 
   clean:
     desc: Removes all generated files except cached web modules
@@ -75,6 +68,9 @@ tasks:
     cmds:
       - rm -rf {{.WEB_DIR}}/node_modules
 
+  #
+  # Development utils
+  #
   buildgo:
     desc: Builds binaries
     cmd:
@@ -103,7 +99,12 @@ tasks:
     cmds:
       - cd {{.WEB_DIR}} && npx vitest run
 
-  # Development utils
+  coverage:
+    desc: Prints a coverage report of the Go code in ./docs/_generated
+    deps: [test]
+    cmds:
+      - sh ./scripts/coverage.sh
+
   rewinddb:
     desc: Rolls the database schema back one version
     cmds:
@@ -129,7 +130,9 @@ tasks:
     cmds:
       - cd {{.WEB_DIR}} && npm run dev
 
+  #
   # Internal targets
+  #
   installweb:
     internal: true
     cmds:
@@ -177,10 +180,16 @@ tasks:
       - tern migrate --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} >/dev/null
       - tern migrate --destination -1 --config {{.TERN_DIR}}/tern.test.conf --migrations {{.TERN_DIR}} >/dev/null
 
-  nrtm4_schema:
+  migratelatest:
     internal: true
     cmds:
-      - "{{.PGDUMP_CMD}} --schema-only --no-privileges --no-comments --no-tablespaces nrtm4 > ./deployments/docker/initdb.d/nrtm4_schema.sql"
+      - tern migrate --config {{.TERN_DIR}}/tern.conf --migrations {{.TERN_DIR}} >/dev/null
+
+  generateschema:
+    internal: true
+    deps: [migratelatest]
+    cmds:
+      - "{{.PGDUMP_CMD}} --schema-only --no-owner --no-privileges --no-comments --no-tablespaces nrtm4 > ./deployments/docker/initdb.d/nrtm4_schema.sql"
     sources:
       - "{{.TERN_DIR}}/*.sql"
     generates:

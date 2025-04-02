@@ -29,12 +29,14 @@ const Toolbar = styled(MuiToolbar)({
 interface AppNavbarProps {
   pageTitle?: string;
   onSelected: (idx: number) => void;
+  onSecondarySelected: (idx: number) => void;
   mainItems: MenuItem[];
   secondaryItems: MenuItem[];
 }
 export default function AppNavbar({
   pageTitle,
   onSelected,
+  onSecondarySelected,
   mainItems,
   secondaryItems,
 }: AppNavbarProps) {
@@ -43,6 +45,11 @@ export default function AppNavbar({
   const onMenuSelected = (idx: number) => {
     setOpen(false);
     onSelected(idx);
+  };
+
+  const onSecondaryMenuSelected = (idx: number) => {
+    setOpen(false);
+    onSecondarySelected(idx);
   };
 
   const toggleDrawer = (newOpen: boolean) => () => {
@@ -96,6 +103,7 @@ export default function AppNavbar({
             open={open}
             toggleDrawer={toggleDrawer}
             onSelected={onMenuSelected}
+            onSecondarySelected={onSecondaryMenuSelected}
             mainItems={mainItems}
             secondaryItems={secondaryItems}
           />

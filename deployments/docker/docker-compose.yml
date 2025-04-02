@@ -4,8 +4,10 @@ services:
     ports:
       - "8000:8080"
     environment:
-      - PG_DATABASE_URL=postgres://nrtm4@host.docker.internal:15432/postgres?sslmode=disable
+      - PG_DATABASE_URL=postgres://postgres@host.docker.internal:15432/postgres?sslmode=disable
       - NRTM4_FILE_PATH=/nrtm4-files
+      - WEB_SOCKET_URL=http://localhost:8000/ws
+      - JSON_RPC_ENDPOINT=http://localhost:8000/rpc
     volumes:
       - ./nrtm4-files:/nrtm4-files
     depends_on:

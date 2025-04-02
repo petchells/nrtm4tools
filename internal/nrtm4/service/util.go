@@ -2,11 +2,25 @@ package service
 
 import (
 	"errors"
+	"log/slog"
 	"net/url"
+	"os"
 	"strings"
-
-	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
+
+var UserLogger *slog.Logger
+
+func init() {
+	UserLogger = slog.New(
+		slog.NewTextHandler(
+			os.Stdout,
+			&slog.HandlerOptions{
+				AddSource: false,
+				Level:     slog.LevelDebug,
+			},
+		),
+	)
+}
 
 func fileNameFromURLString(rawURL string) (string, error) {
 	url, err := url.Parse(rawURL)
@@ -18,17 +32,4 @@ func fileNameFromURLString(rawURL string) (string, error) {
 		return url.Path[idx+1:], nil
 	}
 	return "", errors.New("did not find file name in URL")
-}
-
-type fileRefsByVersion []persist.FileRefJSON
-
-func (s fileRefsByVersion) Len() int {
-	return len(s)
-}
-func (s fileRefsByVersion) Less(i, j int) bool {
-	return s[i].Version < s[j].Version
-}
-
-func (s fileRefsByVersion) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
 }

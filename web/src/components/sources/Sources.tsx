@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import WarningIcon from "@mui/icons-material/Warning";
 
-import { SourceModel } from "../../client/models.ts";
+import { SourceDetail } from "../../client/models.ts";
 import WebAPIClient from "../../client/WebAPIClient.ts";
 import SourcesTable from "./SourcesTable.tsx";
 import SourcesError from "./SourcesError.tsx";
@@ -21,7 +21,7 @@ export default function Sources() {
   const [pageLoading, setPageLoading] = useState<number>(1);
   const [dataLoading, setDataLoading] = useState(false);
   const [err, setErr] = useState<string>("");
-  const [sources, setSources] = useState<SourceModel[]>([]);
+  const [sources, setSources] = useState<SourceDetail[]>([]);
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
   const [refresh, setRefresh] = useState<number>(0);
   const client = new WebAPIClient();
@@ -56,7 +56,7 @@ export default function Sources() {
     fetchSources();
   }, []);
 
-  const handleOnSelected = (row: SourceModel) => {
+  const handleOnSelected = (row: SourceDetail) => {
     const key = row.ID;
     const idx = selectedIDs.indexOf(key);
     if (idx < 0) {
@@ -110,7 +110,7 @@ export default function Sources() {
     return src[0];
   };
 
-  const handleSourceUpdated = (id: string, source: SourceModel) => {
+  const handleSourceUpdated = (id: string, source: SourceDetail) => {
     for (const s of sources) {
       if (s.ID === id) {
         s.Label = source.Label;
@@ -120,7 +120,7 @@ export default function Sources() {
     }
   };
 
-  const removeSource = (source: SourceModel) => {
+  const removeSource = (source: SourceDetail) => {
     setDataLoading(true);
     client
       .removeSource(source.Source, source.Label)

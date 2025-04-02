@@ -70,6 +70,9 @@ func (pi processInvoker) testConnect(srcname, label string) {
 
 	// Assertions
 	sources, err := pi.p.ListSources()
+	if err != nil {
+		t.Error("Error ListSources returned an error", err)
+	}
 	if len(sources) < 1 {
 		t.Error("Should be at least one source")
 	}
@@ -90,12 +93,15 @@ func (pi processInvoker) testConnect(srcname, label string) {
 
 func (pi processInvoker) testUpdate(srcname, label string) {
 	t := pi.t
-	err := pi.p.Update(strings.ToLower(srcname), label)
+	_, err := pi.p.Update(strings.ToLower(srcname), label)
 	if err != nil {
 		t.Error("Error update returned an error", err)
 	}
 
 	sources, err := pi.p.ListSources()
+	if err != nil {
+		t.Error("Error list sources returned an error", err)
+	}
 	if len(sources) < 1 {
 		t.Error("Should be at least one source")
 	}
@@ -112,7 +118,7 @@ func (pi processInvoker) testRename(srcname, label, to string) {
 		t.Error("Error update returned an error", err)
 	}
 
-	sources, err := pi.p.ListSources()
+	sources, _ := pi.p.ListSources()
 	if len(sources) < 1 {
 		t.Error("Should be at least one source")
 	}
