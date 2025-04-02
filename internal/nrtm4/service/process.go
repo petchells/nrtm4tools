@@ -108,7 +108,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	ds.updateSource(source)
 
 	UserLogger.Info("Synchronizing deltas", "total refs", len(notification.DeltaRefs))
-	err = syncDeltas(p, notification, source)
+	source, err = syncDeltas(p, notification, source)
 	if err != nil {
 		UserLogger.Error("Failed to sync deltas", "source", source.Source, "version", source.Version, "error", err)
 		source.Status = "delta.failed: " + err.Error()
@@ -145,13 +145,14 @@ func (p NRTMProcessor) Update(sourceName string, label string) (*persist.NRTMSou
 		UserLogger.Info("Already at latest version")
 		return nil, nil
 	}
-	if err = syncDeltas(p, notification, *source); err != nil {
-		source.Status = "delta.failed: " + err.Error()
-		_, err = ds.updateSource(*source)
+	var updated persist.NRTMSource
+	if updated, err = syncDeltas(p, notification, *source); err != nil {
+		updated.Status = "delta.failed: " + err.Error()
+		_, err = ds.updateSource(updated)
 		return nil, err
 	}
-	source.Status = "ok"
-	return ds.updateSource(*source)
+	updated.Status = "ok"
+	return ds.updateSource(updated)
 }
 
 // ListSources gets details, including notifications, of all sources

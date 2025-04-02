@@ -74,7 +74,7 @@ func TestApplyDeltas(t *testing.T) {
 		t.Fatal("Failed to save source")
 	}
 
-	err = syncDeltas(p, notification, source)
+	_, err = syncDeltas(p, notification, source)
 
 	if err != nil {
 		t.Error("Failed to apply deltas", err)

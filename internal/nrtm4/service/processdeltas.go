@@ -12,34 +12,35 @@ import (
 	"github.com/petchells/nrtm4tools/internal/nrtm4/rpsl"
 )
 
-func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source persist.NRTMSource) error {
+func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source persist.NRTMSource) (persist.NRTMSource, error) {
 	dlDir := filepath.Join(p.config.NRTMFilePath, source.Source, source.SessionID)
 	deltaRefs, err := findUpdates(notification, source)
 	if err != nil {
-		return err
+		return source, err
 	}
 	fm := fileManager{p.client}
 	ds := NrtmDataService{Repository: p.repo}
 	for _, deltaRef := range deltaRefs {
-		UserLogger.Info("Processing delta", "delta", deltaRef.Version, "url", deltaRef.URL)
+		UserLogger.Info("Fetching delta", "version", deltaRef.Version, "relurl", deltaRef.URL)
 		file, err := fm.fetchFileAndCheckHash(source.NotificationURL, deltaRef, dlDir)
 		if err != nil {
-			UserLogger.Error("Error fetching delta", "source", source.Source, "delta", deltaRef.Version, "url", deltaRef.URL, "error", err)
-			return err
+			UserLogger.Error("Error fetching delta", "source", source.Source, "delta", deltaRef.Version, "relurl", deltaRef.URL, "error", err)
+			return source, err
 		}
 		defer file.Close()
-		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, notification, deltaRef)); err != io.EOF {
-			UserLogger.Error("Failed to apply delta", "source", source.Source, "delta", deltaRef.Version, "url", deltaRef.URL, "error", err)
-			return err
+		if err := fm.readJSONSeqRecords(file, applyDeltaFunc(p.repo, source, deltaRef)); err != io.EOF {
+			UserLogger.Error("Failed to apply delta", "source", source.Source, "delta", deltaRef.Version, "relurl", deltaRef.URL, "error", err)
+			return source, err
 		}
 		source.Version = uint32(deltaRef.Version)
-		_, err = ds.updateSource(source)
+		src, err := ds.updateSource(source)
 		if err != nil {
-			return err
+			return source, err
 		}
+		source = *src
 	}
 	UserLogger.Info("Delta sync complete", "number of deltas files applied", len(deltaRefs))
-	return nil
+	return source, nil
 }
 
 func findUpdates(notification persist.NotificationJSON, source persist.NRTMSource) ([]persist.FileRefJSON, error) {
@@ -63,7 +64,7 @@ func findUpdates(notification persist.NotificationJSON, source persist.NRTMSourc
 	return deltaRefs, nil
 }
 
-func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notification persist.NotificationJSON, deltaRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
+func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef persist.FileRefJSON) jsonseq.RecordReaderFunc {
 	var header *persist.DeltaFileJSON
 	return func(bytes []byte, err error) error {
 		if err != nil && err != io.EOF { // eof also gives us a record
@@ -78,8 +79,6 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 				return err
 			}
 			header = deltaHeader
-			source.Version = uint32(deltaRef.Version)
-			_, err = repo.SaveSource(source, &notification)
 			return err
 		}
 		delta := new(persist.DeltaJSON)
@@ -107,7 +106,7 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, notifica
 
 		default:
 			UserLogger.Error("Delta file contains invalid action", "url", deltaRef.URL, "delta.Action", delta.Action)
-			return errors.New("invalid action for delta")
+			return errors.New("invalid delta action")
 		}
 		return nil
 	}
