@@ -152,6 +152,7 @@ CREATE TABLE public.nrtm_source (
     version integer NOT NULL,
     notification_url text NOT NULL,
     label character varying(255) NOT NULL,
+    status character varying(255) NOT NULL,
     created timestamp without time zone NOT NULL
 );
 
