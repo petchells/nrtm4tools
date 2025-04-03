@@ -104,7 +104,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 		ds.updateSource(source)
 		return err
 	}
-	source.Status = "ok"
+	source.Status = "updating"
 	ds.updateSource(source)
 
 	UserLogger.Info("Synchronizing deltas", "total refs", len(notification.DeltaRefs))
@@ -116,8 +116,8 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 		return err
 	}
 	source.Status = "ok"
-	ds.updateSource(source)
-	return nil
+	_, err = ds.updateSource(source)
+	return err
 }
 
 // Update brings the local mirror up to date
@@ -144,6 +144,11 @@ func (p NRTMProcessor) Update(sourceName string, label string) (*persist.NRTMSou
 	if notification.Version == int64(source.Version) {
 		UserLogger.Info("Already at latest version")
 		return nil, nil
+	}
+	source.Status = "updating"
+	source, err = ds.updateSource(*source)
+	if err != nil {
+		logger.Error("Failed to save source")
 	}
 	var updated persist.NRTMSource
 	if updated, err = syncDeltas(p, notification, *source); err != nil {

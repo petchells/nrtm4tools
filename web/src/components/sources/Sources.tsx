@@ -26,13 +26,20 @@ export default function Sources() {
   const [refresh, setRefresh] = useState<number>(0);
   const client = new WebAPIClient();
 
+  const compareSources = (a: SourceDetail, b: SourceDetail) => {
+    if (a.Source === b.Source) {
+      return a.Label.localeCompare(b.Label);
+    }
+    return a.Source.localeCompare(b.Source);
+  };
+
   const fetchSources = () => {
     setPageLoading(1);
     client
       .listSources()
       .then(
         (ss) => {
-          setSources(ss);
+          setSources(ss.sort(compareSources));
           for (let i = 0; i < selectedIDs.length; i++) {
             const found = ss.filter((s) => s.ID === selectedIDs[i]).length > 0;
             if (!found) {
@@ -59,15 +66,12 @@ export default function Sources() {
   const handleOnSelected = (row: SourceDetail) => {
     const key = row.ID;
     const idx = selectedIDs.indexOf(key);
-    if (idx < 0) {
-      selectedIDs.push(key);
+    if (idx > -1) {
+      setSelectedIDs([]);
     } else {
-      selectedIDs.splice(idx, 1);
+      setSelectedIDs([key]);
     }
-    const srcIDs = sources.map((ss) => ss.ID);
-    selectedIDs.sort((a, b) => srcIDs.indexOf(a) - srcIDs.indexOf(b));
-    setSelectedIDs(selectedIDs);
-    setRefresh(refresh ^ 1);
+    //    setRefresh(refresh ^ 1);
   };
 
   const noSources = () => {
@@ -100,7 +104,8 @@ export default function Sources() {
           }
         }
       )
-      .finally(() => setDataLoading(false));
+      .finally(() => setDataLoading(false))
+      .then(() => setTimeout(() => fetchSources(), 2000));
   };
 
   const lookupSource = (key: string) => {
@@ -173,9 +178,8 @@ export default function Sources() {
         </Box>
       ) : (
         <Grid container spacing={2} columns={12}>
-          {err ? (
-            <SourcesError error={err} />
-          ) : sources.length < 1 ? (
+          {err && <SourcesError error={err} />}
+          {sources.length < 1 ? (
             noSources()
           ) : (
             <SourcesTable
@@ -195,7 +199,7 @@ export default function Sources() {
                   sourceRemoveConfirmed={handleRemoveSource}
                 ></Source>
               ))}
-          {!err && selectedIDs.length === 0 && (
+          {selectedIDs.length === 0 && (
             <>
               <Typography variant="h6" component="h1" sx={{ mt: 2 }}>
                 Connect a new source

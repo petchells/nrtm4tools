@@ -52,13 +52,19 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
     setTimeout(() => setWsURL(websocketURL), 1000);
   };
 
-  const toolbarClick = (cmd: ToolbarCommand) => {
+  const logLevelChanged = (lvl: string) => {
+    console.log("level", lvl);
+  };
+  const toolbarClick = (cmd: ToolbarCommand, ...args: any) => {
     switch (cmd) {
       case ToolbarCommand.closeLogPane:
         setOpen(false);
         return;
       case ToolbarCommand.reconnectWS:
         reconnect();
+        return;
+      case ToolbarCommand.setLogLevel:
+        logLevelChanged(args[0]);
         return;
       default:
         throw "Not a ToolbarCommand";

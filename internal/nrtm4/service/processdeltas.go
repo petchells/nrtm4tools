@@ -61,7 +61,6 @@ func findUpdates(notification persist.NotificationJSON, source persist.NRTMSourc
 	if source.Version+1 < uint32(deltaRefs[0].Version) {
 		return nil, ErrNextConsecutiveDeltaUnavaliable
 	}
-	logger.Info("Found deltas", "source", notification.Source, "numdeltas", len(deltaRefs))
 	return deltaRefs, nil
 }
 

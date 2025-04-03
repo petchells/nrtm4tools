@@ -13,6 +13,7 @@ export interface UserMessage {
 export enum ToolbarCommand {
 	closeLogPane = "CloseLogPane",
 	reconnectWS = "ReconnectWebSocket",
+	setLogLevel = "SetLogLevel",
 }
 
 // type IsPrimitive<T> = keyof T extends never ? true : false

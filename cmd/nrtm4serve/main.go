@@ -24,12 +24,22 @@ func main() {
 		}
 	}
 	if wsURL == nil || len(*wsURL) == 0 {
-		u := fmt.Sprintf("http://localhost:%d/ws", *port)
-		wsURL = &u
+		wsu := os.Getenv("WEB_SOCKET_URL")
+		if len(wsu) > 0 {
+			wsURL = &wsu
+		} else {
+			wsu = fmt.Sprintf("http://localhost:%d/ws", *port)
+			wsURL = &wsu
+		}
 	}
 	if rpcURL == nil || len(*rpcURL) == 0 {
-		u := fmt.Sprintf("http://localhost:%d/rpc", *port)
-		rpcURL = &u
+		ru := os.Getenv("JSON_RPC_ENDPOINT")
+		if len(ru) > 0 {
+			rpcURL = &ru
+		} else {
+			ru := fmt.Sprintf("http://localhost:%d/rpc", *port)
+			rpcURL = &ru
+		}
 	}
 	dbURL := os.Getenv("PG_DATABASE_URL")
 	boltDBPath := os.Getenv("BOLT_DATABASE_PATH")

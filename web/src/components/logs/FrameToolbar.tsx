@@ -8,10 +8,10 @@ import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
 import MenuIcon from "@mui/icons-material/Menu";
 import Container from "@mui/material/Container";
-import Button from "@mui/material/Button";
 import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
 
+import CircleIcon from "@mui/icons-material/Circle";
 import CloseIcon from "@mui/icons-material/Close";
 import LeakAddIcon from "@mui/icons-material/LeakAdd";
 import LeakRemoveIcon from "@mui/icons-material/LeakRemove";
@@ -19,11 +19,11 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 
 import { ToolbarCommand } from "./model";
 
-const logLevel = ["Error", "Warning", "Info", "Debug"];
+const logLevel = ["Error", "Info", "Normal", "Fine"];
 
 interface FrameToolbarProps {
   status: string;
-  toolbarClick: (p0: ToolbarCommand) => void;
+  toolbarClick: (cmd: ToolbarCommand, ...args: any) => void;
 }
 
 export default function FrameToolbar({
@@ -47,6 +47,21 @@ export default function FrameToolbar({
   const handleClosePanel = () => {
     setAnchorElUser(null);
     toolbarClick(ToolbarCommand.closeLogPane);
+  };
+
+  const colours = ["#cc0000", "#6633ff", "#339999", "#99ccff"];
+
+  const levelButton = (lvl: string) => {
+    const c = colours[logLevel.indexOf(lvl)];
+    return (
+      <IconButton
+        sx={{ color: c }}
+        onClick={levelClickHandlerWrapper(lvl)}
+        key={lvl}
+      >
+        <CircleIcon />
+      </IconButton>
+    );
   };
 
   return (
@@ -98,15 +113,7 @@ export default function FrameToolbar({
           </Typography>
           <Box sx={{ flexGrow: 1, display: "flex" }}>
             <Box sx={{ display: { xs: "none", sm: "flex" } }}>
-              {logLevel.map((lvl) => (
-                <Button
-                  key={lvl}
-                  onClick={levelClickHandlerWrapper(lvl)}
-                  sx={{ my: 0, display: "block" }}
-                >
-                  {lvl}
-                </Button>
-              ))}
+              {logLevel.map((lvl) => levelButton(lvl))}
             </Box>
           </Box>
           <Tooltip title="Web socket status. Click to reconnect">

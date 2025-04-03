@@ -10,7 +10,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import WarningIcon from '@mui/icons-material/Warning';
+import WarningIcon from "@mui/icons-material/Warning";
 
 import { SourceDetail } from "../../client/models.ts";
 import { formatDateWithStyle } from "../../util/dates.ts";
@@ -32,9 +32,9 @@ export default function SourcesTable(props: {
 
   const rowIcon = (status: string) => {
     if (status === "new") {
-      return <CircularProgress size="1em" />
+      return <CircularProgress size="1em" />;
     } else if (status === "session.restarted") {
-      return <WarningIcon />
+      return <WarningIcon />;
     }
   };
 
@@ -83,9 +83,7 @@ export default function SourcesTable(props: {
                     <Checkbox
                       color="primary"
                       checked={isItemSelected}
-                      inputProps={{
-                        "aria-labelledby": labelId,
-                      }}
+                      slotProps={{ input: { "aria-labelledby": labelId } }}
                     />
                   </TableCell>
                   <TableCell
@@ -100,13 +98,12 @@ export default function SourcesTable(props: {
                     {row.Label}
                   </TableCell>
                   <TableCell>
-                    {!!row.Notifications.length && (
+                    {!!row.Notifications.length &&
                       formatDateWithStyle(
                         row.Notifications[0].Created,
                         "en-gb",
                         "short"
-                      )
-                    )}
+                      )}
                   </TableCell>
                   <TableCell
                     align="right"
