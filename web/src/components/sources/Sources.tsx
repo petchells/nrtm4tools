@@ -26,7 +26,7 @@ export default function Sources() {
   const [refresh, setRefresh] = useState<number>(0);
   const client = new WebAPIClient();
 
-  const compareSources = (a: SourceDetail, b: SourceDetail) => {
+  const bySourceThenLabel = (a: SourceDetail, b: SourceDetail) => {
     if (a.Source === b.Source) {
       return a.Label.localeCompare(b.Label);
     }
@@ -39,7 +39,7 @@ export default function Sources() {
       .listSources()
       .then(
         (ss) => {
-          setSources(ss.sort(compareSources));
+          setSources(ss.sort(bySourceThenLabel));
           for (let i = 0; i < selectedIDs.length; i++) {
             const found = ss.filter((s) => s.ID === selectedIDs[i]).length > 0;
             if (!found) {
@@ -51,10 +51,14 @@ export default function Sources() {
         (err) => {
           setSources([]);
           setSelectedIDs([]);
-          setErr("Connection error: " + err);
+          if (err.hasOwnProperty("message")) {
+            setErr("Error: " + err.message);
+          } else {
+            setErr("Connection error: " + err);
+          }
         }
       )
-      .then(() => {
+      .finally(() => {
         setPageLoading(0);
       });
   };

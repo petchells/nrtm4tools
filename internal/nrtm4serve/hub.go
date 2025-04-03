@@ -83,33 +83,30 @@ func (c *Client) writePump(wg *sync.WaitGroup) {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-
-			w, err := c.conn.NextWriter(websocket.TextMessage)
+			err := c.conn.WriteJSON(msg)
 			if err != nil {
-				logger.Warn("NextWriter returned an error", "error", err)
+				logger.Warn("WriteJSON failed", "error", err)
 				return
 			}
-			var b []byte
-			if b, err = json.Marshal(msg); err != nil {
-				logger.Warn("Marshal message failed", "message", msg)
-				return
-			}
-			w.Write(b)
+			// w, err := c.conn.NextWriter(websocket.TextMessage)
+			// if err != nil {
+			// 	logger.Warn("NextWriter returned an error", "error", err)
+			// 	return
+			// }
+			// var b []byte
+			// if b, err = json.Marshal(msg); err != nil {
+			// 	logger.Warn("Marshal message failed", "message", msg)
+			// 	return
+			// }
+			// w.Write(b)
 
 			// Add queued chat messages to the current websocket message.
 			n := len(c.send)
 			for range n {
-				w.Write(newline)
-				if b, err = json.Marshal(<-c.send); err != nil {
+				if err = c.conn.WriteJSON(<-c.send); err != nil {
 					logger.Warn("Marshal <-c.send failed", "message", msg)
 					return
 				}
-				w.Write(b)
-			}
-
-			if err := w.Close(); err != nil {
-				logger.Warn("Websocket closed with error", "error", err)
-				return
 			}
 		case <-ticker.C:
 			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {

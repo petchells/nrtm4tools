@@ -84,7 +84,7 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
       anchor="bottom"
       open={open}
     >
-      <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
+      <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "xl" } }}>
         <FrameToolbar toolbarClick={toolbarClick} status={connectionStatus} />
         <Stack>
           <Box sx={{ m: 2 }}>

@@ -54,10 +54,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 		return ErrBadNotificationURL
 	}
 	label = strings.TrimSpace(label)
-	if len(label) > 0 && !labelRe.MatchString(label) {
-		return ErrInvalidLabel
-	}
-	if len(label) > 255 {
+	if !validateLabel(label) {
 		return ErrInvalidLabel
 	}
 	ds := NrtmDataService{Repository: p.repo}
@@ -187,6 +184,9 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 // ReplaceLabel replaces a label name
 func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NRTMSource, error) {
 	UserLogger.Info("Replace label", "src", src, "label", fromLabel, "replace with", toLabel)
+	if !validateLabel(toLabel) {
+		return nil, ErrInvalidLabel
+	}
 	ds := NrtmDataService{Repository: p.repo}
 	possDupe := ds.getSourceByNameAndLabel(src, toLabel)
 	if possDupe != nil {
@@ -227,4 +227,12 @@ func fullURL(base, relpath string) string {
 func validateURLString(str string) bool {
 	url, err := url.Parse(str)
 	return err == nil && (url.Scheme == "http" || url.Scheme == "https")
+}
+
+func validateLabel(label string) bool {
+	label = strings.TrimSpace(label)
+	if len(label) > 255 || len(label) > 0 && !labelRe.MatchString(label) {
+		return false
+	}
+	return true
 }

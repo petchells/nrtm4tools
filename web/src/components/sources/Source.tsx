@@ -15,24 +15,33 @@ import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import UpdateIcon from '@mui/icons-material/Update';
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import UpdateIcon from "@mui/icons-material/Update";
 
 import { formatDateWithStyle, parseISOString } from "../../util/dates";
 import { SourceDetail } from "../../client/models";
 import WebAPIClient from "../../client/WebAPIClient.ts";
 import LabelControl from "./LabelControl.tsx";
+import { Alert, AlertTitle } from "@mui/material";
+import { JsonRPCError } from "../../client/RPCClient.ts";
 
-export default function Source(props: {
+interface SourceProps {
   source: SourceDetail;
   sourceUpdated: (id: string, source: SourceDetail) => void;
   sourceRemoveConfirmed: (sourceID: string) => void;
-}) {
+}
+
+export default function Source({
+  source,
+  sourceUpdated,
+  sourceRemoveConfirmed,
+}: SourceProps) {
   const client = new WebAPIClient();
-  const source = props.source;
 
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [jsonRPCError, setJSONRPCError] = useState<JsonRPCError | null>(null);
+  const [error, setError] = useState("");
 
   const removeSourceClicked = () => {
     setOpen(true);
@@ -42,9 +51,10 @@ export default function Source(props: {
     setLoading(true);
     client
       .updateSource(source.Source, source.Label)
-      .then(() => {
-        props.sourceUpdated(source.ID, source);
-      }, (msg) => console.log(msg))
+      .then(
+        () => sourceUpdated(source.ID, source),
+        (msg) => showError(msg)
+      )
       .finally(() => setLoading(false));
   };
 
@@ -55,7 +65,7 @@ export default function Source(props: {
       .then(
         (resp) => {
           source.Label = resp.Label;
-          props.sourceUpdated(source.ID, source);
+          sourceUpdated(source.ID, source);
         },
         (err) => console.log(err)
       )
@@ -65,7 +75,15 @@ export default function Source(props: {
   const handleClose = (confirm: boolean) => () => {
     setOpen(false);
     if (confirm) {
-      props.sourceRemoveConfirmed(source.ID);
+      sourceRemoveConfirmed(source.ID);
+    }
+  };
+
+  const showError = (msg: any) => {
+    if (msg.hasOwnProperty("code")) {
+      setJSONRPCError(msg);
+    } else {
+      setError(msg);
     }
   };
 
@@ -101,18 +119,44 @@ export default function Source(props: {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to remove <b>{source.Source} {source.Label}</b> from the repository?
+            Are you sure you want to remove{" "}
+            <b>
+              {source.Source} {source.Label}
+            </b>{" "}
+            from the repository?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose(false)}>Cancel</Button>
-          <Button onClick={handleClose(true)} autoFocus>Confirm</Button>
+          <Button onClick={handleClose(true)} autoFocus>
+            Confirm
+          </Button>
         </DialogActions>
       </Dialog>
 
       <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
         {source.Source} {source.Label}
       </Typography>
+      {!!jsonRPCError && (
+        <Box sx={{ mb: 1 }}>
+          <Alert severity="error">
+            <AlertTitle>RPC error {jsonRPCError.code}</AlertTitle>
+            <Typography variant="body1" component="h2" sx={{ mb: 2 }}>
+              {jsonRPCError.message}
+            </Typography>
+          </Alert>
+        </Box>
+      )}
+      {!!error && (
+        <Box sx={{ mb: 1 }}>
+          <Alert severity="error">
+            <AlertTitle>Error</AlertTitle>
+            <Typography variant="body1" component="h2" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
+          </Alert>
+        </Box>
+      )}
       <Stack spacing={1} direction="row" sx={{ mb: 1 }}>
         <Button
           variant="outlined"
@@ -127,7 +171,8 @@ export default function Source(props: {
           color="error"
           size="small"
           startIcon={<DeleteOutlineIcon />}
-          onClick={removeSourceClicked}>
+          onClick={removeSourceClicked}
+        >
           Remove
         </Button>
       </Stack>
@@ -172,26 +217,25 @@ export default function Source(props: {
           <Label>Status</Label>
         </Grid>
         <Grid size={{ xs: 8, md: 8 }}>
-          <Item>
-            {source.Status}
-          </Item>
+          <Item>{source.Status}</Item>
         </Grid>
         <Grid size={{ xs: 4, md: 4 }}>
           <Label>Repo last updated</Label>
         </Grid>
         <Grid size={{ xs: 8, md: 8 }}>
           <Item>
-            {source.Notifications.length > 0 ?
+            {source.Notifications.length > 0 ? (
               formatDateWithStyle(
                 parseISOString(source.Notifications[0].Created),
                 "en-gb",
                 "longdatetime"
-              ) : (
-                <i>Not synced</i>
-              )}
+              )
+            ) : (
+              <i>Not synced</i>
+            )}
           </Item>
         </Grid>
       </Grid>
-    </Box >
+    </Box>
   );
 }
