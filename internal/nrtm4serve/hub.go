@@ -23,10 +23,6 @@ const (
 	maxMessageSize = 32 * 1024
 )
 
-var (
-	newline = []byte{'\n'}
-)
-
 type message struct {
 	ID      string
 	Content map[string]any

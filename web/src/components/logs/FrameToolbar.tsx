@@ -36,8 +36,8 @@ export default function FrameToolbar({
     setAnchorElUser(event.currentTarget);
   };
 
-  const levelClickHandlerWrapper = (lvl: string) => () => {
-    console.log("clicked", lvl);
+  const levelClickHandlerWrapper = (lvl: number) => () => {
+    toolbarClick(ToolbarCommand.setLogLevel, lvl);
   };
 
   const handleCloseUserMenu = () => {
@@ -56,7 +56,7 @@ export default function FrameToolbar({
     return (
       <IconButton
         sx={{ color: c }}
-        onClick={levelClickHandlerWrapper(lvl)}
+        onClick={levelClickHandlerWrapper(logLevel.indexOf(lvl))}
         key={lvl}
       >
         <CircleIcon />

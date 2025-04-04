@@ -94,7 +94,7 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef
 			}
 			err = repo.AddModifyObject(source, rpsl, header.NrtmFileJSON)
 			if err != nil {
-				UserLogger.Error("Delta AddModifyObject failed", "rpsl", rpsl, "url", deltaRef.URL, "error", err)
+				UserLogger.Error("Delta AddModifyObject failed", "rpsl", rpsl, "relurl", deltaRef.URL, "error", err)
 				return err
 			}
 		case delta.Action == persist.DeltaDeleteAction:

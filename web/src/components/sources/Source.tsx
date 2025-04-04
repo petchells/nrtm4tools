@@ -67,7 +67,7 @@ export default function Source({
           source.Label = resp.Label;
           sourceUpdated(source.ID, source);
         },
-        (err) => console.log(err)
+        (err) => showError(err)
       )
       .finally(() => setLoading(false));
   };

@@ -20,6 +20,7 @@ interface LogDrawerProps {
 
 export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
   const [messageHistory, setMessageHistory] = useState<LogLine[]>([]);
+  const [logLevel, setLogLevel] = useState(3);
   const [wsURL, setWsURL] = useState(websocketURL);
   const { lastMessage, readyState } = useWebSocket(wsURL);
 
@@ -52,9 +53,6 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
     setTimeout(() => setWsURL(websocketURL), 1000);
   };
 
-  const logLevelChanged = (lvl: string) => {
-    console.log("level", lvl);
-  };
   const toolbarClick = (cmd: ToolbarCommand, ...args: any) => {
     switch (cmd) {
       case ToolbarCommand.closeLogPane:
@@ -64,7 +62,7 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
         reconnect();
         return;
       case ToolbarCommand.setLogLevel:
-        logLevelChanged(args[0]);
+        setLogLevel(args[0]);
         return;
       default:
         throw "Not a ToolbarCommand";
@@ -84,11 +82,11 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
       anchor="bottom"
       open={open}
     >
-      <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "xl" } }}>
+      <Box sx={{ width: "100%" }}>
         <FrameToolbar toolbarClick={toolbarClick} status={connectionStatus} />
         <Stack>
           <Box sx={{ m: 2 }}>
-            <LogPanel messageHistory={messageHistory} />
+            <LogPanel messageHistory={messageHistory} level={logLevel} />
           </Box>
         </Stack>
       </Box>

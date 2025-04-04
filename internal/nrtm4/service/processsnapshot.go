@@ -94,7 +94,7 @@ func snapshotObjectInsertFunc(repo persist.Repository, source persist.NRTMSource
 				case FAILURE:
 					failureCount++
 				case REPORT:
-					UserLogger.Info("Inserting snapshot objects", "number", successCount)
+					UserLogger.Info("Processing snapshot records", "inserted", successCount)
 				case STOP:
 					ticker.Stop()
 					return
