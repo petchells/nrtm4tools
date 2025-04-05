@@ -118,7 +118,8 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 }
 
 // Update brings the local mirror up to date
-func (p NRTMProcessor) Update(sourceName string, label string) (*persist.NRTMSource, error) {
+func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, error) {
+	UserLogger.Info("Update", "name", sourceName, "label", label)
 	ds := NrtmDataService{Repository: p.repo}
 	source := ds.getSourceByNameAndLabel(sourceName, label)
 	if source == nil {
@@ -128,10 +129,12 @@ func (p NRTMProcessor) Update(sourceName string, label string) (*persist.NRTMSou
 	fm := fileManager{p.client}
 	notification, err := fm.downloadNotificationFile(source.NotificationURL)
 	if err != nil {
+		UserLogger.Warn("Notification file was not downloaded", "error", err)
 		return nil, err
 	}
 	if notification.SessionID != source.SessionID {
 		source.Status = "session.restarted"
+		UserLogger.Warn("Update failed because the session was restarted", "sourceName", sourceName, "label", label)
 		ds.updateSource(*source)
 		return nil, ErrSessionRestarted
 	}

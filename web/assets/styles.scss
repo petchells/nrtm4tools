@@ -1,0 +1,25 @@
+
+.loglevel {
+	border-radius: 1em;
+	background-color: grey;
+	height: 1.4em;
+	width: 1.4em;
+	display: inline-block;
+	text-align: center;
+	margin: .1em;
+	
+	&.ERROR {
+		background-color: #cc0000;
+		color: white;
+	}
+	&.WARN {
+		background-color: #6633ff;
+		color: white;
+	}
+	&.INFO {
+		background-color: #47c18e;
+	}
+	&.DEBUG {
+		background-color: #78bcff;
+	}
+}

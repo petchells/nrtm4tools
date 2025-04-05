@@ -18,6 +18,8 @@ import LeakRemoveIcon from "@mui/icons-material/LeakRemove";
 import TerminalIcon from "@mui/icons-material/Terminal";
 
 import { ToolbarCommand } from "./model";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Button from "@mui/material/Button";
 
 const logLevel = ["Error", "Info", "Normal", "Fine"];
 
@@ -49,18 +51,18 @@ export default function FrameToolbar({
     toolbarClick(ToolbarCommand.closeLogPane);
   };
 
-  const colours = ["#cc0000", "#6633ff", "#339999", "#99ccff"];
+  const colours = ["#cc0000", "#6633ff", "#47c18e", "#78bcff"];
 
   const levelButton = (lvl: string) => {
     const c = colours[logLevel.indexOf(lvl)];
     return (
-      <IconButton
+      <Button
         sx={{ color: c }}
         onClick={levelClickHandlerWrapper(logLevel.indexOf(lvl))}
         key={lvl}
       >
         <CircleIcon />
-      </IconButton>
+      </Button>
     );
   };
 
@@ -113,7 +115,9 @@ export default function FrameToolbar({
           </Typography>
           <Box sx={{ flexGrow: 1, display: "flex" }}>
             <Box sx={{ display: { xs: "none", sm: "flex" } }}>
-              {logLevel.map((lvl) => levelButton(lvl))}
+              <ButtonGroup size="small" aria-label="Small button group">
+                {logLevel.map((lvl) => levelButton(lvl))}
+              </ButtonGroup>
             </Box>
           </Box>
           <Tooltip title="Web socket status. Click to reconnect">
@@ -128,7 +132,7 @@ export default function FrameToolbar({
           </Tooltip>
           <Box sx={{ flexGrow: 0, alignItems: "right", ml: 1 }}>
             <Tooltip title="Close panel">
-              <IconButton onClick={handleClosePanel}>
+              <IconButton onClick={handleClosePanel} size="small">
                 <CloseIcon />
               </IconButton>
             </Tooltip>

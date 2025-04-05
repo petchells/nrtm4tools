@@ -1,4 +1,7 @@
 import { useState } from "react";
+
+import "../../assets/styles.scss";
+
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { alpha } from "@mui/material/styles";

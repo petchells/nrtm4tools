@@ -15,6 +15,20 @@ import (
 	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
 
+var publicKeyMap = map[string]string{}
+
+func init() {
+	publicKeyMap["ripe.net"] = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEOkzpjobirEcqoR6zLXnPkm4cCTEY
+Xi2rLlCSXc5EZ3L3PycAdDmWQtGHD8GF++RqWgrdKv+9l+InalmiCGkpRQ==
+-----END PUBLIC KEY-----`
+
+	publicKeyMap["s42.re"] = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsYTv7kPkzBlpm6TfdqiSQqQ7Qajv
+gh4HeTD4QUtluJwaHzW7Gaq03KUqj581nN5YTLxehAf8JkyoIrXxNkaS5Q==
+-----END PUBLIC KEY-----`
+}
+
 // HTTPResponseError is used to model an error response from a http client
 type HTTPResponseError struct {
 	Message string
@@ -40,13 +54,15 @@ func (cl HTTPClient) getUpdateNotification(urlStr string) (persist.NotificationJ
 	if err != nil {
 		logger.Warn("Failed to parse URL", "urlStr", urlStr)
 	}
-	havePublicKey := strings.HasSuffix(nURL.Host, "ripe.net")
-	// TODO: when url is RIPE domain cache this from https://ftp.ripe.net/ripe/dbase/nrtmv4/nrtmv4_public_key.txt
-	keyTxt := `-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEOkzpjobirEcqoR6zLXnPkm4cCTEY
-Xi2rLlCSXc5EZ3L3PycAdDmWQtGHD8GF++RqWgrdKv+9l+InalmiCGkpRQ==
------END PUBLIC KEY-----`
-
+	havePublicKey := false
+	keyTxt := ""
+	for domain, pk := range publicKeyMap {
+		if strings.HasSuffix(nURL.Host, domain) {
+			havePublicKey = true
+			keyTxt = pk
+			break
+		}
+	}
 	var unf persist.NotificationJSON
 	body, err := cl.getResponseBody(urlStr)
 	if err != nil || body == nil {
