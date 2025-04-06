@@ -102,7 +102,7 @@ export default function SourcesTable(props: {
                       formatDateWithStyle(
                         row.Notifications[0].Created,
                         "en-gb",
-                        "short"
+                        "longdatetime"
                       )}
                   </TableCell>
                   <TableCell
