@@ -144,17 +144,21 @@ func (repo PostgresRepository) SaveSource(source persist.NRTMSource, notificatio
 	err := db.WithTransaction(func(tx pgx.Tx) error {
 		if source.ID == 0 {
 			pgSource = pgpersist.NewNRTMSource(source)
-			return db.Create(tx, &pgSource)
-		}
-		pgSource = pgpersist.FromNRTMSource(source)
-		err := db.Update(tx, &pgSource)
-		if err != nil {
-			return err
+			err := db.Create(tx, &pgSource)
+			if err != nil {
+				return err
+			}
+		} else {
+			pgSource = pgpersist.FromNRTMSource(source)
+			err := db.Update(tx, &pgSource)
+			if err != nil {
+				return err
+			}
 		}
 		if notification == nil {
 			return nil
 		}
-		return pgpersist.NewNotification(tx, source.ID, *notification)
+		return pgpersist.NewNotification(tx, pgSource.ID, *notification)
 	})
 	return pgSource.AsNRTMSource(), err
 }

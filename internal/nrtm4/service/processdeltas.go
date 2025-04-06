@@ -34,7 +34,7 @@ func syncDeltas(p NRTMProcessor, notification persist.NotificationJSON, source p
 			return source, err
 		}
 		source.Version = uint32(deltaRef.Version)
-		src, err := ds.updateSource(source)
+		src, err := ds.saveSource(source)
 		if err != nil {
 			return source, err
 		}

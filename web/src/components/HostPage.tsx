@@ -110,9 +110,9 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
             <Header pageTitle={mainListItems[menuItemSelectedIdx].text || ""} />
             <Outlet />
           </Stack>
-          <LogDrawer open={openLogPane} setOpen={setOpenLogPanePersist} />
         </Box>
       </Box>
+      <LogDrawer open={openLogPane} setOpen={setOpenLogPanePersist} />
     </AppTheme>
   );
 }

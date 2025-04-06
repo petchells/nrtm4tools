@@ -72,7 +72,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	}
 	source := persist.NewNRTMSource(notification, label, unfURL)
 	source.Status = "new"
-	if source, err = ds.saveNewSource(source, notification); err != nil {
+	if source, err = ds.saveSourceWithNotification(source, notification); err != nil {
 		UserLogger.Error("There was a problem saving the source. Remove it and restart sync", "error", err)
 		return err
 	}
@@ -89,7 +89,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	snapshotFile, err := fm.fetchFileAndCheckHash(unfURL, notification.SnapshotRef, dirname)
 	if err != nil {
 		source.Status = "snapshot.file.failed: " + err.Error()
-		ds.updateSource(source)
+		ds.saveSource(source)
 		return err
 	}
 	defer snapshotFile.Close()
@@ -98,22 +98,22 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 	if err := fm.readJSONSeqRecords(snapshotFile, snapshotObjectInsertFunc(p.repo, source, notification)); err != io.EOF {
 		UserLogger.Error("Invalid snapshot. Remove Source and restart sync", "error", err)
 		source.Status = "snapshot.insert.failed: " + err.Error()
-		ds.updateSource(source)
+		ds.saveSource(source)
 		return err
 	}
 	source.Status = "updating"
-	ds.updateSource(source)
+	ds.saveSource(source)
 
 	UserLogger.Info("Synchronizing deltas", "total refs", len(notification.DeltaRefs))
 	source, err = syncDeltas(p, notification, source)
 	if err != nil {
 		UserLogger.Error("Failed to sync deltas", "source", source.Source, "version", source.Version, "error", err)
 		source.Status = "delta.failed: " + err.Error()
-		ds.updateSource(source)
+		ds.saveSource(source)
 		return err
 	}
 	source.Status = "ok"
-	_, err = ds.updateSource(source)
+	_, err = ds.saveSource(source)
 	return err
 }
 
@@ -135,29 +135,35 @@ func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, er
 	if notification.SessionID != source.SessionID {
 		source.Status = "session.restarted"
 		UserLogger.Warn("Update failed because the session was restarted", "sourceName", sourceName, "label", label)
-		ds.updateSource(*source)
+		ds.saveSource(*source)
 		return nil, ErrSessionRestarted
 	}
 	if notification.Version < int64(source.Version) {
+		UserLogger.Warn("Notification file is out of date")
 		return nil, ErrNRTM4NotificationOutOfDate
 	}
-	if notification.Version == int64(source.Version) {
-		UserLogger.Info("Already at latest version")
-		return nil, nil
-	}
-	source.Status = "updating"
-	source, err = ds.updateSource(*source)
+	// Save notification even though the version might be the same, because
+	// the snapshot version might be different.
+	saved, err := ds.saveSourceWithNotification(*source, notification)
 	if err != nil {
 		logger.Error("Failed to save source")
+		UserLogger.Warn("Failed to save source")
+		return nil, err
 	}
+	if notification.Version == int64(saved.Version) {
+		UserLogger.Warn("Already at latest version")
+		return source, nil
+	}
+	saved.Status = "updating"
+	ds.saveSource(saved)
 	var updated persist.NRTMSource
-	if updated, err = syncDeltas(p, notification, *source); err != nil {
+	if updated, err = syncDeltas(p, notification, saved); err != nil {
 		updated.Status = "delta.failed: " + err.Error()
-		_, err = ds.updateSource(updated)
+		_, err = ds.saveSource(updated)
 		return nil, err
 	}
 	updated.Status = "ok"
-	return ds.updateSource(updated)
+	return ds.saveSource(updated)
 }
 
 // ListSources gets details, including notifications, of all sources
@@ -200,7 +206,7 @@ func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NR
 		return nil, ErrSourceNotFound
 	}
 	target.Label = toLabel
-	return ds.updateSource(*target)
+	return ds.saveSource(*target)
 }
 
 // RemoveSource removes a source from the repo
@@ -234,8 +240,5 @@ func validateURLString(str string) bool {
 
 func validateLabel(label string) bool {
 	label = strings.TrimSpace(label)
-	if len(label) > 255 || len(label) > 0 && !labelRe.MatchString(label) {
-		return false
-	}
-	return true
+	return len(label) == 0 || len(label) < 256 && labelRe.MatchString(label)
 }

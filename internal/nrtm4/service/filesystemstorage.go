@@ -44,7 +44,7 @@ const numVersionsPerDirectory = 10000
 func (fm fileManager) fetchFileAndCheckHash(unfURL string, fileRef persist.FileRefJSON, basePath string) (*os.File, error) {
 	fURL := fullURL(unfURL, fileRef.URL)
 	if !validateURLString(fURL) {
-		UserLogger.Info("URL in fileRef cannot be parsed", "fURL", fURL)
+		logger.Error("URL in fileRef cannot be parsed", "unfURL", unfURL, "fileRef.URL", fileRef.URL)
 		return nil, errors.New("invalid URL in reference")
 	}
 	vdir := (fileRef.Version / numVersionsPerDirectory) * numVersionsPerDirectory
