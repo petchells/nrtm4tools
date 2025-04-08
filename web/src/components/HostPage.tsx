@@ -46,27 +46,29 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
       break;
     }
   }
-  const [openLogPane, setOpenLogPane] = useState(
+  const [menuItemSelectedIdx, setMenuItemSelectedIdx] = useState(navIdx);
+  const [openLogDrawer, setOpenLogDrawer] = useState(
     localStorage.getItem("app-logpane") === "open"
   );
-  const [menuItemSelectedIdx, setMenuItemSelectedIdx] = useState(navIdx);
 
   const navigateToSection = (idx: number) => {
-    setMenuItemSelectedIdx(idx);
-    if (mainListItems[idx].path) {
-      navigate(mainListItems[idx].path);
+    if (idx !== menuItemSelectedIdx) {
+      setMenuItemSelectedIdx(idx);
+      if (mainListItems[idx].path) {
+        navigate(mainListItems[idx].path);
+      }
     }
   };
 
   const secondaryItemClicked = (idx: number) => {
     if (idx === 0) {
-      setOpenLogPanePersist(!openLogPane);
+      setOpenLogDrawerPersist(!openLogDrawer);
     }
   };
 
-  const setOpenLogPanePersist = (b: boolean) => {
+  const setOpenLogDrawerPersist = (b: boolean) => {
     localStorage.setItem("app-logpane", b ? "open" : "closed");
-    setOpenLogPane(b);
+    setOpenLogDrawer(b);
   };
 
   return (
@@ -112,7 +114,7 @@ export default function HostPage(props: { disableCustomTheme?: boolean }) {
           </Stack>
         </Box>
       </Box>
-      <LogDrawer open={openLogPane} setOpen={setOpenLogPanePersist} />
+      <LogDrawer open={openLogDrawer} setOpen={setOpenLogDrawerPersist} />
     </AppTheme>
   );
 }

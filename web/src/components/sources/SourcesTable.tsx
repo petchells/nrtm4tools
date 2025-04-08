@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { styled } from "@mui/material/styles";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Table from "@mui/material/Table";
@@ -37,6 +38,8 @@ export default function SourcesTable(props: {
       return <WarningIcon />;
     }
   };
+
+  const Tickbox = styled(Checkbox)({});
 
   return (
     <Grid size={{ xs: 12, lg: 12 }}>
@@ -80,7 +83,7 @@ export default function SourcesTable(props: {
                   sx={{ cursor: "pointer" }}
                 >
                   <TableCell padding="checkbox">
-                    <Checkbox
+                    <Tickbox
                       color="primary"
                       checked={isItemSelected}
                       slotProps={{ input: { "aria-labelledby": labelId } }}

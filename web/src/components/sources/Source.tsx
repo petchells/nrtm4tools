@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactElement, useState } from "react";
 
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
@@ -22,8 +22,7 @@ import { formatDateWithStyle, parseISOString } from "../../util/dates";
 import { SourceDetail } from "../../client/models";
 import WebAPIClient from "../../client/WebAPIClient.ts";
 import LabelControl from "./LabelControl.tsx";
-import { Alert, AlertTitle } from "@mui/material";
-import { JsonRPCError } from "../../client/RPCClient.ts";
+import AlertMessage from "./AlertMessage.tsx";
 
 interface SourceProps {
   source: SourceDetail;
@@ -40,8 +39,7 @@ export default function Source({
 
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [jsonRPCError, setJSONRPCError] = useState<JsonRPCError | null>(null);
-  const [error, setError] = useState("");
+  const [alert, setAlert] = useState<ReactElement | null>(null);
 
   const removeSourceClicked = () => {
     setOpen(true);
@@ -80,10 +78,23 @@ export default function Source({
   };
 
   const showError = (msg: any) => {
-    if (msg.hasOwnProperty("code")) {
-      setJSONRPCError(msg);
+    if (msg.hasOwnProperty("message")) {
+      const txt = `RPC${msg.code}: ${msg.message}`;
+      setAlert(
+        <AlertMessage
+          message={txt}
+          level="error"
+          dismissed={() => setAlert(null)}
+        />
+      );
     } else {
-      setError(msg);
+      setAlert(
+        <AlertMessage
+          message={msg}
+          level="error"
+          dismissed={() => setAlert(null)}
+        />
+      );
     }
   };
 
@@ -137,26 +148,7 @@ export default function Source({
       <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
         {source.Source} {source.Label}
       </Typography>
-      {!!jsonRPCError && (
-        <Box sx={{ mb: 1 }}>
-          <Alert severity="error">
-            <AlertTitle>RPC error {jsonRPCError.code}</AlertTitle>
-            <Typography variant="body1" component="h2" sx={{ mb: 2 }}>
-              {jsonRPCError.message}
-            </Typography>
-          </Alert>
-        </Box>
-      )}
-      {!!error && (
-        <Box sx={{ mb: 1 }}>
-          <Alert severity="error">
-            <AlertTitle>Error</AlertTitle>
-            <Typography variant="body1" component="h2" sx={{ mb: 2 }}>
-              {error}
-            </Typography>
-          </Alert>
-        </Box>
-      )}
+      <Box sx={{ mb: 1 }}>{alert}</Box>
       <Stack spacing={1} direction="row" sx={{ mb: 1 }}>
         <Button
           variant="outlined"

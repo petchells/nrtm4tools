@@ -1,26 +1,25 @@
-import { useEffect, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 
-import Alert from "@mui/material/Alert";
+import Alert, { AlertColor } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Typography from "@mui/material/Typography";
 
+import ErrorIcon from "@mui/icons-material/Error";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import WarningIcon from "@mui/icons-material/Warning";
 
 import { SourceDetail } from "../../client/models.ts";
 import WebAPIClient from "../../client/WebAPIClient.ts";
 import SourcesTable from "./SourcesTable.tsx";
-import SourcesError from "./SourcesError.tsx";
 import SourcesInput from "./SourcesInput.tsx";
 import Source from "./Source.tsx";
 
 export default function Sources() {
-  const [pageLoading, setPageLoading] = useState<number>(1);
+  const [pageLoading, setPageLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
-  const [err, setErr] = useState<string>("");
+  const [alert, setAlert] = useState<ReactElement | null>(null);
   const [sources, setSources] = useState<SourceDetail[]>([]);
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
   const [refresh, setRefresh] = useState<number>(0);
@@ -32,39 +31,67 @@ export default function Sources() {
     }
     return a.Source.localeCompare(b.Source);
   };
+  const newMessage = (msg: string, level?: AlertColor) => {
+    let icon;
+    if (!level) {
+      level = "info";
+      icon = <ErrorIcon fontSize="inherit" />;
+    }
+    return (
+      <Alert
+        icon={icon}
+        severity={level}
+        sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}
+      >
+        {msg}
+      </Alert>
+    );
+  };
 
   const fetchSources = () => {
-    setPageLoading(1);
+    setPageLoading(true);
     client
       .listSources()
       .then(
         (ss) => {
           setSources(ss.sort(bySourceThenLabel));
-          for (let i = 0; i < selectedIDs.length; i++) {
-            const found = ss.filter((s) => s.ID === selectedIDs[i]).length > 0;
-            if (!found) {
-              selectedIDs.splice(i, 1);
+          const ids = ss.map((s) => s.ID);
+          const sIDs = selectedIDs.map((sid) => sid);
+          for (let i = 0; i < sIDs.length; i++) {
+            if (ids.indexOf(sIDs[i]) > -1) {
+              selectedIDs.splice(selectedIDs.indexOf(sIDs[i]), 1);
             }
           }
-          setErr("");
+          if (ss.length === 0) {
+            setAlert(
+              newMessage(
+                "No sources are available. Add one with the 'connect' command."
+              )
+            );
+          } else {
+            setAlert(null);
+          }
         },
         (err) => {
           setSources([]);
           setSelectedIDs([]);
           if (err.hasOwnProperty("message")) {
-            setErr("Error: " + err.message);
+            setAlert(newMessage("Error: " + err.message, "error"));
           } else {
-            setErr("Connection error: " + err);
+            setAlert(newMessage("Connection error: " + err, "error"));
           }
         }
       )
       .finally(() => {
-        setPageLoading(0);
+        setPageLoading(false);
       });
   };
 
+  let timeout: number;
+
   useEffect(() => {
-    fetchSources();
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fetchSources(), 50);
   }, []);
 
   const handleOnSelected = (row: SourceDetail) => {
@@ -78,18 +105,6 @@ export default function Sources() {
     //    setRefresh(refresh ^ 1);
   };
 
-  const noSources = () => {
-    return (
-      <Alert
-        icon={<WarningIcon fontSize="inherit" />}
-        severity="info"
-        sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}
-      >
-        No sources are available. Add one with the 'connect' command.
-      </Alert>
-    );
-  };
-
   const onUrlEntered = (url: string, label: string) => {
     setDataLoading(true);
     client
@@ -100,16 +115,15 @@ export default function Sources() {
         },
         (rej) => {
           if (typeof rej == "string") {
-            setErr(rej);
+            setAlert(newMessage(rej, "error"));
           } else if (typeof rej == "object" && rej.message) {
-            setErr(rej.message);
+            setAlert(rej.message);
           } else {
-            setErr("" + rej);
+            setAlert(newMessage("" + rej, "error"));
           }
         }
       )
-      .finally(() => setDataLoading(false))
-      .then(() => setTimeout(() => fetchSources(), 2000));
+      .finally(() => setDataLoading(false));
   };
 
   const lookupSource = (key: string) => {
@@ -147,7 +161,7 @@ export default function Sources() {
           }
           setRefresh(refresh ^ 1);
         },
-        (err) => setErr(err)
+        (err) => setAlert(newMessage(err, "error"))
       )
       .finally(() => setDataLoading(false));
   };
@@ -159,7 +173,7 @@ export default function Sources() {
         return;
       }
     }
-    setErr("Source was not removed");
+    setAlert(newMessage("Source was not removed", "error"));
   };
 
   return (
@@ -182,10 +196,8 @@ export default function Sources() {
         </Box>
       ) : (
         <Grid container spacing={2} columns={12}>
-          {err && <SourcesError error={err} />}
-          {sources.length < 1 ? (
-            noSources()
-          ) : (
+          {alert}
+          {sources.length > 0 && (
             <SourcesTable
               rows={sources}
               selectedIDs={selectedIDs}

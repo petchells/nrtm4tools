@@ -1,3 +1,4 @@
+import { ReactElement } from "react";
 import { Navigate } from "react-router-dom";
 
 import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
@@ -14,7 +15,7 @@ import { MenuItem } from "./widgets/widgettypes";
 
 interface MenuRouter extends MenuItem {
   index?: boolean;
-  element: any;
+  element: ReactElement;
   path?: string;
 }
 

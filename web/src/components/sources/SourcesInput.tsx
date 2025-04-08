@@ -63,7 +63,6 @@ export default function SourcesInput(props: {
         }}
       />
       <Button
-        id="connectbtn"
         variant="outlined"
         aria-label="connect"
         onClick={btnClicked}
