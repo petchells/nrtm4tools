@@ -37,7 +37,7 @@ export default function Sources() {
       level = "info";
       icon = <ErrorIcon fontSize="inherit" />;
     }
-    return (
+    setAlert(
       <Alert
         icon={icon}
         severity={level}
@@ -63,10 +63,9 @@ export default function Sources() {
             }
           }
           if (ss.length === 0) {
-            setAlert(
-              newMessage(
-                "No sources are available. Add one with the 'connect' command."
-              )
+            newMessage(
+              "No sources are available. Add one with the 'connect' command.",
+              "info"
             );
           } else {
             setAlert(null);
@@ -76,9 +75,9 @@ export default function Sources() {
           setSources([]);
           setSelectedIDs([]);
           if (err.hasOwnProperty("message")) {
-            setAlert(newMessage("Error: " + err.message, "error"));
+            newMessage("Error: " + err.message, "error");
           } else {
-            setAlert(newMessage("Connection error: " + err, "error"));
+            newMessage("Connection error: " + err, "error");
           }
         }
       )
@@ -113,13 +112,11 @@ export default function Sources() {
         (msg) => {
           console.log("success", msg);
         },
-        (rej) => {
-          if (typeof rej == "string") {
-            setAlert(newMessage(rej, "error"));
-          } else if (typeof rej == "object" && rej.message) {
-            setAlert(rej.message);
+        (err) => {
+          if (err.hasOwnProperty("message")) {
+            newMessage(err.message, "error");
           } else {
-            setAlert(newMessage("" + rej, "error"));
+            newMessage("Error: " + err, "error");
           }
         }
       )
@@ -161,7 +158,7 @@ export default function Sources() {
           }
           setRefresh(refresh ^ 1);
         },
-        (err) => setAlert(newMessage(err, "error"))
+        (err) => newMessage(err, "error")
       )
       .finally(() => setDataLoading(false));
   };
@@ -173,7 +170,7 @@ export default function Sources() {
         return;
       }
     }
-    setAlert(newMessage("Source was not removed", "error"));
+    newMessage("Source was not removed", "error");
   };
 
   return (

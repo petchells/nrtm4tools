@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import { styled } from "@mui/material/styles";
 import CircularProgress from "@mui/material/CircularProgress";
 import Grid from "@mui/material/Grid2";
 import Table from "@mui/material/Table";
@@ -11,35 +10,40 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import WarningIcon from "@mui/icons-material/Warning";
+import ErrorIcon from "@mui/icons-material/Error";
 
 import { SourceDetail } from "../../client/models.ts";
 import { formatDateWithStyle } from "../../util/dates.ts";
+import { styled } from "@mui/material";
 
-export default function SourcesTable(props: {
+interface SourcesTableProps {
   rows: SourceDetail[];
   selectedIDs: string[];
   onSelected: (row: SourceDetail) => void;
-}) {
+}
+export default function SourcesTable({
+  rows,
+  selectedIDs,
+  onSelected,
+}: SourcesTableProps) {
   const [refresh, setRefresh] = useState<number>(0);
 
-  const rows = props.rows;
-  const selectedIDs = props.selectedIDs;
-
   const handleClick = (row: SourceDetail) => {
-    props.onSelected(row);
+    onSelected(row);
     setRefresh(refresh ^ 1);
   };
 
   const rowIcon = (status: string) => {
     if (status === "new") {
       return <CircularProgress size="1em" />;
-    } else if (status === "session.restarted") {
-      return <WarningIcon />;
+    } else if (status !== "ok") {
+      return <ErrorIcon sx={{ fontSize: "1em" }} color="error" />;
     }
   };
 
-  const Tickbox = styled(Checkbox)({});
+  const Tickbox = styled(Checkbox)({
+    borderRadius: 12,
+  });
 
   return (
     <Grid size={{ xs: 12, lg: 12 }}>
