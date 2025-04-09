@@ -48,9 +48,21 @@ func (api WebAPI) Connect(url, label string) (string, error) {
 }
 
 // Update updates a source to the latest version
-func (api WebAPI) Update(src, label string) (string, error) {
-	_, err := api.Processor.Update(src, label)
-	return wrapResponse("OK", err)
+func (api WebAPI) Update(src, label string) (persist.NRTMSourceDetails, error) {
+	target, err := api.Processor.Update(src, label)
+	if err != nil {
+		return persist.NRTMSourceDetails{}, err
+	}
+	deets, err := api.Processor.ListSources()
+	if err != nil {
+		return wrapResponse(persist.NRTMSourceDetails{}, err)
+	}
+	for _, d := range deets {
+		if d.ID == target.ID {
+			return wrapResponse(d, nil)
+		}
+	}
+	return wrapResponse(persist.NRTMSourceDetails{}, nil)
 }
 
 // RemoveSource removes a source from the repo

@@ -3,26 +3,29 @@ import { useState } from "react";
 import ClearIcon from "@mui/icons-material/Clear";
 import IconButton from "@mui/material/IconButton";
 import OutlinedInput from "@mui/material/OutlinedInput";
-import PunchClockIcon from "@mui/icons-material/PunchClock";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveIcon from "@mui/icons-material/Save";
 import Stack from "@mui/material/Stack";
 
-import { formatDateWithStyle } from "../../util/dates";
-
-export default function LabelControl(props: {
+interface LabelControlProps {
   value: string;
   disabled?: boolean;
   onTextEntered: (text: string) => void;
-}) {
-  const disableInput = !!props.disabled;
-  const [inputText, setInputText] = useState(props.value);
+}
 
-  const initial = props.value;
+export default function LabelControl({
+  value,
+  disabled,
+  onTextEntered,
+}: LabelControlProps) {
+  const disableInput = !!disabled;
+  const [inputText, setInputText] = useState(value);
+
+  const initial = value;
 
   const btnClicked = () => {
     if (isValid(inputText)) {
-      props.onTextEntered(inputText);
+      onTextEntered(inputText);
     }
   };
 
@@ -35,12 +38,7 @@ export default function LabelControl(props: {
   };
 
   const resetInput = () => {
-    setInputText(props.value);
-  };
-
-  const setLabelToTimestamp = () => {
-    const ts = formatDateWithStyle(new Date(), "en-gb", "longdatetime");
-    setInputText(ts);
+    setInputText(value);
   };
 
   return (
@@ -69,12 +67,6 @@ export default function LabelControl(props: {
         disabled={disableInput || !isValid(inputText)}
       >
         <RestartAltIcon />
-      </IconButton>
-      <IconButton
-        onClick={setLabelToTimestamp}
-        disabled={disableInput || inputText.length > 0}
-      >
-        <PunchClockIcon />
       </IconButton>
       <IconButton
         onClick={btnClicked}

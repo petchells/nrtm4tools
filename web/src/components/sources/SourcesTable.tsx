@@ -81,8 +81,8 @@ export default function SourcesTable({
                   hover
                   onClick={() => handleClick(row)}
                   role="checkbox"
-                  aria-checked={isItemSelected}
                   tabIndex={-1}
+                  aria-checked={isItemSelected}
                   selected={isItemSelected}
                   sx={{ cursor: "pointer" }}
                 >

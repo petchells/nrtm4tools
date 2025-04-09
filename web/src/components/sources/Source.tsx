@@ -50,7 +50,7 @@ export default function Source({
     client
       .updateSource(source.Source, source.Label)
       .then(
-        () => sourceUpdated(source.ID, source),
+        (src) => sourceUpdated(source.ID, src),
         (msg) => showError(msg)
       )
       .finally(() => setLoading(false));
@@ -78,24 +78,19 @@ export default function Source({
   };
 
   const showError = (msg: any) => {
+    let txt = "";
     if (msg.hasOwnProperty("message")) {
-      const txt = `RPC${msg.code}: ${msg.message}`;
-      setAlert(
-        <AlertMessage
-          message={txt}
-          level="error"
-          dismissed={() => setAlert(null)}
-        />
-      );
+      txt = `RPC${msg.code}: ${msg.message}`;
     } else {
-      setAlert(
-        <AlertMessage
-          message={msg}
-          level="error"
-          dismissed={() => setAlert(null)}
-        />
-      );
+      txt = "" + msg;
     }
+    setAlert(
+      <AlertMessage
+        message={txt}
+        level="error"
+        dismissed={() => setAlert(null)}
+      />
+    );
   };
 
   const Label = styled(Paper)(({ theme }) => ({

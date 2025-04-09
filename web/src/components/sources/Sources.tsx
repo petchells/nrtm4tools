@@ -58,7 +58,7 @@ export default function Sources() {
           const ids = ss.map((s) => s.ID);
           const sIDs = selectedIDs.map((sid) => sid);
           for (let i = 0; i < sIDs.length; i++) {
-            if (ids.indexOf(sIDs[i]) > -1) {
+            if (ids.indexOf(sIDs[i]) < 0) {
               selectedIDs.splice(selectedIDs.indexOf(sIDs[i]), 1);
             }
           }
@@ -131,9 +131,17 @@ export default function Sources() {
   };
 
   const handleSourceUpdated = (id: string, source: SourceDetail) => {
-    for (const s of sources) {
-      if (s.ID === id) {
-        s.Label = source.Label;
+    for (let i = 0; i < sources.length; i++) {
+      if (sources[i].ID === id) {
+        const src = sources[i];
+        src.Label = source.Label;
+        src.Notifications.splice(
+          0,
+          src.Notifications.length,
+          ...source.Notifications
+        );
+        src.Version = source.Version;
+        src.Status = source.Status;
         setRefresh(refresh ^ 1);
         break;
       }

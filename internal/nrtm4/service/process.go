@@ -159,7 +159,7 @@ func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, er
 	var updated persist.NRTMSource
 	if updated, err = syncDeltas(p, notification, saved); err != nil {
 		updated.Status = "delta.failed: " + err.Error()
-		_, err = ds.saveSource(updated)
+		ds.saveSource(updated)
 		return nil, err
 	}
 	updated.Status = "ok"

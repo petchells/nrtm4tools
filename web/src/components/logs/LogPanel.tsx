@@ -44,7 +44,7 @@ export default function LogPanel({ messageHistory, level }: LogPanelProps) {
           .filter((log) => levels.indexOf(log.level) <= level)
           .map((line) => (
             <Fragment key={line.time}>
-              <Grid size={2}>
+              <Grid size={2} sx={{ maxWidth: 160 }}>
                 <Typography variant="body1">
                   <span className={"loglevel " + line.level}>
                     {line.level[0]}

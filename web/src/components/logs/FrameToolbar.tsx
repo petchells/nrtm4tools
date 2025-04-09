@@ -21,7 +21,7 @@ import { ToolbarCommand } from "./model";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Button from "@mui/material/Button";
 
-const logLevel = ["Error", "Info", "Normal", "Fine"];
+const logLevel = ["Error", "Warning", "Info", "Debug"];
 
 interface FrameToolbarProps {
   status: string;
@@ -39,6 +39,7 @@ export default function FrameToolbar({
   };
 
   const levelClickHandlerWrapper = (lvl: number) => () => {
+    setAnchorElUser(null);
     toolbarClick(ToolbarCommand.setLogLevel, lvl);
   };
 
@@ -96,7 +97,10 @@ export default function FrameToolbar({
               onClose={handleCloseUserMenu}
             >
               {logLevel.map((lvl) => (
-                <MenuItem key={lvl} onClick={handleCloseUserMenu}>
+                <MenuItem
+                  key={lvl}
+                  onClick={levelClickHandlerWrapper(logLevel.indexOf(lvl))}
+                >
                   <Typography sx={{ textAlign: "center" }}>{lvl}</Typography>
                 </MenuItem>
               ))}
@@ -127,6 +131,7 @@ export default function FrameToolbar({
               <LeakRemoveIcon
                 color="error"
                 onClick={() => toolbarClick(ToolbarCommand.reconnectWS)}
+                sx={{ cursor: "pointer" }}
               />
             )}
           </Tooltip>
