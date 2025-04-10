@@ -9,12 +9,16 @@ import (
 )
 
 var (
-	// DeltaUnavaliableErrCode JSON RPC error code
-	DeltaUnavaliableErrCode = -32060
-	// Hash256ErrCode JSON RPC error code
-	Hash256ErrCode = -32020
-	// SnapshotInsertFailedErrCode JSON RPC error code
-	SnapshotInsertFailedErrCode = -32040
+	// Application codes from -32000 to -32098
+
+	// Hash256ErrorCode JSON RPC error code
+	Hash256ErrorCode = -32010
+	// SnapshotInsertFailedErrorCode JSON RPC error code
+	SnapshotInsertFailedErrorCode = -32020
+	// DeltaUnavaliableErrorCode JSON RPC error code
+	DeltaUnavaliableErrorCode = -32030
+	// NRTMServiceErrorCode problem with the service
+	NRTMServiceErrorCode = -32040
 )
 
 // WebAPI defines the RPC functions used by the web client
@@ -23,7 +27,7 @@ type WebAPI struct {
 	Processor service.NRTMProcessor
 }
 
-// GetAuth implements interface -- allows requests to all methods
+// GetAuth implements rpc.API interface -- allows requests to all methods
 func (api WebAPI) GetAuth(w http.ResponseWriter, r *http.Request, req rpc.JSONRPCRequest) (rpc.WebSession, bool) {
 	return rpc.WebSession{}, true
 }
@@ -51,7 +55,7 @@ func (api WebAPI) Connect(url, label string) (string, error) {
 func (api WebAPI) Update(src, label string) (persist.NRTMSourceDetails, error) {
 	target, err := api.Processor.Update(src, label)
 	if err != nil {
-		return persist.NRTMSourceDetails{}, err
+		return wrapResponse(persist.NRTMSourceDetails{}, err)
 	}
 	deets, err := api.Processor.ListSources()
 	if err != nil {
@@ -75,11 +79,15 @@ func wrapResponse[T any](res T, err error) (T, error) {
 		return res, nil
 	}
 	if err == service.ErrHashMismatch {
-		return res, rpc.JSONRPCError{Code: Hash256ErrCode, Message: err.Error()}
+		return res, rpc.JSONRPCError{Code: Hash256ErrorCode, Message: err.Error()}
 	} else if err == service.ErrNextConsecutiveDeltaUnavaliable {
-		return res, rpc.JSONRPCError{Code: DeltaUnavaliableErrCode, Message: err.Error()}
+		return res, rpc.JSONRPCError{Code: DeltaUnavaliableErrorCode, Message: err.Error()}
 	} else if err == service.ErrSnapshotInsertFailed {
-		return res, rpc.JSONRPCError{Code: SnapshotInsertFailedErrCode, Message: err.Error()}
+		return res, rpc.JSONRPCError{Code: SnapshotInsertFailedErrorCode, Message: err.Error()}
+	}
+	switch err.(type) {
+	case service.ErrNRTMServiceError:
+		return res, rpc.JSONRPCError{Code: NRTMServiceErrorCode, Message: err.Error()}
 	}
 	return res, err
 }

@@ -15,6 +15,7 @@ import WebAPIClient from "../../client/WebAPIClient.ts";
 import SourcesTable from "./SourcesTable.tsx";
 import SourcesInput from "./SourcesInput.tsx";
 import Source from "./Source.tsx";
+import { JsonRPCError } from "../../client/RPCClient.ts";
 
 export default function Sources() {
   const [pageLoading, setPageLoading] = useState(false);
@@ -31,11 +32,17 @@ export default function Sources() {
     }
     return a.Source.localeCompare(b.Source);
   };
-  const newMessage = (msg: string, level?: AlertColor) => {
+  const newMessage = (msg: string | JsonRPCError, level?: AlertColor) => {
     let icon;
     if (!level) {
       level = "info";
       icon = <ErrorIcon fontSize="inherit" />;
+    }
+    let text: string;
+    if (typeof msg === "string") {
+      text = msg;
+    } else {
+      text = `RPCError${msg.code} ${msg.message}`;
     }
     setAlert(
       <Alert
@@ -43,7 +50,7 @@ export default function Sources() {
         severity={level}
         sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}
       >
-        {msg}
+        {text}
       </Alert>
     );
   };
@@ -113,11 +120,7 @@ export default function Sources() {
           console.log("success", msg);
         },
         (err) => {
-          if (err.hasOwnProperty("message")) {
-            newMessage(err.message, "error");
-          } else {
-            newMessage("Error: " + err, "error");
-          }
+          newMessage(err, "error");
         }
       )
       .finally(() => setDataLoading(false));

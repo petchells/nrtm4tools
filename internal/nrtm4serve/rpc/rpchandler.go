@@ -10,16 +10,11 @@ import (
 )
 
 var (
-	// ErrResponseUnauthorized returned when user has no session or is not authorized to execute method
-	ErrResponseUnauthorized = JSONRPCError{Code: -32000, Message: "Unauthorized"}
-	// ErrNoPrivilege user does not have the privilege to view resource
-	ErrNoPrivilege = JSONRPCError{Code: -32098, Message: "No privilege"}
-
 	parseErrorResponse     = JSONRPCResponse{JSONRPC: "2.0", Error: &JSONRPCError{Code: -32700, Message: "Parse error"}}
 	invalidRequestResponse = JSONRPCResponse{JSONRPC: "2.0", Error: &JSONRPCError{Code: -32600, Message: "Invalid Request"}}
 	methodNotFoundResponse = JSONRPCResponse{JSONRPC: "2.0", Error: &JSONRPCError{Code: -32601, Message: "Method not found"}}
 	invalidParamsResponse  = JSONRPCResponse{JSONRPC: "2.0", Error: &JSONRPCError{Code: -32602, Message: "Invalid params"}}
-	unauthorizedResponse   = JSONRPCResponse{JSONRPC: "2.0", Error: &ErrResponseUnauthorized}
+	// unauthorizedResponse   = JSONRPCResponse{JSONRPC: "2.0", Error: &ErrResponseUnauthorized}
 	// User-defined codes from -32000 to -32099
 	emptyResponse = JSONRPCResponse{JSONRPC: "2.0", Error: &JSONRPCError{Code: -32099, Message: ""}}
 )
@@ -58,9 +53,9 @@ func (e JSONRPCError) Error() string {
 // JSONRPCResponse A response
 type JSONRPCResponse struct {
 	JSONRPC string        `json:"jsonrpc"`
-	ID      interface{}   `json:"id"`
+	ID      any           `json:"id"`
 	Error   *JSONRPCError `json:"error,omitempty"`
-	Result  interface{}   `json:"result,omitempty"`
+	Result  any           `json:"result,omitempty"`
 }
 
 // Handler which implements the JSONRPC 2.0 specification at https://www.jsonrpc.org/specification
@@ -113,7 +108,7 @@ func (handler Handler) ProcessRPC(w http.ResponseWriter, r *http.Request) {
 			if ok {
 				response = handler.execRPCRequest(w, r, sess, rpcreq)
 			} else {
-				w.WriteHeader(http.StatusForbidden)
+				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 		} else {
@@ -126,11 +121,11 @@ func (handler Handler) ProcessRPC(w http.ResponseWriter, r *http.Request) {
 
 func (handler Handler) execRPCRequest(w http.ResponseWriter, r *http.Request, session WebSession, req JSONRPCRequest) JSONRPCResponse {
 	if req.JSONRPC != "2.0" || req.Method == nil || len(*req.Method) == 0 || req.ID == nil {
-		return emptyResponse
+		return invalidRequestResponse
 	}
 	targetMethod := reflect.ValueOf(handler.API).MethodByName(*req.Method)
 	if reflect.Invalid == targetMethod.Kind() {
-		return emptyResponse
+		return methodNotFoundResponse
 	}
 	in := make([]reflect.Value, targetMethod.Type().NumIn())
 	if targetMethod.Type().NumIn() < len(req.Params) {
@@ -138,7 +133,7 @@ func (handler Handler) execRPCRequest(w http.ResponseWriter, r *http.Request, se
 	}
 
 	filled := 0
-	for paramIdx := 0; paramIdx < targetMethod.Type().NumIn(); paramIdx++ {
+	for paramIdx := range targetMethod.Type().NumIn() {
 		if reflect.TypeOf(w).AssignableTo(targetMethod.Type().In(paramIdx)) {
 			in[paramIdx] = reflect.ValueOf(w)
 			filled++
@@ -253,7 +248,7 @@ func (handler Handler) execRPCRequest(w http.ResponseWriter, r *http.Request, se
 	return rpcResponse
 }
 
-func collectReturns(apiResp interface{}) (interface{}, *JSONRPCError) {
+func collectReturns(apiResp any) (any, *JSONRPCError) {
 	switch resp := apiResp.(type) {
 	case JSONRPCError:
 		return nil, &resp
@@ -264,7 +259,7 @@ func collectReturns(apiResp interface{}) (interface{}, *JSONRPCError) {
 		return nil, &rpcErr
 	default:
 		if apiResp == nil {
-			return "OK", nil
+			return "", nil
 		}
 		return apiResp, nil
 	}

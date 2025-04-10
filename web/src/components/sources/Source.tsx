@@ -142,17 +142,20 @@ export default function Source({
 
       <Typography variant="h4" component="h2" sx={{ mb: 2 }}>
         {source.Source} {source.Label}
+        {!!loading && <CircularProgress size="1em" />}
       </Typography>
       <Box sx={{ mb: 1 }}>{alert}</Box>
       <Stack spacing={1} direction="row" sx={{ mb: 1 }}>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<UpdateIcon />}
-          onClick={updateSourceClicked}
-        >
-          Update
-        </Button>
+        <Box sx={{ flexGrow: 1, display: "flex" }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<UpdateIcon />}
+            onClick={updateSourceClicked}
+          >
+            Update
+          </Button>
+        </Box>
         <Button
           variant="outlined"
           color="error"
@@ -174,14 +177,10 @@ export default function Source({
           <Label>Label</Label>
         </Grid>
         <Grid size={{ xs: 8, md: 8 }}>
-          {!!loading ? (
-            <CircularProgress />
-          ) : (
-            <LabelControl
-              value={source.Label}
-              onTextEntered={saveLabel}
-            ></LabelControl>
-          )}
+          <LabelControl
+            value={source.Label}
+            onTextEntered={saveLabel}
+          ></LabelControl>
         </Grid>
         <Grid size={{ xs: 4, md: 4 }}>
           <Label>Version</Label>
