@@ -1,16 +1,11 @@
 import { Fragment } from "react/jsx-runtime";
 
-import { createTheme, SxProps, ThemeProvider } from "@mui/material";
+import { createTheme, ThemeProvider } from "@mui/material";
 import Box from "@mui/material/Box";
-import Fab from "@mui/material/Fab";
 import Grid from "@mui/material/Grid2";
-import Zoom from "@mui/material/Zoom";
-
 import Typography from "@mui/material/Typography";
-import WatchIcon from "@mui/icons-material/Watch";
-import WatchOffIcon from "@mui/icons-material/WatchOff";
+
 import { LogLine, printParams } from "./model";
-import { useState } from "react";
 
 const theme = createTheme({
   typography: {
@@ -22,12 +17,6 @@ const theme = createTheme({
   },
 });
 
-const fabStyle: SxProps = {
-  position: "absolute",
-  bottom: 16,
-  right: 16,
-};
-
 const levels = ["ERROR", "WARN", "INFO", "DEBUG"];
 
 const showDate = (dstr: string): string => {
@@ -38,19 +27,29 @@ const showDate = (dstr: string): string => {
 interface LogPanelProps {
   messageHistory: LogLine[];
   level: number;
+  scrollBottom: boolean;
 }
 
-export default function LogPanel({ messageHistory, level }: LogPanelProps) {
-  const [scrollBottom, setScrollBottom] = useState(true);
-  let to;
+let to: number;
+
+export default function LogPanel({
+  messageHistory,
+  level,
+  scrollBottom,
+}: LogPanelProps) {
   clearTimeout(to);
-  to = setTimeout(() => {
+  to = setInterval(() => {
     if (!scrollBottom) {
       return;
     }
     const el = document.getElementById("gridend");
-    el && el.scrollIntoView();
-  }, 800);
+    const rect = el?.getBoundingClientRect();
+    const inView =
+      rect &&
+      rect.bottom <=
+        (window.innerHeight || document.documentElement.clientHeight);
+    !inView && el && el.scrollIntoView();
+  }, 600);
 
   return (
     <ThemeProvider theme={theme}>
@@ -75,17 +74,6 @@ export default function LogPanel({ messageHistory, level }: LogPanelProps) {
             </Fragment>
           ))}
       </Grid>
-      <Box sx={{ "& > :not(style)": { m: 1 } }}>
-        <Fab
-          sx={fabStyle}
-          size="small"
-          color="secondary"
-          aria-label="add"
-          onClick={() => setScrollBottom(!scrollBottom)}
-        >
-          {scrollBottom ? <WatchIcon /> : <WatchOffIcon />}
-        </Fab>
-      </Box>
       <Box id="gridend"></Box>
     </ThemeProvider>
   );

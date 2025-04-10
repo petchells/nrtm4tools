@@ -2,35 +2,40 @@ import { useState } from "react";
 
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Container from "@mui/material/Container";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
-import Typography from "@mui/material/Typography";
 import Menu from "@mui/material/Menu";
-import MenuIcon from "@mui/icons-material/Menu";
-import Container from "@mui/material/Container";
-import Tooltip from "@mui/material/Tooltip";
 import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 
 import CircleIcon from "@mui/icons-material/Circle";
 import CloseIcon from "@mui/icons-material/Close";
 import LeakAddIcon from "@mui/icons-material/LeakAdd";
 import LeakRemoveIcon from "@mui/icons-material/LeakRemove";
+import MenuIcon from "@mui/icons-material/Menu";
 import TerminalIcon from "@mui/icons-material/Terminal";
+import WatchIcon from "@mui/icons-material/Watch";
+import WatchOffIcon from "@mui/icons-material/WatchOff";
 
 import { ToolbarCommand } from "./model";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 
 const logLevel = ["Error", "Warning", "Info", "Debug"];
 
 interface FrameToolbarProps {
   status: string;
   toolbarClick: (cmd: ToolbarCommand, ...args: any) => void;
+  scrollBottom: boolean;
 }
 
 export default function FrameToolbar({
   status,
   toolbarClick,
+  scrollBottom,
 }: FrameToolbarProps) {
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
@@ -40,7 +45,7 @@ export default function FrameToolbar({
 
   const levelClickHandlerWrapper = (lvl: number) => () => {
     setAnchorElUser(null);
-    toolbarClick(ToolbarCommand.setLogLevel, lvl);
+    toolbarClick(ToolbarCommand.logLevel, lvl);
   };
 
   const handleCloseUserMenu = () => {
@@ -124,24 +129,37 @@ export default function FrameToolbar({
               </ButtonGroup>
             </Box>
           </Box>
-          <Tooltip title="Web socket status. Click to reconnect">
-            {status === "Open" ? (
-              <LeakAddIcon />
-            ) : (
-              <LeakRemoveIcon
-                color="error"
-                onClick={() => toolbarClick(ToolbarCommand.reconnectWS)}
-                sx={{ cursor: "pointer" }}
-              />
-            )}
-          </Tooltip>
-          <Box sx={{ flexGrow: 0, alignItems: "right", ml: 1 }}>
-            <Tooltip title="Close panel">
-              <IconButton onClick={handleClosePanel} size="small">
-                <CloseIcon />
+          <Stack direction="row" spacing={1}>
+            <Tooltip title="Scroll to end of log">
+              <IconButton
+                size="small"
+                onClick={() =>
+                  toolbarClick(ToolbarCommand.scrollBottom, !scrollBottom)
+                }
+              >
+                {scrollBottom ? <WatchIcon /> : <WatchOffIcon />}
               </IconButton>
             </Tooltip>
-          </Box>
+            <Tooltip title="Web socket status. Click to reconnect">
+              <IconButton
+                size="small"
+                onClick={() => toolbarClick(ToolbarCommand.reconnectWS)}
+              >
+                {status === "Open" ? (
+                  <LeakAddIcon />
+                ) : (
+                  <LeakRemoveIcon color="error" sx={{ cursor: "pointer" }} />
+                )}
+              </IconButton>
+            </Tooltip>
+            <Box sx={{ flexGrow: 0, alignItems: "right", ml: 1 }}>
+              <Tooltip title="Close panel">
+                <IconButton size="small" onClick={handleClosePanel}>
+                  <CloseIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Stack>
         </Toolbar>
       </Container>
     </AppBar>

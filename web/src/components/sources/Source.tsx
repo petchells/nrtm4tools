@@ -50,7 +50,10 @@ export default function Source({
     client
       .updateSource(source.Source, source.Label)
       .then(
-        (src) => sourceUpdated(source.ID, src),
+        (src) => {
+          sourceUpdated(source.ID, src);
+          setAlert(null);
+        },
         (msg) => showError(msg)
       )
       .finally(() => setLoading(false));
@@ -64,6 +67,7 @@ export default function Source({
         (resp) => {
           source.Label = resp.Label;
           sourceUpdated(source.ID, source);
+          setAlert(null);
         },
         (err) => showError(err)
       )

@@ -3,13 +3,12 @@ import useWebSocket, * as ws from "react-use-websocket";
 
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-
 import Stack from "@mui/material/Stack";
 
-import FrameToolbar from "./FrameToolbar";
-import LogPanel from "./LogPanel";
 import { websocketURL } from "../../main";
 import { LogLine, ToolbarCommand, UserMessage } from "./model";
+import FrameToolbar from "./FrameToolbar";
+import LogPanel from "./LogPanel";
 
 const drawerHeight = 360;
 
@@ -23,6 +22,7 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
   const [logLevel, setLogLevel] = useState(3);
   const [wsURL, setWsURL] = useState(websocketURL);
   const { lastMessage, readyState } = useWebSocket(wsURL);
+  const [scrollBottom, setScrollBottom] = useState(true);
 
   useEffect(() => {
     if (lastMessage !== null) {
@@ -34,11 +34,6 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
       }
     }
   }, [lastMessage]);
-
-  //   const msg = {
-  //     ID: "logs",
-  //     Content: "Hello",
-  //   };
 
   const connectionStatus = {
     [ws.ReadyState.CONNECTING]: "Connecting",
@@ -61,8 +56,11 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
       case ToolbarCommand.reconnectWS:
         reconnect();
         return;
-      case ToolbarCommand.setLogLevel:
+      case ToolbarCommand.logLevel:
         setLogLevel(args[0]);
+        return;
+      case ToolbarCommand.scrollBottom:
+        setScrollBottom(args[0]);
         return;
       default:
         throw "Not a ToolbarCommand";
@@ -83,10 +81,18 @@ export default function LogDrawer({ open, setOpen }: LogDrawerProps) {
       open={open}
     >
       <Box sx={{ width: "100%" }}>
-        <FrameToolbar toolbarClick={toolbarClick} status={connectionStatus} />
+        <FrameToolbar
+          toolbarClick={toolbarClick}
+          status={connectionStatus}
+          scrollBottom={scrollBottom}
+        />
         <Stack>
           <Box sx={{ m: 2 }}>
-            <LogPanel messageHistory={messageHistory} level={logLevel} />
+            <LogPanel
+              messageHistory={messageHistory}
+              level={logLevel}
+              scrollBottom={scrollBottom}
+            />
           </Box>
         </Stack>
       </Box>
