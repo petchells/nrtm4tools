@@ -15,8 +15,28 @@ type NRTMSource struct {
 	NotificationURL string
 	Label           string
 	Status          string
+	Properties      SourceProperties
 	Created         time.Time
 }
+
+type SourceProperties struct {
+	AutoUpdate AutoUpdateMode
+	Compliance ComplianceMode
+}
+
+type AutoUpdateMode int
+type ComplianceMode int
+
+const (
+	AutoUpdateOff AutoUpdateMode = iota
+	AutoUpdatePreserve
+	AutoUpdateReplace
+)
+
+const (
+	ComplianceLoose ComplianceMode = iota
+	ComplianceStrict
+)
 
 // NRTMSourceDetails is a source with notification objects
 type NRTMSourceDetails struct {
@@ -32,6 +52,7 @@ func NewNRTMSource(notification NotificationJSON, label string, notificationURL 
 		Version:         uint32(notification.SnapshotRef.Version),
 		Label:           label,
 		NotificationURL: notificationURL,
+		Properties:      SourceProperties{},
 	}
 }
 

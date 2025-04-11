@@ -119,7 +119,7 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 
 // Update brings the local mirror up to date
 func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, error) {
-	UserLogger.Info("Update", "name", sourceName, "label", label)
+	UserLogger.Warn("Update", "name", sourceName, "label", label)
 	ds := NrtmDataService{Repository: p.repo}
 	source := ds.getSourceByNameAndLabel(sourceName, label)
 	if source == nil {
@@ -169,7 +169,6 @@ func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, er
 // ListSources gets details, including notifications, of all sources
 func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	ds := NrtmDataService{Repository: p.repo}
-	UserLogger.Info("List sources")
 	sources, err := ds.listSources()
 	deets := []persist.NRTMSourceDetails{}
 	if err != nil {

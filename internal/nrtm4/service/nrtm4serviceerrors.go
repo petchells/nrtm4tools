@@ -34,7 +34,7 @@ type ErrNRTMServiceError struct {
 }
 
 func (e ErrNRTMServiceError) Error() string {
-	return "NRTM4 Service Error: " + e.Message
+	return e.Message
 }
 
 func newNRTMServiceError(msg string, args ...any) ErrNRTMServiceError {

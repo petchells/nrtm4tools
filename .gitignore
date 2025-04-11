@@ -1,6 +1,6 @@
 *~
-.*.swp
-.*.swo
+*.swp
+*.swo
 Session.vim
 
 .task/

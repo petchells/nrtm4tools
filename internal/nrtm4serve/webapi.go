@@ -11,14 +11,11 @@ import (
 var (
 	// Application codes from -32000 to -32098
 
-	// Hash256ErrorCode JSON RPC error code
-	Hash256ErrorCode = -32010
-	// SnapshotInsertFailedErrorCode JSON RPC error code
-	SnapshotInsertFailedErrorCode = -32020
-	// DeltaUnavaliableErrorCode JSON RPC error code
-	DeltaUnavaliableErrorCode = -32030
-	// NRTMServiceErrorCode problem with the service
-	NRTMServiceErrorCode = -32040
+	Hash256ErrorCode                = -32010
+	NoDeltasInNotificationErrorCode = -32020
+	SnapshotInsertFailedErrorCode   = -32030
+	DeltaUnavaliableErrorCode       = -32040
+	NRTMServiceErrorCode            = -32050
 )
 
 // WebAPI defines the RPC functions used by the web client
@@ -37,9 +34,24 @@ func (api WebAPI) ListSources() ([]persist.NRTMSourceDetails, error) {
 	return api.Processor.ListSources()
 }
 
+// FetchSource returns a single source
+func (api WebAPI) FetchSource(src, label string) *persist.NRTMSourceDetails {
+	srcs, err := api.Processor.ListSources()
+	if err != nil {
+		logger.Warn("api.Processor.ListSources() returned error", "error", err)
+		return nil
+	}
+	for _, s := range srcs {
+		if s.Source == src && s.Label == label {
+			return &s
+		}
+	}
+	return nil
+}
+
 // ReplaceLabel replaces a label on a source
 func (api WebAPI) ReplaceLabel(source, fromLabel, toLabel string) (*persist.NRTMSource, error) {
-	return api.Processor.ReplaceLabel(source, fromLabel, toLabel)
+	return wrapResponse(api.Processor.ReplaceLabel(source, fromLabel, toLabel))
 }
 
 // Connect connects a new source to the repo
@@ -78,12 +90,17 @@ func wrapResponse[T any](res T, err error) (T, error) {
 	if err == nil {
 		return res, nil
 	}
-	if err == service.ErrHashMismatch {
+	switch err {
+	case service.ErrHashMismatch:
 		return res, rpc.JSONRPCError{Code: Hash256ErrorCode, Message: err.Error()}
-	} else if err == service.ErrNextConsecutiveDeltaUnavaliable {
+	case service.ErrNextConsecutiveDeltaUnavaliable:
 		return res, rpc.JSONRPCError{Code: DeltaUnavaliableErrorCode, Message: err.Error()}
-	} else if err == service.ErrSnapshotInsertFailed {
+	case service.ErrSnapshotInsertFailed:
 		return res, rpc.JSONRPCError{Code: SnapshotInsertFailedErrorCode, Message: err.Error()}
+	case service.ErrSnapshotInsertFailed:
+		return res, rpc.JSONRPCError{Code: SnapshotInsertFailedErrorCode, Message: err.Error()}
+	case service.ErrNRTM4NoDeltasInNotification:
+		return res, rpc.JSONRPCError{Code: NoDeltasInNotificationErrorCode, Message: err.Error()}
 	}
 	switch err.(type) {
 	case service.ErrNRTMServiceError:

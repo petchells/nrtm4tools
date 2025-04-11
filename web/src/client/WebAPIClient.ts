@@ -54,4 +54,14 @@ export default class WebAPIClient {
 		])
 	}
 
+	public fetchSource(
+		source: string,
+		label: string,
+	) {
+		return this.client.execute<SourceDetail | null>("FetchSource", [
+			source,
+			label,
+		])
+	}
+
 }

@@ -51,11 +51,20 @@ export default function Source({
       .updateSource(source.Source, source.Label)
       .then(
         (src) => {
-          sourceUpdated(source.ID, src);
           setAlert(null);
+          sourceUpdated(source.ID, src);
+          return src;
         },
-        (msg) => showError(msg)
+        (msg) => {
+          showError(msg);
+          return client.fetchSource(source.Source, source.Label);
+        }
       )
+      .then((src) => {
+        if (src !== null) {
+          sourceUpdated(source.ID, src);
+        }
+      })
       .finally(() => setLoading(false));
   };
 

@@ -17,7 +17,8 @@ const theme = createTheme({
   },
 });
 
-const levels = ["ERROR", "WARN", "INFO", "DEBUG"];
+const levels: string[] = ["ERROR", "WARN", "INFO", "DEBUG"];
+const levelInitials = "!•⁃‣";
 
 const showDate = (dstr: string): string => {
   const str = dstr.substring(11, 23);
@@ -30,6 +31,18 @@ interface LogPanelProps {
   scrollBottom: boolean;
 }
 
+const scrollElementIntoView = (id: string) => {
+  const el = document.getElementById(id);
+  if (!el) {
+    return;
+  }
+  const rect = el.getBoundingClientRect();
+  const inView =
+    rect.bottom <=
+    (window.innerHeight || document.documentElement.clientHeight);
+  !inView && el.scrollIntoView();
+};
+
 let to: number;
 
 export default function LogPanel({
@@ -38,18 +51,9 @@ export default function LogPanel({
   scrollBottom,
 }: LogPanelProps) {
   clearTimeout(to);
-  to = setInterval(() => {
-    if (!scrollBottom) {
-      return;
-    }
-    const el = document.getElementById("gridend");
-    const rect = el?.getBoundingClientRect();
-    const inView =
-      rect &&
-      rect.bottom <=
-        (window.innerHeight || document.documentElement.clientHeight);
-    !inView && el && el.scrollIntoView();
-  }, 600);
+  if (scrollBottom) {
+    to = setInterval(() => scrollElementIntoView("gridend"), 600);
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -61,7 +65,7 @@ export default function LogPanel({
               <Grid size={2} sx={{ maxWidth: 160 }}>
                 <Typography variant="body1">
                   <span className={"loglevel " + line.level}>
-                    {line.level[0]}
+                    {levelInitials[levels.indexOf(line.level)]}
                   </span>
                   {showDate(line.time)}
                 </Typography>
