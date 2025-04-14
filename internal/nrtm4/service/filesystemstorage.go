@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"slices"
 
@@ -141,6 +142,13 @@ func (fm fileManager) downloadNotificationFile(url string) (persist.Notification
 func validateNotificationFile(file persist.NotificationJSON) error {
 	if file.NrtmVersion != 4 {
 		return newNRTMServiceError("notificationFile nrtm version is not 4: '%v'", file.NrtmVersion)
+	}
+	t, err := time.Parse(time.RFC3339, file.Timestamp)
+	if err != nil {
+		return newNRTMServiceError("notificationFile timestamp is not valid: '%v'", file.Timestamp)
+	}
+	if t.AddDate(0, 0, 1).Before(util.AppClock.Now()) {
+		UserLogger.Warn("Notification timestamp is older than 24hr", "timestamp", file.Timestamp)
 	}
 	if len(file.SessionID) < 36 {
 		return newNRTMServiceError("notificationFile session ID is not valid: '%v'", file.SessionID)

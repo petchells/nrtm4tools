@@ -51,18 +51,13 @@ export interface SourceDetail {
 
 export interface SourceProperties {
 	AutoUpdate: AutoUpdateMode;
-	Compliance: ComplianceMode;
+	AutoUpdateInterval: string;
 }
 
 enum AutoUpdateMode {
 	Off = 0,
-	Preserve = 1,
-	Replace = 2,
-}
-
-enum ComplianceMode {
-	Loose = 0,
-	Strict = 1,
+	Preserve,
+	Replace,
 }
 
 export interface AppConfig {

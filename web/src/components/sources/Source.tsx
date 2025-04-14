@@ -138,10 +138,10 @@ export default function Source({
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to remove{" "}
+            Are you sure you want to remove
             <b>
               {source.Source} {source.Label}
-            </b>{" "}
+            </b>
             from the repository?
           </DialogContentText>
         </DialogContent>

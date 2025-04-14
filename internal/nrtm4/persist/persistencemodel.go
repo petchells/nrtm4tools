@@ -20,22 +20,16 @@ type NRTMSource struct {
 }
 
 type SourceProperties struct {
-	AutoUpdate AutoUpdateMode
-	Compliance ComplianceMode
+	AutoUpdate         AutoUpdateMode
+	AutoUpdateInterval string
 }
 
 type AutoUpdateMode int
-type ComplianceMode int
 
 const (
 	AutoUpdateOff AutoUpdateMode = iota
 	AutoUpdatePreserve
 	AutoUpdateReplace
-)
-
-const (
-	ComplianceLoose ComplianceMode = iota
-	ComplianceStrict
 )
 
 // NRTMSourceDetails is a source with notification objects
