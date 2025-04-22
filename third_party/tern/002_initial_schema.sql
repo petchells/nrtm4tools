@@ -32,7 +32,7 @@ CREATE TABLE nrtm_rpslobject (
 	rpsl TEXT NOT NULL,
 	CONSTRAINT rpslobject__pk PRIMARY KEY (id),
 	CONSTRAINT rpslobject__nrtm_source__fk FOREIGN key (source_id) REFERENCES nrtm_source (id),
-	CONSTRAINT rpslobject__source__type__primary_key__version__uid UNIQUE (source_id, object_type, primary_key, VERSION)
+	CONSTRAINT rpslobject__source__type__primary_key__uid UNIQUE (source_id, object_type, primary_key)
 );
 
 CREATE INDEX rpslobject__type__primary_key__idx ON nrtm_rpslobject (object_type, primary_key);

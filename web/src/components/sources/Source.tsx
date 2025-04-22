@@ -9,13 +9,18 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid2";
+import Input from "@mui/material/Input";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import SaveIcon from "@mui/icons-material/Save";
 import UpdateIcon from "@mui/icons-material/Update";
 
 import { formatDateWithStyle, parseISOString } from "../../util/dates";
@@ -23,6 +28,8 @@ import { SourceDetail } from "../../client/models";
 import WebAPIClient from "../../client/WebAPIClient.ts";
 import LabelControl from "./LabelControl.tsx";
 import AlertMessage from "./AlertMessage.tsx";
+import { IconButton } from "@mui/material";
+import SourcePropertiesEditor from "./SourcePropertiesEditor.tsx";
 
 interface SourceProps {
   source: SourceDetail;
@@ -122,6 +129,14 @@ export default function Source({
   const Item = styled(Paper)(({ theme }) => ({
     ...theme.typography.body2,
     padding: theme.spacing(1),
+    paddingLeft: theme.spacing(2),
+    textAlign: "start",
+  }));
+
+  const PaddedItem = styled(Paper)(({ theme }) => ({
+    ...theme.typography.body2,
+    padding: theme.spacing(1),
+    paddingLeft: theme.spacing(2),
     textAlign: "start",
   }));
 
@@ -234,7 +249,15 @@ export default function Source({
             )}
           </Item>
         </Grid>
+        <Grid size={{ xs: 4, md: 4 }}>
+          <Label>Source properties</Label>
+        </Grid>
+        <Grid size={{ xs: 8, md: 8 }}>
+          <SourcePropertiesEditor
+            sourceProps={source.Properties}
+          />
+        </Grid>
       </Grid>
-    </Box>
+    </Box >
   );
 }

@@ -19,17 +19,21 @@ type NRTMSource struct {
 	Created         time.Time
 }
 
+// SourceProperties configurable user properties per source
 type SourceProperties struct {
-	AutoUpdate         AutoUpdateMode
+	UpdateMode         UpdateMode
 	AutoUpdateInterval string
 }
 
-type AutoUpdateMode int
+// UpdateMode what to do when a mirror is re-synced from a snapshot
+type UpdateMode int
 
 const (
-	AutoUpdateOff AutoUpdateMode = iota
-	AutoUpdatePreserve
-	AutoUpdateReplace
+
+	// UpdateModePreserve when a repo loses sync, relabel it then reinitialize from snapshot
+	UpdateModePreserve UpdateMode = iota
+	// UpdateModeReplace when a repo loses sync delete it then reinitialize from snapshot
+	UpdateModeReplace
 )
 
 // NRTMSourceDetails is a source with notification objects

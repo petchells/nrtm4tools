@@ -50,11 +50,11 @@ export interface SourceDetail {
 }
 
 export interface SourceProperties {
-	AutoUpdate: AutoUpdateMode;
+	UpdateMode: UpdateMode;
 	AutoUpdateInterval: string;
 }
 
-enum AutoUpdateMode {
+export enum UpdateMode {
 	Off = 0,
 	Preserve,
 	Replace,
