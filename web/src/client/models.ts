@@ -51,11 +51,10 @@ export interface SourceDetail {
 
 export interface SourceProperties {
 	UpdateMode: UpdateMode;
-	AutoUpdateInterval: string;
+	AutoUpdateInterval: number;
 }
 
 export enum UpdateMode {
-	Off = 0,
 	Preserve,
 	Replace,
 }
