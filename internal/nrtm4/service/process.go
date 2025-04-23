@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"io"
 	"net/url"
 	"os"
@@ -41,7 +42,7 @@ type NRTMProcessor struct {
 	client Client
 }
 
-const charsAllowedInLabel = "A-Za-z0-9 :._-"
+const charsAllowedInLabel = "A-Za-z0-9 !@#$%():,.?_-"
 
 // Must have a letter or digit in there somewhere
 var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" + charsAllowedInLabel + "]*$")
@@ -187,6 +188,18 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 		deets = append(deets, persist.NRTMSourceDetails{NRTMSource: src, Notifications: notifs})
 	}
 	return deets, nil
+}
+
+// SaveProperties saves properties for a source/label
+func (p NRTMProcessor) SaveProperties(source, label string, props persist.SourceProperties) (*persist.NRTMSource, error) {
+	ds := NrtmDataService{Repository: p.repo}
+	src := ds.getSourceByNameAndLabel(source, label)
+	if src == nil {
+		return nil, errors.New("no such source")
+	}
+	src.Properties.AutoUpdateInterval = props.AutoUpdateInterval
+	src.Properties.UpdateMode = props.UpdateMode
+	return ds.saveSource(*src)
 }
 
 // ReplaceLabel replaces a label name

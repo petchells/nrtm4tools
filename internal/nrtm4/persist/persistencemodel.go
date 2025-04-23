@@ -22,7 +22,7 @@ type NRTMSource struct {
 // SourceProperties configurable user properties per source
 type SourceProperties struct {
 	UpdateMode         UpdateMode
-	AutoUpdateInterval string
+	AutoUpdateInterval int
 }
 
 // UpdateMode what to do when a mirror is re-synced from a snapshot

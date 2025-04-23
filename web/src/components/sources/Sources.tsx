@@ -145,6 +145,10 @@ export default function Sources() {
         );
         src.Version = source.Version;
         src.Status = source.Status;
+        src.Properties = {
+          AutoUpdateInterval: source.Properties.AutoUpdateInterval,
+          UpdateMode: source.Properties.UpdateMode,
+        };
         setRefresh(refresh ^ 1);
         break;
       }

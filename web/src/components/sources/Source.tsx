@@ -85,7 +85,26 @@ export default function Source({
   };
 
   const saveSourcePropsHandler = (p: SourceProperties) => {
-    console.log(p);
+    setLoading(true);
+    client
+      .saveProperties(source.Source, source.Label, p)
+      .then(
+        (src) => {
+          setAlert(null);
+          sourceUpdated(source.ID, src);
+          return src;
+        },
+        (msg) => {
+          showError(msg);
+          return client.fetchSource(source.Source, source.Label);
+        }
+      )
+      .then((src) => {
+        if (src !== null) {
+          sourceUpdated(source.ID, src);
+        }
+      })
+      .finally(() => setLoading(false));
   };
 
   const handleClose = (confirm: boolean) => () => {
