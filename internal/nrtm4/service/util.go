@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// UserLogger is a logger that goes to stdout. Can be overridden.
 var UserLogger *slog.Logger
 
 func init() {

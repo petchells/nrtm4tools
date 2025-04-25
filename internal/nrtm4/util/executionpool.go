@@ -1,13 +1,13 @@
 package util
 
-type executionPool struct {
+type ExecutionPool struct {
 	executors chan executor
 }
 
 type executor struct{}
 
-func NewExecutionPool(limit int) *executionPool {
-	pool := executionPool{}
+func NewExecutionPool(limit int) *ExecutionPool {
+	pool := ExecutionPool{}
 	pool.executors = make(chan executor, limit)
 	for range limit {
 		pool.executors <- executor{}
@@ -15,14 +15,14 @@ func NewExecutionPool(limit int) *executionPool {
 	return &pool
 }
 
-func (pool *executionPool) Acquire() executor {
+func (pool *ExecutionPool) Acquire() executor {
 	return <-pool.executors
 }
 
-func (pool *executionPool) Release(p executor) {
+func (pool *ExecutionPool) Release(p executor) {
 	pool.executors <- p
 }
 
-func (pool *executionPool) Close() {
+func (pool *ExecutionPool) Close() {
 	close(pool.executors)
 }

@@ -24,7 +24,7 @@ func TestLabelRegex(t *testing.T) {
 	lbls := [...]labelExpectation{{
 		"This_one_is-100.OK", true},
 		{"1_is_ok", true},
-		{"YES$nowerky", false},
+		{"YES $5,000", true},
 		{"No\\BS", false},
 		{"-1", true},
 		{"F", true},

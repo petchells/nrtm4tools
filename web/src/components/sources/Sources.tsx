@@ -138,11 +138,13 @@ export default function Sources() {
       if (sources[i].ID === id) {
         const src = sources[i];
         src.Label = source.Label;
-        src.Notifications.splice(
-          0,
-          src.Notifications.length,
-          ...source.Notifications
-        );
+        if (source.Notifications && source.Notifications.length) {
+          src.Notifications.splice(
+            0,
+            src.Notifications.length,
+            ...source.Notifications
+          );
+        }
         src.Version = source.Version;
         src.Status = source.Status;
         src.Properties = {

@@ -104,9 +104,8 @@ func applyDeltaFunc(repo persist.Repository, source persist.NRTMSource, deltaRef
 					const txt = "Delta delete_object failed because object is not in the repository"
 					UserLogger.Error(txt, "url", deltaRef.URL, "ObjectClass", *delta.ObjectClass, "PrimaryKey", *delta.PrimaryKey)
 					return newNRTMServiceError("%v. class: %v primary-key: %v", txt, *delta.ObjectClass, *delta.PrimaryKey)
-				} else {
-					UserLogger.Error("Delta DeleteObject failed", "url", deltaRef.URL, "ObjectClass", *delta.ObjectClass, "PrimaryKey", *delta.PrimaryKey, "error", err)
 				}
+				UserLogger.Error("Delta DeleteObject failed", "url", deltaRef.URL, "ObjectClass", *delta.ObjectClass, "PrimaryKey", *delta.PrimaryKey, "error", err)
 				return err
 			}
 

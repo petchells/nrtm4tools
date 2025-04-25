@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
@@ -42,10 +43,34 @@ type NRTMProcessor struct {
 	client Client
 }
 
-const charsAllowedInLabel = "A-Za-z0-9 !@#$%():,.?_-"
+const charsAllowedInLabel = `A-Za-z0-9 !@#$%^;:,.?_-`
 
 // Must have a letter or digit in there somewhere
 var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" + charsAllowedInLabel + "]*$")
+
+// StartAutoUpdater starts the autoupdater
+func (p NRTMProcessor) StartAutoUpdater() {
+	t := time.NewTicker(10 * time.Second)
+	for {
+		select {
+		case <-t.C:
+			srcs, err := p.ListSources()
+			if err != nil {
+				logger.Error("ListSources failed", "error", err)
+			}
+			for _, s := range srcs {
+				a := GetAutoUpdaterInstance(p, s.ID)
+				if a.IsRunning() {
+					continue
+				}
+				err = a.Start(false)
+				if err != nil {
+					logger.Error("AutoUpdater.Start failed", "error", err)
+				}
+			}
+		}
+	}
+}
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {

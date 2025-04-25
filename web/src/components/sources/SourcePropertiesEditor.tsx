@@ -20,8 +20,7 @@ import { Typography } from "@mui/material";
 
 const PaddedItem = styled(Paper)(({ theme }) => ({
     ...theme.typography.body2,
-    padding: theme.spacing(1),
-    paddingLeft: theme.spacing(2),
+    padding: theme.spacing(2),
     textAlign: "start",
 }));
 
