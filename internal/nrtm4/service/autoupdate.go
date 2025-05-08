@@ -29,6 +29,7 @@ func GetAutoUpdaterInstance(p NRTMProcessor, sourceID uint64) *AutoUpdater {
 		p:        p,
 	}
 	updateRegister[sourceID] = au
+	au.initialize()
 	return au
 }
 
@@ -68,11 +69,10 @@ func (u *AutoUpdater) IsRunning() bool {
 
 // }
 
-// Start sets up the timer and performs updates.
-func (u *AutoUpdater) Start(preDelay bool) error {
+func (u *AutoUpdater) initialize() error {
 	src := latestSource(u.p, u.sourceID)
 	if src == nil {
-		return errors.New("Source not found")
+		return errors.New("source not found")
 	}
 	u.interval = src.Properties.AutoUpdateInterval
 	if u.interval < 0 {
@@ -84,14 +84,15 @@ func (u *AutoUpdater) Start(preDelay bool) error {
 
 	if u.interval == 0 {
 		dur, _ := time.ParseDuration("9h")
-		u.t = time.NewTicker(dur)
+		if u.t == nil {
+			u.t = time.NewTicker(dur)
+		}
 		u.t.Stop()
 	} else {
-		if !preDelay {
-			go u.doUpdateWithReconnectOnFail()
-		}
 		dur, _ := time.ParseDuration(fmt.Sprintf("%dm", u.interval))
+		logger.Info("setting ticker", "dur", dur, "u.interval", u.interval)
 		u.t = time.NewTicker(dur)
+		u.running = true
 	}
 	go func() {
 		for {
@@ -111,6 +112,36 @@ func (u *AutoUpdater) Start(preDelay bool) error {
 			}
 		}
 	}()
+	return nil
+}
+
+// Start sets up the timer and performs updates.
+func (u *AutoUpdater) Start(preDelay bool) error {
+	src := latestSource(u.p, u.sourceID)
+	if src == nil {
+		return errors.New("source not found")
+	}
+	if u.interval == src.Properties.AutoUpdateInterval {
+		return nil
+	}
+	u.interval = src.Properties.AutoUpdateInterval
+	if u.interval < 0 {
+		logger.Error("Bad value in Properties", "AutoUpdateInterval", u.interval)
+		return nil
+	}
+	var err error
+	if u.interval == 0 {
+		u.t.Stop()
+		u.running = false
+	} else {
+		// if !preDelay {
+		// 	go u.doUpdateWithReconnectOnFail()
+		// }
+		dur, _ := time.ParseDuration(fmt.Sprintf("%dm", u.interval))
+		logger.Info("setting ticker", "dur", dur, "u.interval", u.interval)
+		u.t.Reset(dur)
+		u.running = true
+	}
 	return err
 }
 
@@ -143,6 +174,17 @@ func (u *AutoUpdater) doUpdateWithReconnectOnFail() {
 		updaterPool.Release(lock)
 	}()
 
+	if src.Properties.AutoUpdateInterval != u.interval {
+		// interval changed
+		u.interval = src.Properties.AutoUpdateInterval
+		if u.interval == 0 {
+			u.t.Stop()
+			return
+		} else {
+			d, _ := time.ParseDuration(fmt.Sprintf("%dm", u.interval))
+			u.t.Reset(d)
+		}
+	}
 	// Do an update
 	logger.Info("AutoUpdater will update", "src.Source", src.Source, "src.Label", src.Label)
 	_, err := u.p.Update(src.Source, src.Label)
@@ -152,6 +194,7 @@ func (u *AutoUpdater) doUpdateWithReconnectOnFail() {
 	}
 	// There was en error with the update; delete or rename repo
 	logger.Info("AutoUpdater failed to update, reconnecting...", "src.Source", src.Source, "src.Label", src.Label)
+	label := src.Label // preserve original label in case of rename
 	switch src.Properties.UpdateMode {
 	case persist.UpdateModeReplace:
 		err = u.p.RemoveSource(src.Source, src.Label)
@@ -159,35 +202,35 @@ func (u *AutoUpdater) doUpdateWithReconnectOnFail() {
 		err = relabelAutoUpdateFailure(u.p, src)
 	}
 	if err != nil {
-		logger.Error("AutoUpdater got an error when removing", "src.Source", src.Source, "src.Label", src.Label)
+		logger.Error("AutoUpdater got an error when removing or renaming", "src.Source", src.Source, "src.Label", src.Label)
 		u.ch <- err
 		return
 	}
-
+	u.t.Stop()
 	// Connect to source
-	err = u.p.Connect(src.NotificationURL, src.Label)
-	if err != nil {
-		u.ch <- err
-	}
-	srcs, err := u.p.ListSources()
-	if err != nil {
-		return
-	}
-	for _, s := range srcs {
-		if s.Source == src.Source && s.Label == src.Label {
-			u.sourceID = s.ID
-			if s.Properties.AutoUpdateInterval != u.interval {
-				u.interval = s.Properties.AutoUpdateInterval
-				if u.interval == 0 {
-					u.t.Stop()
-				} else {
-					d, _ := time.ParseDuration(fmt.Sprintf("%dm", u.interval))
-					u.t.Reset(d)
-				}
-			}
-			break
-		}
-	}
+	err = u.p.Connect(src.NotificationURL, label)
+	u.ch <- err
+	// srcs, err := u.p.ListSources()
+	// if err != nil {
+	// 	return
+	// }
+	// logger.Debug("Looking for latest source...", "src.Source", src.Source, "label", label)
+	// for _, s := range srcs {
+	// 	if s.Source == src.Source && s.Label == label {
+	// 		logger.Debug("Found it")
+	// 		u.sourceID = s.ID
+	// 		if s.Properties.AutoUpdateInterval != u.interval {
+	// 			u.interval = s.Properties.AutoUpdateInterval
+	// 			if u.interval == 0 {
+	// 				u.t.Stop()
+	// 			} else {
+	// 				d, _ := time.ParseDuration(fmt.Sprintf("%dm", u.interval))
+	// 				u.t.Reset(d)
+	// 			}
+	// 		}
+	// 		break
+	// 	}
+	// }
 }
 
 func latestSource(p NRTMProcessor, id uint64) *persist.NRTMSourceDetails {
