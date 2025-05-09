@@ -2,23 +2,25 @@ package util
 
 import "fmt"
 
+type member struct{}
+
 // Set is a mathematical set of values
-type Set[E comparable] map[E]struct{}
+type Set[E comparable] map[E]member
 
 type filterFn[E comparable] func(E) bool
 
 // NewSet creates a new set from a list of values, or an empty set of a certain type
 func NewSet[E comparable](vals ...E) Set[E] {
-	s := Set[E]{}
+	s := make(Set[E], len(vals))
 	for _, v := range vals {
-		s[v] = struct{}{}
+		s[v] = member{}
 	}
 	return s
 }
 
 func (s Set[E]) Add(vals ...E) {
 	for _, v := range vals {
-		s[v] = struct{}{}
+		s[v] = member{}
 	}
 }
 
@@ -80,9 +82,9 @@ func (s Set[E]) IsEmpty() bool {
 
 func (s Set[E]) Filter(fn filterFn[E]) Set[E] {
 	result := NewSet[E]()
-	for _, ele := range s.Members() {
-		if fn(ele) {
-			result.Add(ele)
+	for _, member := range s.Members() {
+		if fn(member) {
+			result.Add(member)
 		}
 	}
 	return result

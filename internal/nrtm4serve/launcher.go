@@ -48,6 +48,7 @@ func Launch(config service.AppConfig, port int, webDir string) {
 	defer repo.Close()
 	logger.Info("NRTM4serve is starting", "port", port)
 	processor := service.NewNRTMProcessor(config, repo, service.HTTPClient{})
+	go processor.StartAutoUpdater()
 	rpcHandler := rpc.Handler{API: WebAPI{Processor: processor}}
 	defer func() {
 		if r := recover(); r != nil {

@@ -119,9 +119,9 @@ func TestRpcErrorHandling(t *testing.T) {
 	jsonStr = `{
 		"jsonRpc": "2.0",
 		"id": "1",
-		"method": "Heartbeat"
+		"method": "NoSuchMethod"
 	}`
-	expected = "-32099: "
+	expected = "-32601: Method not found"
 	doErrorTest(jsonStr, expected)
 
 	jsonStr = `{
@@ -152,7 +152,7 @@ func TestRpcErrorHandling(t *testing.T) {
 		"jsonrpc": "2.0",
 		"method": "Echo",
 		"params": [""]}`
-	expected = emptyResponse.Error.Error()
+	expected = invalidRequestResponse.Error.Error()
 	doErrorTest(jsonStr, expected)
 
 	jsonStr = `{
@@ -160,7 +160,7 @@ func TestRpcErrorHandling(t *testing.T) {
 		"id": 77777,
 		"method": "Echo",
 		"params": [""]}`
-	expected = emptyResponse.Error.Error()
+	expected = invalidRequestResponse.Error.Error()
 	doErrorTest(jsonStr, expected)
 
 	jsonStr = `{
@@ -219,7 +219,7 @@ func TestArrayOfCommandsRequest(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 	res := []JSONRPCResponse{}
-	json.Unmarshal([]byte(rr.Body.String()), &res)
+	json.Unmarshal(rr.Body.Bytes(), &res)
 
 	expectNumResponses := 2
 	if len(res) != expectNumResponses {
@@ -244,8 +244,8 @@ func TestArrayOfCommandsRequest(t *testing.T) {
 		t.Fatal("When called with no such method, result should be nil")
 	}
 	errorCode := res[1].Error.Code
-	if errorCode != emptyResponse.Error.Code {
-		t.Fatalf("No such method error code expected %d but was %d", emptyResponse.Error.Code, errorCode)
+	if errorCode != methodNotFoundResponse.Error.Code {
+		t.Fatalf("No such method error code expected %d but was %d", methodNotFoundResponse.Error.Code, errorCode)
 	}
 }
 
@@ -415,7 +415,7 @@ func TestParseErrorHandling(t *testing.T) {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 		}
 		res := JSONRPCResponse{}
-		if err = json.Unmarshal([]byte(rr.Body.String()), &res); err != nil {
+		if err = json.Unmarshal(rr.Body.Bytes(), &res); err != nil {
 			t.Errorf("Should not encounter unmarshal error")
 		}
 		if res.Result != nil {
@@ -440,7 +440,7 @@ func TestParseErrorHandling(t *testing.T) {
 		"jsonrpc": "2.0",
 		"method": "Echo",
 		"params": [""]}`
-	doTestWith(jsonStr, emptyResponse.Error)
+	doTestWith(jsonStr, invalidRequestResponse.Error)
 }
 
 func TestSliceTypeHandling(t *testing.T) {
@@ -457,7 +457,7 @@ func TestSliceTypeHandling(t *testing.T) {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
 		}
 		res := JSONRPCResponse{}
-		if err = json.Unmarshal([]byte(rr.Body.String()), &res); err != nil {
+		if err = json.Unmarshal(rr.Body.Bytes(), &res); err != nil {
 			t.Errorf("Should not encounter unmarshal error")
 		}
 		return res

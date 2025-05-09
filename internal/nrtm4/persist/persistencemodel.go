@@ -15,8 +15,26 @@ type NRTMSource struct {
 	NotificationURL string
 	Label           string
 	Status          string
+	Properties      SourceProperties
 	Created         time.Time
 }
+
+// SourceProperties configurable user properties per source
+type SourceProperties struct {
+	UpdateMode         UpdateMode
+	AutoUpdateInterval int
+}
+
+// UpdateMode what to do when a mirror is re-synced from a snapshot
+type UpdateMode int
+
+const (
+
+	// UpdateModePreserve when a repo loses sync, relabel it then reinitialize from snapshot
+	UpdateModePreserve UpdateMode = iota
+	// UpdateModeReplace when a repo loses sync delete it then reinitialize from snapshot
+	UpdateModeReplace
+)
 
 // NRTMSourceDetails is a source with notification objects
 type NRTMSourceDetails struct {
@@ -32,6 +50,7 @@ func NewNRTMSource(notification NotificationJSON, label string, notificationURL 
 		Version:         uint32(notification.SnapshotRef.Version),
 		Label:           label,
 		NotificationURL: notificationURL,
+		Properties:      SourceProperties{},
 	}
 }
 

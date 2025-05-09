@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 17.4 (Debian 17.4-1.pgdg120+2)
--- Dumped by pg_dump version 17.0
+-- Dumped by pg_dump version 17.4 (Ubuntu 17.4-1.pgdg24.04+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -153,7 +153,8 @@ CREATE TABLE public.nrtm_source (
     notification_url text NOT NULL,
     label character varying(255) NOT NULL,
     status character varying(255) NOT NULL,
-    created timestamp without time zone NOT NULL
+    created timestamp without time zone NOT NULL,
+    properties jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 
@@ -207,11 +208,11 @@ ALTER TABLE ONLY public.nrtm_rpslobject
 
 
 --
--- Name: nrtm_rpslobject rpslobject__source__type__primary_key__version__uid; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: nrtm_rpslobject rpslobject__source__type__primary_key__uid; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.nrtm_rpslobject
-    ADD CONSTRAINT rpslobject__source__type__primary_key__version__uid UNIQUE (source_id, object_type, primary_key, version);
+    ADD CONSTRAINT rpslobject__source__type__primary_key__uid UNIQUE (source_id, object_type, primary_key);
 
 
 --

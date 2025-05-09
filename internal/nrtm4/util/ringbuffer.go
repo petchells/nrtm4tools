@@ -1,9 +1,10 @@
-package service
+package util
 
 import (
 	"sync"
 )
 
+// RingBuffer is a fixed size ring buffer implementation with mutex locking
 type RingBuffer[T any] struct {
 	buffer []T
 	size   int

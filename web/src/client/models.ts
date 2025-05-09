@@ -35,6 +35,7 @@ export interface Notification {
 	Version: number;
 }
 
+
 export interface SourceDetail {
 	ID: string;
 	Source: string;
@@ -44,7 +45,18 @@ export interface SourceDetail {
 	Label: string;
 	Status: string;
 	Created: string;
+	Properties: SourceProperties;
 	Notifications: Notification[];
+}
+
+export interface SourceProperties {
+	UpdateMode: UpdateMode;
+	AutoUpdateInterval: number;
+}
+
+export enum UpdateMode {
+	Preserve,
+	Replace,
 }
 
 export interface AppConfig {

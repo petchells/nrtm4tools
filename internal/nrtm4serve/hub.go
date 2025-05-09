@@ -28,6 +28,7 @@ type message struct {
 	Content map[string]any
 }
 
+// Client a websocket client that can connect to a Hub
 type Client struct {
 	ID   string
 	conn *websocket.Conn
@@ -117,6 +118,7 @@ func (c *Client) writePump(wg *sync.WaitGroup) {
 	}
 }
 
+// Hub is a websocket hub that routes messages
 type Hub struct {
 	// Registered clients.
 	clients map[string]*Client

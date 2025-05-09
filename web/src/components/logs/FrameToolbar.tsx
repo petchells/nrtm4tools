@@ -24,18 +24,18 @@ import WatchOffIcon from "@mui/icons-material/WatchOff";
 import { ToolbarCommand } from "./model";
 import Stack from "@mui/material/Stack";
 
-const logLevel = ["Error", "Warning", "Info", "Debug"];
+const logLevel = ["Error", "Info", "Verbose", "Fine"];
 
 interface FrameToolbarProps {
   status: string;
-  toolbarClick: (cmd: ToolbarCommand, ...args: any) => void;
   scrollBottom: boolean;
+  toolbarClick: (cmd: ToolbarCommand, ...args: any) => void;
 }
 
 export default function FrameToolbar({
   status,
-  toolbarClick,
   scrollBottom,
+  toolbarClick,
 }: FrameToolbarProps) {
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
@@ -62,13 +62,14 @@ export default function FrameToolbar({
   const levelButton = (lvl: string) => {
     const c = colours[logLevel.indexOf(lvl)];
     return (
-      <Button
-        sx={{ color: c }}
-        onClick={levelClickHandlerWrapper(logLevel.indexOf(lvl))}
-        key={lvl}
-      >
-        <CircleIcon />
-      </Button>
+      <Tooltip title={lvl} key={lvl}>
+        <Button
+          sx={{ color: c }}
+          onClick={levelClickHandlerWrapper(logLevel.indexOf(lvl))}
+        >
+          <CircleIcon />
+        </Button>
+      </Tooltip>
     );
   };
 
@@ -130,7 +131,7 @@ export default function FrameToolbar({
             </Box>
           </Box>
           <Stack direction="row" spacing={1}>
-            <Tooltip title="Scroll to end of log">
+            <Tooltip title="Watch the tail of the log">
               <IconButton
                 size="small"
                 onClick={() =>

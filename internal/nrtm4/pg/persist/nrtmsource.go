@@ -11,14 +11,15 @@ import (
 // NRTMSource pg database mapping for nrtm_source
 type NRTMSource struct {
 	db.EntityManaged `em:"nrtm_source src"`
-	ID               uint64    `em:"-"`
-	Source           string    `em:"-"`
-	SessionID        string    `em:"-"`
-	Version          uint32    `em:"-"`
-	NotificationURL  string    `em:"-"`
-	Label            string    `em:"-"`
-	Status           string    `em:"-"`
-	Created          time.Time `em:"-"`
+	ID               uint64                   `em:"-"`
+	Source           string                   `em:"-"`
+	SessionID        string                   `em:"-"`
+	Version          uint32                   `em:"-"`
+	NotificationURL  string                   `em:"-"`
+	Label            string                   `em:"-"`
+	Status           string                   `em:"-"`
+	Properties       persist.SourceProperties `em:"-"`
+	Created          time.Time                `em:"-"`
 }
 
 // NewNRTMSource is a shorthand function which prepares a source object for storage
@@ -32,6 +33,7 @@ func NewNRTMSource(source persist.NRTMSource) NRTMSource {
 		NotificationURL: source.NotificationURL,
 		Label:           source.Label,
 		Status:          source.Status,
+		Properties:      source.Properties,
 		Created:         util.AppClock.Now(),
 	}
 	return sourceObj
@@ -47,6 +49,7 @@ func FromNRTMSource(source persist.NRTMSource) NRTMSource {
 		NotificationURL: source.NotificationURL,
 		Label:           source.Label,
 		Status:          source.Status,
+		Properties:      source.Properties,
 		Created:         source.Created,
 	}
 }
@@ -61,6 +64,7 @@ func (s *NRTMSource) AsNRTMSource() persist.NRTMSource {
 		NotificationURL: s.NotificationURL,
 		Label:           s.Label,
 		Status:          s.Status,
+		Properties:      s.Properties,
 		Created:         s.Created,
 	}
 }

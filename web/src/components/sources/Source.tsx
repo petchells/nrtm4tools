@@ -19,10 +19,11 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import UpdateIcon from "@mui/icons-material/Update";
 
 import { formatDateWithStyle, parseISOString } from "../../util/dates";
-import { SourceDetail } from "../../client/models";
+import { SourceDetail, SourceProperties } from "../../client/models";
 import WebAPIClient from "../../client/WebAPIClient.ts";
 import LabelControl from "./LabelControl.tsx";
 import AlertMessage from "./AlertMessage.tsx";
+import SourcePropertiesEditor from "./SourcePropertiesEditor.tsx";
 
 interface SourceProps {
   source: SourceDetail;
@@ -51,11 +52,20 @@ export default function Source({
       .updateSource(source.Source, source.Label)
       .then(
         (src) => {
-          sourceUpdated(source.ID, src);
           setAlert(null);
+          sourceUpdated(source.ID, src);
+          return src;
         },
-        (msg) => showError(msg)
+        (msg) => {
+          showError(msg);
+          return client.fetchSource(source.Source, source.Label);
+        }
       )
+      .then((src) => {
+        if (src !== null) {
+          sourceUpdated(source.ID, src);
+        }
+      })
       .finally(() => setLoading(false));
   };
 
@@ -71,6 +81,29 @@ export default function Source({
         },
         (err) => showError(err)
       )
+      .finally(() => setLoading(false));
+  };
+
+  const saveSourcePropsHandler = (p: SourceProperties) => {
+    setLoading(true);
+    client
+      .saveProperties(source.Source, source.Label, p)
+      .then(
+        (src) => {
+          setAlert(null);
+          sourceUpdated(source.ID, src);
+          return src;
+        },
+        (msg) => {
+          showError(msg);
+          return client.fetchSource(source.Source, source.Label);
+        }
+      )
+      .then((src) => {
+        if (src !== null) {
+          sourceUpdated(source.ID, src);
+        }
+      })
       .finally(() => setLoading(false));
   };
 
@@ -113,6 +146,7 @@ export default function Source({
   const Item = styled(Paper)(({ theme }) => ({
     ...theme.typography.body2,
     padding: theme.spacing(1),
+    paddingLeft: theme.spacing(2),
     textAlign: "start",
   }));
 
@@ -129,10 +163,10 @@ export default function Source({
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure you want to remove{" "}
+            Are you sure you want to remove
             <b>
               {source.Source} {source.Label}
-            </b>{" "}
+            </b>
             from the repository?
           </DialogContentText>
         </DialogContent>
@@ -225,7 +259,16 @@ export default function Source({
             )}
           </Item>
         </Grid>
+        <Grid size={{ xs: 4, md: 4 }}>
+          <Label>Source configuration</Label>
+        </Grid>
+        <Grid size={{ xs: 8, md: 8 }}>
+          <SourcePropertiesEditor
+            sourceProps={source.Properties}
+            saveSourceProps={saveSourcePropsHandler}
+          />
+        </Grid>
       </Grid>
-    </Box>
+    </Box >
   );
 }

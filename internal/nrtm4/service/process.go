@@ -1,12 +1,14 @@
 package service
 
 import (
+	"errors"
 	"io"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/petchells/nrtm4tools/internal/nrtm4/persist"
 )
@@ -41,10 +43,34 @@ type NRTMProcessor struct {
 	client Client
 }
 
-const charsAllowedInLabel = "A-Za-z0-9 :._-"
+const charsAllowedInLabel = `A-Za-z0-9 !@#$%^;:,.?_-`
 
 // Must have a letter or digit in there somewhere
 var labelRe = regexp.MustCompile("^[" + charsAllowedInLabel + "]*[A-Za-z0-9][" + charsAllowedInLabel + "]*$")
+
+// StartAutoUpdater starts the autoupdater
+func (p NRTMProcessor) StartAutoUpdater() {
+	t := time.NewTicker(10 * time.Second)
+	for range t.C {
+		srcs, err := p.ListSources()
+		if err != nil {
+			logger.Error("ListSources failed", "error", err)
+		}
+		for _, s := range srcs {
+			if s.Status != "ok" {
+				continue
+			}
+			a := GetAutoUpdaterInstance(p, s.ID)
+			if !a.IsRunning() {
+				logger.Debug("Starting updater for", "id", s.ID, "source", s.Source)
+				err = a.Start(false)
+				if err != nil {
+					logger.Error("AutoUpdater.Start failed", "error", err)
+				}
+			}
+		}
+	}
+}
 
 // Connect stores details about a connection
 func (p NRTMProcessor) Connect(notificationURL string, label string) error {
@@ -119,11 +145,11 @@ func (p NRTMProcessor) Connect(notificationURL string, label string) error {
 
 // Update brings the local mirror up to date
 func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, error) {
-	UserLogger.Info("Update", "name", sourceName, "label", label)
+	UserLogger.Warn("Update", "sourceName", sourceName, "label", label)
 	ds := NrtmDataService{Repository: p.repo}
 	source := ds.getSourceByNameAndLabel(sourceName, label)
 	if source == nil {
-		logger.Warn("No source with given name and label", "name", sourceName, "label", label)
+		logger.Warn("No source with given name and label", "sourceName", sourceName, "label", label)
 		return nil, ErrSourceNotFound
 	}
 	fm := fileManager{p.client}
@@ -146,12 +172,12 @@ func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, er
 	// the snapshot version might be different.
 	saved, err := ds.saveSourceWithNotification(*source, notification)
 	if err != nil {
-		logger.Error("Failed to save source")
-		UserLogger.Warn("Failed to save source")
+		logger.Error("Failed to save source", "sourceName", sourceName, "label", label)
+		UserLogger.Warn("Failed to save source", "sourceName", sourceName, "label", label)
 		return nil, err
 	}
 	if notification.Version == int64(saved.Version) {
-		UserLogger.Warn("Already at latest version")
+		UserLogger.Warn("Already at latest version", "sourceName", sourceName, "label", label)
 		return source, nil
 	}
 	saved.Status = "updating"
@@ -169,7 +195,6 @@ func (p NRTMProcessor) Update(sourceName, label string) (*persist.NRTMSource, er
 // ListSources gets details, including notifications, of all sources
 func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	ds := NrtmDataService{Repository: p.repo}
-	UserLogger.Info("List sources")
 	sources, err := ds.listSources()
 	deets := []persist.NRTMSourceDetails{}
 	if err != nil {
@@ -190,9 +215,21 @@ func (p NRTMProcessor) ListSources() ([]persist.NRTMSourceDetails, error) {
 	return deets, nil
 }
 
+// SaveProperties saves properties for a source/label
+func (p NRTMProcessor) SaveProperties(source, label string, props persist.SourceProperties) (*persist.NRTMSource, error) {
+	ds := NrtmDataService{Repository: p.repo}
+	src := ds.getSourceByNameAndLabel(source, label)
+	if src == nil {
+		return nil, errors.New("no such source")
+	}
+	src.Properties.AutoUpdateInterval = props.AutoUpdateInterval
+	src.Properties.UpdateMode = props.UpdateMode
+	return ds.saveSource(*src)
+}
+
 // ReplaceLabel replaces a label name
 func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NRTMSource, error) {
-	UserLogger.Info("Replace label", "src", src, "label", fromLabel, "replace with", toLabel)
+	UserLogger.Info("Replace label", "sourceName", src, "label", fromLabel, "replace with", toLabel)
 	if !validateLabel(toLabel) {
 		return nil, ErrInvalidLabel
 	}
@@ -211,7 +248,7 @@ func (p NRTMProcessor) ReplaceLabel(src, fromLabel, toLabel string) (*persist.NR
 
 // RemoveSource removes a source from the repo
 func (p NRTMProcessor) RemoveSource(src, label string) error {
-	UserLogger.Info("Remove source", "src", src, "label", label)
+	UserLogger.Info("Remove source", "sourceName", src, "label", label)
 	ds := NrtmDataService{Repository: p.repo}
 	target := ds.getSourceByNameAndLabel(src, label)
 	if target == nil {

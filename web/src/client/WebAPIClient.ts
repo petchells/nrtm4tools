@@ -1,4 +1,4 @@
-import { SourceDetail } from "./models";
+import { SourceDetail, SourceProperties } from "./models";
 import RPCClient from "./RPCClient";
 
 export default class WebAPIClient {
@@ -10,6 +10,18 @@ export default class WebAPIClient {
 
 	public listSources(): Promise<SourceDetail[]> {
 		return this.client.execute<SourceDetail[]>("ListSources");
+	}
+
+	public saveProperties(
+		source: string,
+		label: string,
+		props: SourceProperties,
+	) {
+		return this.client.execute<SourceDetail>("SaveProperties", [
+			source,
+			label,
+			props,
+		])
 	}
 
 	public saveLabel(
@@ -49,6 +61,16 @@ export default class WebAPIClient {
 		label: string,
 	) {
 		return this.client.execute<string>("RemoveSource", [
+			source,
+			label,
+		])
+	}
+
+	public fetchSource(
+		source: string,
+		label: string,
+	) {
+		return this.client.execute<SourceDetail | null>("FetchSource", [
 			source,
 			label,
 		])
