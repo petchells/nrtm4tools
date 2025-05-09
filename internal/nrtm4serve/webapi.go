@@ -69,11 +69,13 @@ func (api WebAPI) SaveProperties(source, label string, props persist.SourcePrope
 
 // Connect connects a new source to the repo
 func (api WebAPI) Connect(url, label string) (string, error) {
-	err := api.Processor.Connect(url, label)
-	if err != nil {
-		service.UserLogger.Error("Connect failed", "url", url, "label", label, "error", err)
-	}
-	return "OK", wrapErr(err)
+	go func() {
+		err := api.Processor.Connect(url, label)
+		if err != nil {
+			service.UserLogger.Error("Connect failed", "url", url, "label", label, "error", err)
+		}
+	}()
+	return "OK", nil
 }
 
 // Update updates a source to the latest version
@@ -96,7 +98,8 @@ func (api WebAPI) Update(src, label string) (persist.NRTMSourceDetails, error) {
 
 // RemoveSource removes a source from the repo
 func (api WebAPI) RemoveSource(src, label string) (string, error) {
-	return "OK", wrapErr(api.Processor.RemoveSource(src, label))
+	go api.Processor.RemoveSource(src, label)
+	return "OK", nil
 }
 
 func wrapErr(err error) error {
