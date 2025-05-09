@@ -11,7 +11,7 @@ func TestNRTMSourceMapping(t *testing.T) {
 }
 
 func TestColumnNameConversionFromFieldTags(t *testing.T) {
-	expected := [...]string{"id", "source", "session_id", "version", "notification_url", "label", "status", "created"}
+	expected := [...]string{"id", "source", "session_id", "version", "notification_url", "label", "status", "properties", "created"}
 	o := NRTMSource{}
 	dtor := db.GetDescriptor(&o)
 	names := dtor.ColumnNames()
